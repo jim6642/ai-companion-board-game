@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 
-const LOG_FILE = path.join(process.cwd(), "ai-logs.json");
-const LEGACY_LOG_FILE = path.join(process.cwd(), "ai-logs.jsonl");
+const LOG_DIR = process.env.NODE_ENV === "production" ? "/tmp" : process.cwd();
+const LOG_FILE = path.join(LOG_DIR, "ai-logs.json");
+const LEGACY_LOG_FILE = path.join(LOG_DIR, "ai-logs.jsonl");
 
 const safeParseJsonArray = (content: string) => {
   if (!content.trim()) return [];
@@ -38,7 +39,14 @@ const readLogs = async () => {
 
 const writeLogs = async (logs: unknown[]) => {
   const content = JSON.stringify(logs, null, 2) + "\n";
-  await fs.writeFile(LOG_FILE, content, "utf-8");
+  try {
+    await fs.writeFile(LOG_FILE, content, "utf-8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EROFS") {
+      return;
+    }
+    throw error;
+  }
 };
 
 export async function POST(request: NextRequest) {
@@ -56,6 +64,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EROFS") {
+      return NextResponse.json({ success: true, warning: "read-only filesystem" });
+    }
     console.error("Failed to write AI log:", error);
     return NextResponse.json(
       { success: false, error: String(error) },
@@ -84,6 +95,9 @@ export async function DELETE() {
     await writeLogs([]);
     return NextResponse.json({ success: true });
   } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EROFS") {
+      return NextResponse.json({ success: true, warning: "read-only filesystem" });
+    }
     return NextResponse.json(
       { success: false, error: String(error) },
       { status: 500 }
