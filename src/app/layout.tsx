@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cinzel, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/next"
 
 const cinzel = Cinzel({
   weight: ["700"],
@@ -30,6 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
+      <Analytics />
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
