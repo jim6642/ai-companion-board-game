@@ -1453,26 +1453,32 @@ input[type="submit"]:not(:disabled),
 
   .wc-dialog-history {
     flex: 1;
-    min-height: 100px;
-    max-height: 35vh;
+    min-height: 0;
+    max-height: none;
   }
 
   .wc-dialog-bottom {
     padding: 0 12px calc(8px + env(safe-area-inset-bottom));
+    position: relative;
   }
 
   .wc-dialog-portrait-mobile {
-    margin: 4px 0 8px;
+    position: absolute;
+    left: 12px;
+    bottom: calc(100% + 6px);
+    z-index: 5;
+    margin: 0;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: flex-end;
     min-height: 100px;
     max-height: 160px;
+    width: 100%;
   }
 
   .wc-dialog-portrait-mobile img,
   .wc-dialog-portrait-mobile .wc-talking-avatar {
-    width: 140px !important;
+    width: 110px !important;
   }
 
   /* Smaller dialog panel on mobile */
@@ -1665,6 +1671,12 @@ input[type="submit"]:not(:disabled),
   letter-spacing: 0.05em;
 }
 
+/* Dialog panel action buttons are more compact */
+.wc-panel .wc-action-btn {
+  height: 36px;
+  padding: 0 16px;
+}
+
 .wc-action-btn:hover {
   background: rgba(197, 160, 89, 0.2);
   box-shadow: 0 0 15px rgba(197, 160, 89, 0.2);
@@ -1781,6 +1793,7 @@ input[type="submit"]:not(:disabled),
 
 @media (max-width: 768px) {
   .wc-notebook-fab {
+    display: none;
     bottom: calc(16px + env(safe-area-inset-bottom));
     right: 16px;
     width: 52px;
@@ -1788,11 +1801,14 @@ input[type="submit"]:not(:disabled),
   }
 
   .wc-notebook-panel {
-    right: 50% !important;
-    bottom: calc(16px + env(safe-area-inset-bottom)) !important;
-    transform: translateX(50%);
-    width: min(520px, 92vw);
-    height: min(70vh, 520px);
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    transform: none;
+    width: 100%;
+    height: min(75vh, 560px);
+    max-height: calc(100vh - 80px);
+    border-radius: 16px 16px 0 0;
   }
 }
 
@@ -1825,7 +1841,7 @@ input[type="submit"]:not(:disabled),
   flex: 0 0 auto;
   min-width: 90px;
   max-width: 100px;
-  padding: 8px;
+  padding: 8px 6px 6px;
   border-radius: 8px;
   gap: 0;
   flex-direction: column;
@@ -1853,6 +1869,7 @@ input[type="submit"]:not(:disabled),
   max-width: 80px;
   line-height: 1.2;
   margin-bottom: 0;
+  justify-content: center;
 }
 
 .wc-player-card--mobile .wc-player-card__meta {

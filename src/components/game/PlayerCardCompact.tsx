@@ -276,41 +276,78 @@ export function PlayerCardCompact({
       
       {/* 信息区 */}
       <div className="wc-player-card__info relative z-10">
-        <div className="flex items-center gap-1.5 mb-0.5">
-          <span className={cn(
-            "wc-seat-badge transition-colors duration-300",
-            isSpeaking ? "bg-[var(--color-gold)] text-[#1a1614]" : "bg-black/10 text-[var(--text-secondary)]",
-            !isReady && "opacity-50"
-          )}>{player.seat + 1}</span>
-          {isMe && isReady && (
-            <span className="text-[10px] bg-[var(--color-gold)]/90 text-[#1a1614] px-1.5 rounded-sm font-bold leading-none py-0.5 shadow-sm">YOU</span>
-          )}
-        </div>
-        
-        <div className="wc-player-card__name relative h-5" title={player.displayName}>
-          <AnimatePresence mode="wait">
-            {isReady ? (
-              <motion.span
-                key="name-text"
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="block truncate font-medium text-[var(--text-primary)]"
-              >
-                {player.displayName}
-              </motion.span>
-            ) : (
-              <motion.div
-                key="name-loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="h-full flex items-center"
-              >
-                <div className="h-2 w-16 bg-[var(--text-secondary)]/10 rounded-full animate-pulse" />
-              </motion.div>
+        {variant === "mobile" ? (
+          <div className="wc-player-card__name relative flex items-center gap-1 min-w-0" title={player.displayName}>
+            <span className={cn(
+              "wc-seat-badge transition-colors duration-300",
+              isSpeaking ? "bg-[var(--color-gold)] text-[#1a1614]" : "bg-black/10 text-[var(--text-secondary)]",
+              !isReady && "opacity-50"
+            )}>{player.seat + 1}</span>
+            <AnimatePresence mode="wait">
+              {isReady ? (
+                <motion.span
+                  key="name-text"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="truncate font-medium text-[var(--text-primary)] flex-1 min-w-0"
+                >
+                  {player.displayName}
+                </motion.span>
+              ) : (
+                <motion.div
+                  key="name-loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex-1 h-3 flex items-center"
+                >
+                  <div className="h-2 w-16 bg-[var(--text-secondary)]/10 rounded-full animate-pulse" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {isMe && isReady && (
+              <span className="text-[10px] bg-[var(--color-gold)]/90 text-[#1a1614] px-1.5 rounded-sm font-bold leading-none py-0.5 shadow-sm">YOU</span>
             )}
-          </AnimatePresence>
-        </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className={cn(
+                "wc-seat-badge transition-colors duration-300",
+                isSpeaking ? "bg-[var(--color-gold)] text-[#1a1614]" : "bg-black/10 text-[var(--text-secondary)]",
+                !isReady && "opacity-50"
+              )}>{player.seat + 1}</span>
+              {isMe && isReady && (
+                <span className="text-[10px] bg-[var(--color-gold)]/90 text-[#1a1614] px-1.5 rounded-sm font-bold leading-none py-0.5 shadow-sm">YOU</span>
+              )}
+            </div>
+
+            <div className="wc-player-card__name relative h-5" title={player.displayName}>
+              <AnimatePresence mode="wait">
+                {isReady ? (
+                  <motion.span
+                    key="name-text"
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="block truncate font-medium text-[var(--text-primary)]"
+                  >
+                    {player.displayName}
+                  </motion.span>
+                ) : (
+                  <motion.div
+                    key="name-loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="h-full flex items-center"
+                  >
+                    <div className="h-2 w-16 bg-[var(--text-secondary)]/10 rounded-full animate-pulse" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </>
+        )}
 
         <div className="wc-player-card__meta min-h-[1.25rem] space-y-0.5">
           {isReady && styleLabel && (

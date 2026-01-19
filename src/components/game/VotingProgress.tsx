@@ -80,17 +80,25 @@ export function VotingProgress({ gameState, humanPlayer }: VotingProgressProps) 
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                className="wc-voting-progress-row flex items-center gap-2 p-2 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]"
+                className="wc-voting-progress-row flex flex-col gap-2 p-2 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]"
               >
-                <div className="flex items-center gap-1.5 min-w-[80px]">
-                  <span className="text-sm font-bold text-[var(--color-danger)]">
-                    {Number(targetSeat) + 1}号
-                  </span>
-                  <span className="text-xs text-[var(--text-secondary)] truncate max-w-[60px]">
-                    {target?.displayName}
-                  </span>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-[80px]">
+                    <span className="text-sm font-bold text-[var(--color-danger)]">
+                      {Number(targetSeat) + 1}号
+                    </span>
+                    <span className="text-xs text-[var(--text-secondary)] truncate max-w-[80px]">
+                      {target?.displayName}
+                    </span>
+                  </div>
+                  <motion.span
+                    layout
+                    className="text-xs font-semibold text-[var(--color-accent)] whitespace-nowrap"
+                  >
+                    总票数 {voteCount % 1 === 0 ? voteCount : voteCount.toFixed(1)}
+                  </motion.span>
                 </div>
-                <div className="flex-1 flex items-center gap-1 flex-wrap">
+                <div className="flex flex-wrap items-center gap-1">
                   <AnimatePresence mode="popLayout">
                     {voters.map((voter) => (
                       <motion.span
@@ -100,8 +108,8 @@ export function VotingProgress({ gameState, humanPlayer }: VotingProgressProps) 
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
                         className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded ${
-                          voter.isHuman 
-                            ? "bg-[var(--color-accent)] text-white font-bold" 
+                          voter.isHuman
+                            ? "bg-[var(--color-accent)] text-white font-bold"
                             : "bg-white border border-[var(--border-color)] text-[var(--text-secondary)]"
                         }`}
                       >
@@ -111,12 +119,6 @@ export function VotingProgress({ gameState, humanPlayer }: VotingProgressProps) 
                     ))}
                   </AnimatePresence>
                 </div>
-                <motion.span 
-                  layout
-                  className="text-sm font-bold text-[var(--color-accent)] ml-auto"
-                >
-                  {voteCount % 1 === 0 ? voteCount : voteCount.toFixed(1)}票
-                </motion.span>
               </motion.div>
             ))
           ) : (

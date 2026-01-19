@@ -820,7 +820,7 @@ export function DialogArea({
 
       {/* 下方：对话框 - 固定在底部 */}
       <div className="wc-dialog-bottom mt-auto shrink-0 px-4 lg:px-6 pb-4 lg:pb-6 pt-0">
-        {/* 移动端立绘置于消息框上方 */}
+        {/* 移动端立绘放在消息框上方 */}
         <div className="wc-dialog-portrait-mobile md:hidden">
           {portraitNode}
         </div>
@@ -852,21 +852,23 @@ export function DialogArea({
           )}
         >
           {showTutorialHelp && tutorialHelpLabel && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onTutorialOpen?.();
-              }}
-              className={cn(
-                "absolute top-4 right-4 inline-flex items-center gap-1.5 p-1 px-2 rounded-full text-xs font-semibold border transition-all",
-                isNight
-                  ? "bg-white/10 border-white/15 text-white/80 hover:bg-white/20"
-                  : "bg-white border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-              )}
-            >
-              {tutorialHelpLabel}
-            </button>
+            <div className="flex justify-end mb-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTutorialOpen?.();
+                }}
+                className={cn(
+                  "inline-flex items-center gap-1.5 p-1 px-2 rounded-full text-xs font-semibold border transition-all",
+                  isNight
+                    ? "bg-white/10 border-white/15 text-white/80 hover:bg-white/20"
+                    : "bg-white border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                )}
+              >
+                {tutorialHelpLabel}
+              </button>
+            </div>
           )}
           {shouldShowDialogPanel && (
           <AnimatePresence mode="wait">

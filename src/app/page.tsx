@@ -146,6 +146,7 @@ export default function Home() {
 
   const [visualIsNight, setVisualIsNight] = useState(isNight);
   const visualIsNightRef = useRef(isNight);
+  const [isMobile, setIsMobile] = useState(false);
   const [dayNightBlinkPhase, setDayNightBlinkPhase] = useState<null | "closing" | "opening">(null);
   const dayNightBlinkTokenRef = useRef(0);
   const dayNightBlinkTimeoutsRef = useRef<number[]>([]);
@@ -155,6 +156,18 @@ export default function Home() {
   useEffect(() => {
     visualIsNightRef.current = visualIsNight;
   }, [visualIsNight]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 768px)");
+    const update = () => setIsMobile(media.matches);
+    update();
+    if (media.addEventListener) {
+      media.addEventListener("change", update);
+      return () => media.removeEventListener("change", update);
+    }
+    media.addListener(update);
+    return () => media.removeListener(update);
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", visualIsNight ? "dark" : "light");
@@ -1253,7 +1266,7 @@ export default function Home() {
                       className="flex-1 flex flex-col min-h-0 overflow-hidden"
                     >
                 {/* 主布局 - 严格对齐 style-unification-preview.html */}
-                <div className="flex-1 flex gap-4 lg:gap-6 px-4 lg:px-6 py-4 lg:py-6 overflow-hidden w-full justify-center min-h-0">
+                <div className="flex-1 flex gap-4 lg:gap-6 lg:px-6 lg:py-6 overflow-hidden w-full justify-center min-h-0">
                   {/* 左侧玩家卡片 */}
                   <div className="hidden md:flex w-[220px] lg:w-[240px] xl:w-[260px] 2xl:w-[300px] flex-col gap-3 shrink-0 overflow-y-auto overflow-x-visible scrollbar-hide pt-2 pb-2 px-1 -mx-1">
                     <AnimatePresence>
@@ -1416,13 +1429,13 @@ export default function Home() {
         {isNotebookOpen && (
           <motion.div
             key="notebook-panel"
-            initial={{ opacity: 0, x: 24, y: 12, scale: 0.98 }}
-            animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 24, y: 12, scale: 0.98 }}
+            initial={isMobile ? { opacity: 0, y: 24 } : { opacity: 0, x: 24, y: 12, scale: 0.98 }}
+            animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, x: 0, y: 0, scale: 1 }}
+            exit={isMobile ? { opacity: 0, y: 24 } : { opacity: 0, x: 24, y: 12, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className="wc-notebook-panel fixed bottom-20 right-5 z-50 w-[360px] h-[480px] max-h-[70vh]"
           >
-            <div className="h-full rounded-lg overflow-hidden border shadow-2xl glass-panel glass-panel--strong">
+            <div className="h-full rounded-t-2xl md:rounded-lg overflow-hidden border shadow-2xl glass-panel glass-panel--strong">
               <Notebook />
             </div>
           </motion.div>
