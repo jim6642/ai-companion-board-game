@@ -1,8 +1,15 @@
 import type { GameState, Player, Phase } from "@/types/game";
 
+export type SystemPromptPart = {
+  text: string;
+  cacheable?: boolean;
+  ttl?: "5m" | "1h";
+};
+
 export interface PromptResult {
   system: string;
   user: string;
+  systemParts?: SystemPromptPart[];
 }
 
 export type GameAction =

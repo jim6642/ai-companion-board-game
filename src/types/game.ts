@@ -8,6 +8,7 @@ export interface StartGameOptions {
   fixedRoles?: Role[];
   devPreset?: DevPreset;
   difficulty?: DifficultyLevel;
+  playerCount?: number;
 }
 
 export type Phase =

@@ -1,11 +1,11 @@
 import type { GameState, Player, Phase } from "@/types/game";
 import { GamePhase } from "../core/GamePhase";
-import type { GameAction, GameContext, PromptResult } from "../core/types";
+import type { GameAction, GameContext, PromptResult, SystemPromptPart } from "../core/types";
 import {
   buildGameContext,
   buildDifficultyDecisionHint,
-  getRoleText,
   getWinCondition,
+  buildSystemTextFromParts,
 } from "@/lib/prompt-utils";
 import {
   addSystemMessage,
@@ -433,21 +433,26 @@ export class NightPhase extends GamePhase {
     const uncheckedPlayers = alivePlayers.filter((p) => !checkedSeats.includes(p.seat));
     const alreadyChecked = alivePlayers.filter((p) => checkedSeats.includes(p.seat));
 
-    const system = `【身份】
+    const cacheableContent = `【身份】
 你是 ${player.seat + 1}号「${player.displayName}」
 身份: 预言家（好人阵营）
 
 ${getWinCondition("Seer")}
 
-${difficultyHint}
+${difficultyHint}`;
 
-【任务】
+    const dynamicContent = `【任务】
 夜晚查验阶段，选择一名玩家查验身份。
 本环节只需要给出座位数字，不要分析，不要角色扮演。
 ${alreadyChecked.length > 0 ? `\n已查验过: ${alreadyChecked.map((p) => `${p.seat + 1}号`).join(", ")}（不建议重复查验）` : ""}
 
-可选: ${uncheckedPlayers.length > 0 ? uncheckedPlayers.map((p) => `${p.seat + 1}号(${p.displayName})`).join(", ") : alivePlayers.map((p) => `${p.seat + 1}号(${p.displayName})`).join(", ")}
-`;
+可选: ${uncheckedPlayers.length > 0 ? uncheckedPlayers.map((p) => `${p.seat + 1}号(${p.displayName})`).join(", ") : alivePlayers.map((p) => `${p.seat + 1}号(${p.displayName})`).join(", ")}`;
+
+    const systemParts: SystemPromptPart[] = [
+      { text: cacheableContent, cacheable: true, ttl: "1h" },
+      { text: dynamicContent },
+    ];
+    const system = buildSystemTextFromParts(systemParts);
 
     const user = `${context}
 
@@ -457,7 +462,7 @@ ${alreadyChecked.length > 0 ? `\n已查验过: ${alreadyChecked.map((p) => `${p.
 只回复座位数字，如: 5
 不要解释，不要输出多余文字，不要代码块`;
 
-    return { system, user };
+    return { system, user, systemParts };
   }
 
   private buildWolfPrompt(
@@ -482,22 +487,30 @@ ${alreadyChecked.length > 0 ? `\n已查验过: ${alreadyChecked.map((p) => `${p.
       .filter(Boolean)
       .join("\n");
 
-    const system = `【身份】
+    const identitySection = `【身份】
 你是 ${player.seat + 1}号「${player.displayName}」
-身份: 狼人（坏人阵营）
-${teammates.length > 0 ? `狼队友: ${teammates.map((t) => `${t.seat + 1}号 ${t.displayName}`).join(", ")}` : "你是唯一存活的狼人"}
+身份: 狼人（坏人阵营）`;
+    const teammateLine = teammates.length > 0
+      ? `狼队友: ${teammates.map((t) => `${t.seat + 1}号 ${t.displayName}`).join(", ")}`
+      : "你是唯一存活的狼人";
+    const cacheableRules = `${getWinCondition("Werewolf")}
 
-${getWinCondition("Werewolf")}
-
-${difficultyHint}
-
-【任务】
+${difficultyHint}`;
+    const taskSection = `【任务】
 夜晚击杀阶段，选择一名好人击杀。
 本环节只需要给出座位数字，不要分析，不要角色扮演。
 ${teammateVotesStr ? `\n【队友意向】\n${teammateVotesStr}\n提示：建议跟随队友集火同一目标！` : ""}
 
 可选: ${villagers.map((p) => `${p.seat + 1}号(${p.displayName})`).join(", ")}
 `;
+
+    const systemParts: SystemPromptPart[] = [
+      { text: identitySection, cacheable: true, ttl: "1h" },
+      { text: teammateLine },
+      { text: cacheableRules, cacheable: true, ttl: "1h" },
+      { text: taskSection },
+    ];
+    const system = buildSystemTextFromParts(systemParts);
 
     const user = `${context}
 
@@ -507,7 +520,7 @@ ${teammateVotesStr ? `\n【队友意向】\n${teammateVotesStr}\n提示：建议
 只回复座位数字，如: 2
 不要解释，不要输出多余文字，不要代码块`;
 
-    return { system, user };
+    return { system, user, systemParts };
   }
 
   private buildGuardPrompt(state: GameContext["state"], player: Player): PromptResult {
@@ -516,15 +529,14 @@ ${teammateVotesStr ? `\n【队友意向】\n${teammateVotesStr}\n提示：建议
     const lastTarget = state.nightActions.lastGuardTarget;
     const difficultyHint = buildDifficultyDecisionHint(state.difficulty, player.role);
 
-    const system = `【身份】
+    const cacheableContent = `【身份】
 你是 ${player.seat + 1}号「${player.displayName}」
 身份: 守卫（好人阵营）
 
 ${getWinCondition("Guard")}
 
-${difficultyHint}
-
-【任务】
+${difficultyHint}`;
+    const dynamicContent = `【任务】
 夜晚守护阶段，选择一名玩家保护，使其今晚不被狼人杀害。
 本环节只需要给出座位数字，不要分析，不要角色扮演。
 注意：不能连续两晚保护同一人！
@@ -536,6 +548,11 @@ ${difficultyHint}
       .join(", ")}
 ${lastTarget !== undefined ? `\n上晚保护了${lastTarget + 1}号，今晚不能选` : ""}
 `;
+    const systemParts: SystemPromptPart[] = [
+      { text: cacheableContent, cacheable: true, ttl: "1h" },
+      { text: dynamicContent },
+    ];
+    const system = buildSystemTextFromParts(systemParts);
 
     const user = `${context}
 
@@ -545,7 +562,7 @@ ${lastTarget !== undefined ? `\n上晚保护了${lastTarget + 1}号，今晚不�
 只回复座位数字，如: 3
 不要解释，不要输出多余文字，不要代码块`;
 
-    return { system, user };
+    return { system, user, systemParts };
   }
 
   private buildWitchPrompt(
@@ -571,15 +588,14 @@ ${lastTarget !== undefined ? `\n上晚保护了${lastTarget + 1}号，今晚不�
         ? state.players.find((p) => p.seat === wolfTarget)
         : null;
 
-    const system = `【身份】
+    const cacheableContent = `【身份】
 你是 ${player.seat + 1}号「${player.displayName}」
 身份: 女巫（好人阵营）
 
 ${getWinCondition("Witch")}
 
-${difficultyHint}
-
-【药水状态】
+${difficultyHint}`;
+    const dynamicContent = `【药水状态】
 解药: ${state.roleAbilities.witchHealUsed ? "已使用" : "可用"}
 毒药: ${state.roleAbilities.witchPoisonUsed ? "已使用" : "可用"}
 
@@ -597,6 +613,11 @@ ${canPoison ? `- 输入 "poison X" 毒杀X号玩家（如 "poison 3"）` : "- �
 
 可毒目标: ${alivePlayers.map((p) => `${p.seat + 1}号`).join(", ")}
 `;
+    const systemParts: SystemPromptPart[] = [
+      { text: cacheableContent, cacheable: true, ttl: "1h" },
+      { text: dynamicContent },
+    ];
+    const system = buildSystemTextFromParts(systemParts);
 
     const user = `${context}
 
@@ -606,6 +627,6 @@ ${canPoison ? `- 输入 "poison X" 毒杀X号玩家（如 "poison 3"）` : "- �
 回复: save / poison X / pass
 只输出上述指令本身，不要解释，不要输出多余文字，不要代码块`;
 
-    return { system, user };
+    return { system, user, systemParts };
   }
 }

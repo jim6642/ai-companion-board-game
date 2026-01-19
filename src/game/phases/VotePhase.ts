@@ -1,6 +1,6 @@
 import type { GameState, Player } from "@/types/game";
 import { GamePhase } from "../core/GamePhase";
-import type { GameAction, GameContext, PromptResult } from "../core/types";
+import type { GameAction, GameContext, PromptResult, SystemPromptPart } from "../core/types";
 import {
   buildGameContext,
   buildDifficultyDecisionHint,
@@ -8,6 +8,7 @@ import {
   buildPlayerTodaySpeech,
   getRoleText,
   getWinCondition,
+  buildSystemTextFromParts,
 } from "@/lib/prompt-utils";
 import {
   addSystemMessage,
@@ -113,15 +114,14 @@ export class VotePhase extends GamePhase {
           ? "提示：根据查验结果决定"
           : "";
 
-    const system = `【身份】
+    const cacheableContent = `【身份】
 你是 ${player.seat + 1}号「${player.displayName}」
 身份: ${getRoleText(player.role)}
 
 ${getWinCondition(player.role)}
 
-${difficultyHint}
-
-【任务】
+${difficultyHint}`;
+    const dynamicContent = `【任务】
 投票环节，选择一名玩家处决。
 尽量与自己本日发言保持一致。
 本环节只需要给出座位数字，不要分析，不要角色扮演。
@@ -130,6 +130,11 @@ ${difficultyHint}
 
 ${roleHints}
 `;
+    const systemParts: SystemPromptPart[] = [
+      { text: cacheableContent, cacheable: true, ttl: "1h" },
+      { text: dynamicContent },
+    ];
+    const system = buildSystemTextFromParts(systemParts);
 
     const user = `${gameContext}
 
@@ -143,7 +148,7 @@ ${selfSpeech ? `【你本日发言汇总】\n"${selfSpeech}"` : "【你本日发
 只回复座位数字，如: 3
 不要解释，不要输出多余文字，不要代码块`;
 
-    return { system, user };
+    return { system, user, systemParts };
   }
 
   async handleAction(_context: GameContext, _action: GameAction): Promise<void> {
@@ -170,8 +175,12 @@ ${selfSpeech ? `【你本日发言汇总】\n"${selfSpeech}"` : "【你本日发
     const sheriffPlayer =
       sheriffSeat !== null ? state.players.find((p) => p.seat === sheriffSeat && p.alive) : null;
     const sheriffPlayerId = sheriffPlayer?.playerId;
+    const aliveById = new Set(state.players.filter((p) => p.alive).map((p) => p.playerId));
+    const aliveBySeat = new Set(state.players.filter((p) => p.alive).map((p) => p.seat));
 
     for (const [voterId, targetSeat] of Object.entries(state.votes)) {
+      if (!aliveById.has(voterId)) continue;
+      if (!aliveBySeat.has(targetSeat)) continue;
       const weight = voterId === sheriffPlayerId ? 1.5 : 1;
       counts[targetSeat] = (counts[targetSeat] || 0) + weight;
     }
@@ -187,9 +196,13 @@ ${selfSpeech ? `【你本日发言汇总】\n"${selfSpeech}"` : "【你本日发
     const sheriffPlayer =
       sheriffSeat !== null ? players.find((p) => p.seat === sheriffSeat && p.alive) : null;
     const sheriffPlayerId = sheriffPlayer?.playerId;
+    const aliveById = new Set(players.filter((p) => p.alive).map((p) => p.playerId));
+    const aliveBySeat = new Set(players.filter((p) => p.alive).map((p) => p.seat));
 
     const voteGroups: Record<number, number[]> = {};
     Object.entries(votes).forEach(([playerId, targetSeat]) => {
+      if (!aliveById.has(playerId)) return;
+      if (!aliveBySeat.has(targetSeat)) return;
       const voter = players.find((p) => p.playerId === playerId);
       if (voter) {
         if (!voteGroups[targetSeat]) voteGroups[targetSeat] = [];

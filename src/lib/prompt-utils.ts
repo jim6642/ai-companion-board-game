@@ -1,4 +1,6 @@
 import type { DifficultyLevel, GameState, Player } from "@/types/game";
+import type { SystemPromptPart } from "@/game/core/types";
+import type { OpenRouterMessage } from "./openrouter";
 
 /**
  * Prompt helper utilities used by Phase prompts.
@@ -388,3 +390,68 @@ ${teammates.map((t) => `${t.seat + 1}号 ${t.displayName}`).join(", ")}`;
 
   return context;
 };
+
+/**
+ * Build a system message with cache control for static content.
+ * Splits the system prompt into cacheable (static rules) and non-cacheable (dynamic state) parts.
+ * 
+ * @param cacheableContent - Static content that can be cached (role rules, win conditions, etc.)
+ * @param dynamicContent - Dynamic content that changes per request (game state, player-specific info)
+ * @param useCache - Whether to enable caching (default: true)
+ * @param ttl - Cache TTL: "5m" (default) or "1h"
+ * @returns OpenRouterMessage with cache_control breakpoints
+ */
+export function buildSystemTextFromParts(parts: SystemPromptPart[]): string {
+  return parts
+    .map((part) => part.text)
+    .map((text) => text.trim())
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+export function buildCachedSystemMessageFromParts(
+  parts: SystemPromptPart[] | undefined,
+  fallbackSystem: string,
+  useCache: boolean = true
+): OpenRouterMessage {
+  if (!parts || parts.length === 0 || !useCache) {
+    return { role: "system", content: fallbackSystem };
+  }
+
+  let cacheCount = 0;
+  const contentParts: Array<{
+    type: "text";
+    text: string;
+    cache_control?: { type: "ephemeral"; ttl?: "1h" };
+  }> = [];
+
+  parts.forEach((part) => {
+    const text = part.text.trim();
+    if (!text) return;
+    const cacheable = part.cacheable === true;
+    const allowCache = cacheable && cacheCount < 4;
+    const cache_control = allowCache
+      ? {
+          type: "ephemeral" as const,
+          ...(part.ttl === "1h" ? { ttl: "1h" as const } : {}),
+        }
+      : undefined;
+
+    if (allowCache) cacheCount += 1;
+
+    contentParts.push({
+      type: "text",
+      text,
+      ...(cache_control ? { cache_control } : {}),
+    });
+  });
+
+  if (contentParts.length === 0) {
+    return { role: "system", content: fallbackSystem };
+  }
+
+  return {
+    role: "system",
+    content: contentParts,
+  };
+}

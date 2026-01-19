@@ -70,10 +70,17 @@ export function useBadgePhase(
   /** 生成警长投票详情 */
   const generateBadgeVoteDetails = useCallback((
     votes: Record<string, number>,
-    players: Player[]
+    players: Player[],
+    candidates: number[] = []
   ): string => {
+    const aliveById = new Set(players.filter((p) => p.alive).map((p) => p.playerId));
+    const aliveBySeat = new Set(players.filter((p) => p.alive).map((p) => p.seat));
+    const candidateSet = new Set(candidates);
     const badgeVoteGroups: Record<number, number[]> = {};
     Object.entries(votes).forEach(([playerId, targetSeat]) => {
+      if (!aliveById.has(playerId)) return;
+      if (!aliveBySeat.has(targetSeat)) return;
+      if (candidateSet.size > 0 && !candidateSet.has(targetSeat)) return;
       const voter = players.find(p => p.playerId === playerId);
       if (voter) {
         if (!badgeVoteGroups[targetSeat]) badgeVoteGroups[targetSeat] = [];
@@ -150,8 +157,14 @@ export function useBadgePhase(
     isResolvingBadgeElectionRef.current = true;
 
     // 计票
+    const aliveById = new Set(state.players.filter((p) => p.alive).map((p) => p.playerId));
+    const aliveBySeat = new Set(state.players.filter((p) => p.alive).map((p) => p.seat));
+    const candidateSet = new Set(candidates);
     const counts: Record<number, number> = {};
-    for (const seat of Object.values(state.badge.votes)) {
+    for (const [voterId, seat] of Object.entries(state.badge.votes)) {
+      if (!aliveById.has(voterId)) continue;
+      if (!aliveBySeat.has(seat)) continue;
+      if (candidateSet.size > 0 && !candidateSet.has(seat)) continue;
       counts[seat] = (counts[seat] || 0) + 1;
     }
     const entries = Object.entries(counts);
@@ -218,7 +231,7 @@ export function useBadgePhase(
     };
 
     // 添加投票详情
-    const badgeVoteDetailMessage = generateBadgeVoteDetails(state.badge.votes, state.players);
+    const badgeVoteDetailMessage = generateBadgeVoteDetails(state.badge.votes, state.players, state.badge.candidates || []);
     nextState = addSystemMessage(nextState, badgeVoteDetailMessage);
     nextState = addSystemMessage(nextState, SYSTEM_MESSAGES.badgeElected(winnerSeat + 1, winner?.displayName || "", votedCount));
 

@@ -11,6 +11,8 @@ interface VotingProgressProps {
 
 export function VotingProgress({ gameState, humanPlayer }: VotingProgressProps) {
   const alivePlayers = gameState.players.filter(p => p.alive);
+  const aliveById = new Set(alivePlayers.map((p) => p.playerId));
+  const aliveBySeat = new Set(alivePlayers.map((p) => p.seat));
   const isBadgeElection = gameState.phase === "DAY_BADGE_ELECTION";
   const votes = isBadgeElection ? gameState.badge.votes : gameState.votes;
   
@@ -20,7 +22,9 @@ export function VotingProgress({ gameState, humanPlayer }: VotingProgressProps) 
     ? alivePlayers.filter(p => !candidates.includes(p.seat))
     : alivePlayers;
   const totalVoters = eligibleVoters.length;
-  const votedCount = Object.keys(votes).length;
+  const votedCount = eligibleVoters.reduce((count, voter) => {
+    return votes[voter.playerId] !== undefined ? count + 1 : count;
+  }, 0);
   
   // 获取警长信息（用于计算1.5票）
   const sheriffSeat = gameState.badge.holderSeat;
@@ -32,8 +36,11 @@ export function VotingProgress({ gameState, humanPlayer }: VotingProgressProps) 
   const voteTargets: Record<number, { voters: Player[], target: Player | undefined, voteCount: number }> = {};
   
   Object.entries(votes).forEach(([voterId, targetSeat]) => {
+    if (!aliveById.has(voterId)) return;
+    if (!aliveBySeat.has(targetSeat)) return;
     const voter = gameState.players.find(p => p.playerId === voterId);
     const target = gameState.players.find(p => p.seat === targetSeat);
+    if (!voter || !target) return;
     
     // 警长的票在非警长选举阶段计算为1.5票
     const voteWeight = (!isBadgeElection && sheriffPlayer && voterId === sheriffPlayer.playerId) ? 1.5 : 1;

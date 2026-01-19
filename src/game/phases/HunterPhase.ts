@@ -1,11 +1,12 @@
 import type { Player } from "@/types/game";
 import { GamePhase } from "../core/GamePhase";
-import type { GameAction, GameContext, PromptResult } from "../core/types";
+import type { GameAction, GameContext, PromptResult, SystemPromptPart } from "../core/types";
 import {
   buildGameContext,
   buildDifficultyDecisionHint,
   getRoleText,
   getWinCondition,
+  buildSystemTextFromParts,
 } from "@/lib/prompt-utils";
 
 export class HunterPhase extends GamePhase {
@@ -21,20 +22,24 @@ export class HunterPhase extends GamePhase {
       (p) => p.alive && p.playerId !== player.playerId
     );
 
-    const system = `【身份】
+    const cacheableContent = `【身份】
 你是 ${player.seat + 1}号「${player.displayName}」
 身份: 猎人（好人阵营）
 
 ${getWinCondition("Hunter")}
 
-${difficultyHint}
-
-【任务】
+${difficultyHint}`;
+    const dynamicContent = `【任务】
 你已死亡，现在可以开枪带走一人。
 本环节只需要给出座位数字或 pass，不要分析，不要角色扮演。
 
 可选: ${alivePlayers.map((p) => `${p.seat + 1}号(${p.displayName})`).join(", ")}
 `;
+    const systemParts: SystemPromptPart[] = [
+      { text: cacheableContent, cacheable: true, ttl: "1h" },
+      { text: dynamicContent },
+    ];
+    const system = buildSystemTextFromParts(systemParts);
 
     const user = `${gameContext}
 
@@ -45,7 +50,7 @@ ${difficultyHint}
 如果不想开枪，回复: pass
 不要解释，不要输出多余文字，不要代码块`;
 
-    return { system, user };
+    return { system, user, systemParts };
   }
 
   async handleAction(_context: GameContext, _action: GameAction): Promise<void> {

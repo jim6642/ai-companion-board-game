@@ -1,12 +1,13 @@
 import type { Player } from "@/types/game";
 import { GamePhase } from "../core/GamePhase";
-import type { GameAction, GameContext, PromptResult } from "../core/types";
+import type { GameAction, GameContext, PromptResult, SystemPromptPart } from "../core/types";
 import {
   buildDifficultyDecisionHint,
   buildGameContext,
   buildTodayTranscript,
   getRoleText,
   getWinCondition,
+  buildSystemTextFromParts,
 } from "@/lib/prompt-utils";
 
 export class BadgePhase extends GamePhase {
@@ -47,15 +48,14 @@ export class BadgePhase extends GamePhase {
           .join("、")
         : "";
 
-    const system = `【身份】
+    const cacheableContent = `【身份】
 你是 ${player.seat + 1}号「${player.displayName}」
 身份: ${getRoleText(player.role)}
 
 ${getWinCondition(player.role)}
 
-${difficultyHint}
-
-【任务】
+${difficultyHint}`;
+    const dynamicContent = `【任务】
 现在进行警徽评选。选择一名玩家获得警徽。
 好人阵营：优先选择你认为更可信、更有领导力、发言更清晰的玩家。
 狼人阵营：优先选择狼队友或你认为容易掌控、能带偏节奏的玩家。
@@ -63,6 +63,11 @@ ${difficultyHint}
 
 可选: ${alivePlayers.map((p) => `${p.seat + 1}号(${p.displayName})`).join(", ")}
 `;
+    const systemParts: SystemPromptPart[] = [
+      { text: cacheableContent, cacheable: true, ttl: "1h" },
+      { text: dynamicContent },
+    ];
+    const system = buildSystemTextFromParts(systemParts);
 
     const recent = state.messages
       .slice(-6)
@@ -77,7 +82,7 @@ ${difficultyHint}
 
     const user = `${liteContextLines.join("\n\n")}\n\n你把警徽投给几号？\n\n【格式】\n只回复座位数字，如: 3\n不要解释，不要输出多余文字，不要代码块`;
 
-    return { system, user };
+    return { system, user, systemParts };
   }
 
   private buildBadgeTransferPrompt(state: GameContext["state"], player: Player): PromptResult {
@@ -92,15 +97,14 @@ ${difficultyHint}
         ? "提示：考虑移交给狼队友或者看起来可信的好人，或者撕毁警徽"
         : "提示：移交给你认为最可信的好人玩家，或者撕毁警徽";
 
-    const system = `【身份】
+    const cacheableContent = `【身份】
 你是 ${player.seat + 1}号「${player.displayName}」
 身份: ${getRoleText(player.role)}
 
 ${getWinCondition(player.role)}
 
-${difficultyHint}
-
-【任务】
+${difficultyHint}`;
+    const dynamicContent = `【任务】
 你已经出局，需要将警徽移交给一名存活的玩家或选择撕毁警徽。
 如果你选择移交，请选择你认为最值得信任的玩家继承警徽。
 如果你选择撕毁警徽，请回复"0"。
@@ -112,6 +116,11 @@ ${roleHints}
 【格式】
 只回复座位数字，如: 3
 不要解释，不要输出多余文字，不要代码块`;
+    const systemParts: SystemPromptPart[] = [
+      { text: cacheableContent, cacheable: true, ttl: "1h" },
+      { text: dynamicContent },
+    ];
+    const system = buildSystemTextFromParts(systemParts);
 
     const todayTranscript = buildTodayTranscript(state, 6000);
 
@@ -121,6 +130,6 @@ ${todayTranscript ? `【本日讨论记录】\n${todayTranscript}` : "【本日�
 
 你把警徽移交给几号？（回复"0"表示撕毁警徽）`;
 
-    return { system, user };
+    return { system, user, systemParts };
   }
 }

@@ -1,6 +1,6 @@
 import type { GameState, Player } from "@/types/game";
 import { GamePhase } from "../core/GamePhase";
-import type { GameAction, GameContext, PromptResult } from "../core/types";
+import type { GameAction, GameContext, PromptResult, SystemPromptPart } from "../core/types";
 import {
   buildGameContext,
   buildDifficultySpeechHint,
@@ -9,6 +9,7 @@ import {
   buildTodayTranscript,
   getRoleText,
   getWinCondition,
+  buildSystemTextFromParts,
 } from "@/lib/prompt-utils";
 import type { FlowToken } from "@/lib/game-flow-controller";
 import {
@@ -110,7 +111,7 @@ export class DaySpeechPhase extends GamePhase {
           ? "你是预言家，可以选择跳身份或先潜水观察"
           : "";
 
-    const system = `【身份】
+    const baseCacheable = `【身份】
 你是 ${player.seat + 1}号「${player.displayName}」
 身份: ${getRoleText(player.role)}
 
@@ -121,13 +122,11 @@ ${getWinCondition(player.role)}
 
 ${persona}
 
-${difficultyHint}
-
-【任务】
+${difficultyHint}`;
+    const taskSection = `【任务】
 ${isLastWords ? "你已经出局，现在发表遗言。" : isCampaignSpeech ? "警徽竞选发言阶段，发表你的竞选发言。" : "白天讨论环节，发表你的看法。"}
-${campaignRequirements ? `\n${campaignRequirements}` : ""}
-
-【核心原则】
+${campaignRequirements ? `\n${campaignRequirements}` : ""}`;
+    const guidelinesSection = `【核心原则】
 1. **沉浸式扮演**：你就是${player.displayName}，完全融入这个角色的性格和说话习惯。不要只是“模仿”风格，要思考“如果我是他，我现在会怎么想，怎么说”。
 2. **性格鲜明**：如果你的设定是暴躁的，那就表现得不耐烦；如果是蠢萌的，那就表现得迷糊一点。不要因为是游戏就强行变身“逻辑大师”。
 3. **自然对话**：像真人在群聊里打字一样说话。可以是断断续续的短句，可以有感叹、犹豫或情绪化的表达。不要写成“逻辑分析报告”。
@@ -144,6 +143,12 @@ ${roleHints ? `- ${roleHints}` : ""}
 返回 JSON 字符串数组，每个元素是一条消息气泡。
 示例：
 ["哎不是...", "3号你这逻辑也太牵强了吧？", "我感觉你就像是在硬找茬，真的。"]`;
+    const systemParts: SystemPromptPart[] = [
+      { text: baseCacheable, cacheable: true, ttl: "1h" },
+      { text: taskSection },
+      { text: guidelinesSection, cacheable: true, ttl: "1h" },
+    ];
+    const system = buildSystemTextFromParts(systemParts);
 
     const phaseHint = isBadgeSpeech
       ? "你正在进行警徽竞选发言，请严格满足竞选要求。"
@@ -164,7 +169,7 @@ ${speakOrderHint}
 
 轮到你发言，返回JSON数组：`;
 
-    return { system, user };
+    return { system, user, systemParts };
   }
 
   async handleAction(_context: GameContext, _action: GameAction): Promise<void> {

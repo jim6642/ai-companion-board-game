@@ -797,7 +797,8 @@ export function useGameLogic() {
 
   /** 开始游戏 */
   const startGame = useCallback(async (options?: StartGameOptions) => {
-    const { fixedRoles, devPreset, difficulty = "normal" } = options || {};
+    const { fixedRoles, devPreset, difficulty = "normal", playerCount = 10 } = options || {};
+    const totalPlayers = Math.min(12, Math.max(8, playerCount));
 
     // 清理状态
     setGameState({ ...createInitialGameState(), difficulty });
@@ -818,7 +819,6 @@ export function useGameLogic() {
       const scenario = getRandomScenario();
       const makeId = () => generateUUID();
 
-      const totalPlayers = 10;
       const humanSeat = 0;
       const initialPlayers: Player[] = Array.from({ length: totalPlayers }).map((_, seat) => {
         const isHuman = seat === humanSeat;
@@ -847,7 +847,7 @@ export function useGameLogic() {
       setGameStarted(true);
       setShowTable(true);
 
-      const characters = await generateCharacters(9, scenario, {
+      const characters = await generateCharacters(totalPlayers - 1, scenario, {
         onBaseProfiles: (profiles) => {
           profiles.forEach((p, i) => {
             window.setTimeout(() => {
@@ -883,7 +883,7 @@ export function useGameLogic() {
         },
       });
 
-      const players = setupPlayers(characters, 0, humanName || "你", fixedRoles, seedPlayerIds);
+      const players = setupPlayers(characters, 0, humanName || "你", totalPlayers, fixedRoles, seedPlayerIds);
 
       let newState: GameState = {
         ...createInitialGameState(),
@@ -1053,9 +1053,12 @@ export function useGameLogic() {
   /** 人类投票 */
   const handleHumanVote = useCallback(async (targetSeat: number) => {
     if (!humanPlayer) return;
+    if (!humanPlayer.alive) return;
 
     const baseState = gameStateRef.current;
     if (baseState.phase !== "DAY_VOTE" && baseState.phase !== "DAY_BADGE_ELECTION") return;
+    const targetPlayer = baseState.players.find((p) => p.seat === targetSeat);
+    if (!targetPlayer || !targetPlayer.alive) return;
 
     if (baseState.phase === "DAY_BADGE_ELECTION") {
       const candidates = baseState.badge.candidates || [];

@@ -15,6 +15,8 @@ import { GAME_TEMPERATURE } from "./ai-config";
 import { type GeneratedCharacter } from "./character-generator";
 import { aiLogger } from "./ai-logger";
 import { PhaseManager } from "@/game/core/PhaseManager";
+import type { PromptResult } from "@/game/core/types";
+import { buildCachedSystemMessageFromParts } from "./prompt-utils";
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -47,6 +49,25 @@ function resolvePhasePrompt(
     throw new Error(`[wolfcha] Missing phase prompt for ${phase}`);
   }
   return prompt;
+}
+
+function buildMessagesForPrompt(
+  prompt: PromptResult,
+  useCache: boolean = true
+): { messages: OpenRouterMessage[]; systemMessage: OpenRouterMessage } {
+  const systemMessage = buildCachedSystemMessageFromParts(
+    prompt.systemParts,
+    prompt.system,
+    useCache
+  );
+
+  return {
+    systemMessage,
+    messages: [
+      systemMessage,
+      { role: "user", content: prompt.user },
+    ],
+  };
 }
 
 export function createInitialGameState(): GameState {
@@ -84,24 +105,65 @@ export function createInitialGameState(): GameState {
   };
 }
 
+export function getRoleConfiguration(playerCount: number): Role[] {
+  const configs: Record<number, Role[]> = {
+    8: ["Werewolf", "Werewolf", "Werewolf", "Seer", "Witch", "Hunter", "Villager", "Villager"],
+    9: ["Werewolf", "Werewolf", "Werewolf", "Seer", "Witch", "Hunter", "Villager", "Villager", "Villager"],
+    10: [
+      "Werewolf",
+      "Werewolf",
+      "Werewolf",
+      "Seer",
+      "Witch",
+      "Hunter",
+      "Villager",
+      "Villager",
+      "Villager",
+      "Villager",
+    ],
+    11: [
+      "Werewolf",
+      "Werewolf",
+      "Werewolf",
+      "Werewolf",
+      "Seer",
+      "Witch",
+      "Hunter",
+      "Guard",
+      "Villager",
+      "Villager",
+      "Villager",
+    ],
+    12: [
+      "Werewolf",
+      "Werewolf",
+      "Werewolf",
+      "Werewolf",
+      "Seer",
+      "Witch",
+      "Hunter",
+      "Guard",
+      "Villager",
+      "Villager",
+      "Villager",
+      "Villager",
+    ],
+  };
+
+  const roles = configs[playerCount] ?? configs[10];
+  return roles.slice();
+}
+
 export function setupPlayers(
   characters: GeneratedCharacter[],
   humanSeat: number = 0,
   humanName: string = "你",
+  playerCount: number = 10,
   fixedRoles?: Role[],
   seedPlayerIds?: string[]
 ): Player[] {
-  const totalPlayers = 10;
-  // 10人局配置: 3狼人 + 1预言家 + 1女巫 + 1猎人 + 1守卫 + 3村民
-  const roles: Role[] = [
-    "Werewolf", "Werewolf", "Werewolf",  // 3狼人
-    "Seer",                               // 1预言家
-    "Witch",                              // 1女巫
-    "Hunter",                             // 1猎人
-    "Guard",                              // 1守卫
-    "Villager", "Villager", "Villager",  // 3村民
-  ];
-
+  const totalPlayers = playerCount;
+  const roles = getRoleConfiguration(totalPlayers);
   const assignedRoles = fixedRoles && fixedRoles.length === totalPlayers ? fixedRoles : shuffleArray(roles);
 
   const players: Player[] = [];
@@ -251,6 +313,8 @@ export function getNextAliveSeat(state: GameState, currentSeat: number, excludeS
 export function tallyVotes(state: GameState): { seat: number; count: number } | null {
   const voteCounts: Record<number, number> = {};
   const sheriffSeat = state.badge.holderSeat;
+  const aliveById = new Set(state.players.filter((p) => p.alive).map((p) => p.playerId));
+  const aliveBySeat = new Set(state.players.filter((p) => p.alive).map((p) => p.seat));
   
   // 找到警长的 playerId
   const sheriffPlayer = sheriffSeat !== null 
@@ -259,6 +323,8 @@ export function tallyVotes(state: GameState): { seat: number; count: number } | 
   const sheriffPlayerId = sheriffPlayer?.playerId;
   
   for (const [voterId, targetSeat] of Object.entries(state.votes)) {
+    if (!aliveById.has(voterId)) continue;
+    if (!aliveBySeat.has(targetSeat)) continue;
     // 警长的票计算为1.5票
     const voteWeight = voterId === sheriffPlayerId ? 1.5 : 1;
     voteCounts[targetSeat] = (voteCounts[targetSeat] || 0) + voteWeight;
@@ -376,13 +442,9 @@ export async function* generateAISpeechStream(
   state: GameState,
   player: Player
 ): AsyncGenerator<string, void, unknown> {
-  const { system, user } = resolvePhasePrompt(state.phase, state, player);
+  const prompt = resolvePhasePrompt(state.phase, state, player);
   const startTime = Date.now();
-
-  const messages: OpenRouterMessage[] = [
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ];
+  const { messages } = buildMessagesForPrompt(prompt);
 
   let fullResponse = "";
   try {
@@ -400,7 +462,7 @@ export async function* generateAISpeechStream(
       type: "speech",
       request: { 
         model: player.agentProfile!.modelRef.model,
-        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+        messages,
         player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
       },
       response: { content: fullResponse, duration: Date.now() - startTime },
@@ -410,7 +472,7 @@ export async function* generateAISpeechStream(
       type: "speech",
       request: { 
         model: player.agentProfile!.modelRef.model,
-        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+        messages,
         player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
       },
       response: { content: fullResponse, duration: Date.now() - startTime },
@@ -435,13 +497,9 @@ export async function generateAISpeechSegments(
   state: GameState,
   player: Player
 ): Promise<string[]> {
-  const { system, user } = resolvePhasePrompt(state.phase, state, player);
+  const prompt = resolvePhasePrompt(state.phase, state, player);
   const startTime = Date.now();
-
-  const messages: OpenRouterMessage[] = [
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ];
+  const { messages } = buildMessagesForPrompt(prompt);
 
   try {
     const result = await generateCompletion({
@@ -518,7 +576,7 @@ export async function generateAIVote(
   state: GameState,
   player: Player
 ): Promise<number> {
-  const { system, user } = resolvePhasePrompt("DAY_VOTE", state, player);
+  const prompt = resolvePhasePrompt("DAY_VOTE", state, player);
   const eligibleSeats = state.pkSource === "vote" && state.pkTargets && state.pkTargets.length > 0
     ? new Set(state.pkTargets)
     : null;
@@ -526,11 +584,7 @@ export async function generateAIVote(
     (p) => p.alive && p.playerId !== player.playerId && (!eligibleSeats || eligibleSeats.has(p.seat))
   );
   const startTime = Date.now();
-
-  const messages: OpenRouterMessage[] = [
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ];
+  const { messages } = buildMessagesForPrompt(prompt);
 
   let result: { content: string };
   try {
@@ -555,7 +609,7 @@ export async function generateAIVote(
       type: "vote",
       request: { 
         model: player.agentProfile!.modelRef.model,
-        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+        messages,
         player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
       },
       response: { content: cleanedVote, duration: Date.now() - startTime },
@@ -567,7 +621,7 @@ export async function generateAIVote(
       type: "vote",
       request: {
         model: player.agentProfile!.modelRef.model,
-        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+        messages,
         player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
       },
       response: { content: "", duration: Date.now() - startTime },
@@ -595,14 +649,10 @@ export async function generateAIBadgeVote(
   state: GameState,
   player: Player
 ): Promise<number> {
-  const { system, user } = resolvePhasePrompt("DAY_BADGE_ELECTION", state, player);
+  const prompt = resolvePhasePrompt("DAY_BADGE_ELECTION", state, player);
   const alivePlayers = state.players.filter((p) => p.alive && p.playerId !== player.playerId);
   const startTime = Date.now();
-
-  const messages: OpenRouterMessage[] = [
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ];
+  const { messages } = buildMessagesForPrompt(prompt);
 
   const result = await generateCompletion({
     model: player.agentProfile!.modelRef.model,
@@ -617,7 +667,7 @@ export async function generateAIBadgeVote(
     type: "badge_vote",
     request: {
       model: player.agentProfile!.modelRef.model,
-      messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      messages,
       player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
     },
     response: { content: cleanedBadgeVote, duration: Date.now() - startTime },
@@ -639,16 +689,12 @@ export async function generateBadgeTransfer(
   state: GameState,
   player: Player
 ): Promise<number> {
-  const { system, user } = resolvePhasePrompt("BADGE_TRANSFER", state, player);
+  const prompt = resolvePhasePrompt("BADGE_TRANSFER", state, player);
   const alivePlayers = state.players.filter(
     (p) => p.alive && p.playerId !== player.playerId
   );
   const startTime = Date.now();
-
-  const messages: OpenRouterMessage[] = [
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ];
+  const { messages } = buildMessagesForPrompt(prompt);
 
   const result = await generateCompletion({
     model: player.agentProfile!.modelRef.model,
@@ -663,7 +709,7 @@ export async function generateBadgeTransfer(
     type: "badge_transfer",
     request: {
       model: player.agentProfile!.modelRef.model,
-      messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      messages,
       player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
     },
     response: { content: cleanedTransfer, duration: Date.now() - startTime },
@@ -686,16 +732,12 @@ export async function generateSeerAction(
   state: GameState,
   player: Player
 ): Promise<number> {
-  const { system, user } = resolvePhasePrompt("NIGHT_SEER_ACTION", state, player);
+  const prompt = resolvePhasePrompt("NIGHT_SEER_ACTION", state, player);
   const alivePlayers = state.players.filter(
     (p) => p.alive && p.playerId !== player.playerId
   );
   const startTime = Date.now();
-
-  const messages: OpenRouterMessage[] = [
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ];
+  const { messages } = buildMessagesForPrompt(prompt);
 
   const result = await generateCompletion({
     model: player.agentProfile!.modelRef.model,
@@ -710,7 +752,7 @@ export async function generateSeerAction(
     type: "seer_action",
     request: { 
       model: player.agentProfile!.modelRef.model,
-      messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      messages,
       player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
     },
     response: { content: cleanedSeer, duration: Date.now() - startTime },
@@ -733,16 +775,12 @@ export async function generateWolfAction(
   player: Player,
   existingVotes: Record<string, number> = {}
 ): Promise<number> {
-  const { system, user } = resolvePhasePrompt("NIGHT_WOLF_ACTION", state, player, { existingVotes });
+  const prompt = resolvePhasePrompt("NIGHT_WOLF_ACTION", state, player, { existingVotes });
   const alivePlayers = state.players.filter(
     (p) => p.alive && p.alignment === "village"
   );
   const startTime = Date.now();
-
-  const messages: OpenRouterMessage[] = [
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ];
+  const { messages } = buildMessagesForPrompt(prompt);
 
   const result = await generateCompletion({
     model: player.agentProfile!.modelRef.model,
@@ -757,7 +795,7 @@ export async function generateWolfAction(
     type: "wolf_action",
     request: { 
       model: player.agentProfile!.modelRef.model,
-      messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      messages,
       player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
     },
     response: { content: cleanedWolf, duration: Date.now() - startTime },
@@ -785,13 +823,9 @@ export async function generateWitchAction(
   player: Player,
   wolfTarget: number | undefined
 ): Promise<WitchAction> {
-  const { system, user } = resolvePhasePrompt("NIGHT_WITCH_ACTION", state, player, { wolfTarget });
+  const prompt = resolvePhasePrompt("NIGHT_WITCH_ACTION", state, player, { wolfTarget });
   const startTime = Date.now();
-
-  const messages: OpenRouterMessage[] = [
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ];
+  const { messages } = buildMessagesForPrompt(prompt);
 
   const result = await generateCompletion({
     model: player.agentProfile!.modelRef.model,
@@ -850,17 +884,13 @@ export async function generateGuardAction(
   state: GameState,
   player: Player
 ): Promise<number> {
-  const { system, user } = resolvePhasePrompt("NIGHT_GUARD_ACTION", state, player);
+  const prompt = resolvePhasePrompt("NIGHT_GUARD_ACTION", state, player);
   const lastTarget = state.nightActions.lastGuardTarget;
   const alivePlayers = state.players.filter(
     (p) => p.alive && p.seat !== lastTarget
   );
   const startTime = Date.now();
-
-  const messages: OpenRouterMessage[] = [
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ];
+  const { messages } = buildMessagesForPrompt(prompt);
 
   const result = await generateCompletion({
     model: player.agentProfile!.modelRef.model,
@@ -899,16 +929,12 @@ export async function generateHunterShoot(
   state: GameState,
   player: Player
 ): Promise<number | null> {
-  const { system, user } = resolvePhasePrompt("HUNTER_SHOOT", state, player);
+  const prompt = resolvePhasePrompt("HUNTER_SHOOT", state, player);
   const alivePlayers = state.players.filter(
     (p) => p.alive && p.playerId !== player.playerId
   );
   const startTime = Date.now();
-
-  const messages: OpenRouterMessage[] = [
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ];
+  const { messages } = buildMessagesForPrompt(prompt);
 
   const result = await generateCompletion({
     model: player.agentProfile!.modelRef.model,

@@ -1,5 +1,5 @@
 export type OpenRouterContentPart =
-  | { type: "text"; text: string }
+  | { type: "text"; text: string; cache_control?: { type: "ephemeral"; ttl?: "1h" } }
   | { type: "image_url"; image_url: { url: string; detail?: string } }
   | { type: "input_audio"; input_audio: { data: string; format: "mp3" | "wav" } };
 

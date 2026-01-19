@@ -8,7 +8,87 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { TutorialModal } from "@/components/game/TutorialModal";
 import type { DevPreset, DifficultyLevel, Role, StartGameOptions } from "@/types/game";
 import { DevModeButton } from "@/components/DevTools";
-import { DifficultySelector } from "@/components/game/DifficultySelector";
+import { GameSetupModal } from "@/components/game/GameSetupModal";
+
+function buildDefaultRoles(playerCount: number): Role[] {
+  switch (playerCount) {
+    case 8:
+      return ["Werewolf", "Werewolf", "Werewolf", "Seer", "Witch", "Hunter", "Villager", "Villager"];
+    case 9:
+      return [
+        "Werewolf",
+        "Werewolf",
+        "Werewolf",
+        "Seer",
+        "Witch",
+        "Hunter",
+        "Villager",
+        "Villager",
+        "Villager",
+      ];
+    case 11:
+      return [
+        "Werewolf",
+        "Werewolf",
+        "Werewolf",
+        "Werewolf",
+        "Seer",
+        "Witch",
+        "Hunter",
+        "Guard",
+        "Villager",
+        "Villager",
+        "Villager",
+      ];
+    case 12:
+      return [
+        "Werewolf",
+        "Werewolf",
+        "Werewolf",
+        "Werewolf",
+        "Seer",
+        "Witch",
+        "Hunter",
+        "Guard",
+        "Villager",
+        "Villager",
+        "Villager",
+        "Villager",
+      ];
+    case 10:
+    default:
+      return [
+        "Werewolf",
+        "Werewolf",
+        "Werewolf",
+        "Seer",
+        "Witch",
+        "Hunter",
+        "Villager",
+        "Villager",
+        "Villager",
+        "Villager",
+      ];
+  }
+}
+
+function getRoleCountConfig(playerCount: number) {
+  const wolfCount = playerCount >= 11 ? 4 : 3;
+  const guardCount = playerCount >= 11 ? 1 : 0;
+  const seerCount = 1;
+  const witchCount = 1;
+  const hunterCount = 1;
+  const godCount = seerCount + witchCount + hunterCount + guardCount;
+  const villagerCount = Math.max(0, playerCount - wolfCount - godCount);
+  return {
+    wolfCount,
+    guardCount,
+    seerCount,
+    witchCount,
+    hunterCount,
+    villagerCount,
+  };
+}
 
 interface WelcomeScreenProps {
   humanName: string;
@@ -24,11 +104,12 @@ export function WelcomeScreen({
   isLoading,
 }: WelcomeScreenProps) {
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
-  const [isDifficultyOpen, setIsDifficultyOpen] = useState(false);
+  const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const paperRef = useRef<HTMLDivElement | null>(null);
   const sealButtonRef = useRef<HTMLButtonElement | null>(null);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>("normal");
+  const [playerCount, setPlayerCount] = useState(10);
 
   // 调试面板状态
   const [isDevModeEnabled, setIsDevModeEnabled] = useState(false);
@@ -48,21 +129,14 @@ export function WelcomeScreen({
     Guard: "守卫",
   };
 
-  const [fixedRoles, setFixedRoles] = useState<(Role | "")[]>(() => [
-    "Villager",
-    "Villager",
-    "Villager",
-    "Werewolf",
-    "Werewolf",
-    "Werewolf",
-    "Seer",
-    "Witch",
-    "Hunter",
-    "Guard",
-  ]);
+  const [fixedRoles, setFixedRoles] = useState<(Role | "")[]>(() => buildDefaultRoles(10));
+
+  useEffect(() => {
+    setFixedRoles(buildDefaultRoles(playerCount));
+  }, [playerCount]);
 
   const roleConfigValid = useMemo(() => {
-    if (fixedRoles.length !== 10) return false;
+    if (fixedRoles.length !== playerCount) return false;
     if (fixedRoles.some((r) => !r)) return false;
 
     const counts: Record<Role, number> = {
@@ -77,15 +151,22 @@ export function WelcomeScreen({
       counts[r as Role] += 1;
     }
 
+    const expected = getRoleCountConfig(playerCount);
     return (
-      counts.Werewolf === 3 &&
-      counts.Seer === 1 &&
-      counts.Witch === 1 &&
-      counts.Hunter === 1 &&
-      counts.Guard === 1 &&
-      counts.Villager === 3
+      counts.Werewolf === expected.wolfCount &&
+      counts.Seer === expected.seerCount &&
+      counts.Witch === expected.witchCount &&
+      counts.Hunter === expected.hunterCount &&
+      counts.Guard === expected.guardCount &&
+      counts.Villager === expected.villagerCount
     );
-  }, [fixedRoles]);
+  }, [fixedRoles, playerCount]);
+
+  const roleConfigHint = useMemo(() => {
+    const expected = getRoleCountConfig(playerCount);
+    const godLabel = expected.guardCount > 0 ? "预女猎守" : "预女猎";
+    return `需满足：${expected.wolfCount}狼 ${godLabel} ${expected.villagerCount}民`;
+  }, [playerCount]);
 
   const canConfirm = useMemo(() => {
     return !!humanName.trim() && !isLoading && !isTransitioning;
@@ -190,7 +271,7 @@ export function WelcomeScreen({
       // 传递开发模式配置
       const roles = devTab === "roles" && roleConfigValid ? (fixedRoles as Role[]) : undefined;
       const preset = devTab === "preset" && devPreset ? (devPreset as DevPreset) : undefined;
-      void onStart({ fixedRoles: roles, devPreset: preset, difficulty });
+      void onStart({ fixedRoles: roles, devPreset: preset, difficulty, playerCount });
     }, 800);
   };
 
@@ -201,22 +282,24 @@ export function WelcomeScreen({
       <div className="wc-contract-vignette" aria-hidden="true" />
 
       <TutorialModal open={isTutorialOpen} onOpenChange={setIsTutorialOpen} />
-      <DifficultySelector
-        open={isDifficultyOpen}
-        onOpenChange={setIsDifficultyOpen}
-        value={difficulty}
-        onChange={setDifficulty}
+      <GameSetupModal
+        open={isSetupOpen}
+        onOpenChange={setIsSetupOpen}
+        difficulty={difficulty}
+        onDifficultyChange={setDifficulty}
+        playerCount={playerCount}
+        onPlayerCountChange={setPlayerCount}
       />
 
       <div className="wc-welcome-actions absolute top-6 right-6 z-20 flex items-center gap-2">
         <Button
           type="button"
           variant="outline"
-          onClick={() => setIsDifficultyOpen(true)}
+          onClick={() => setIsSetupOpen(true)}
           className="h-9 text-sm gap-2"
         >
           <GearSix size={16} />
-          {`难度：${difficultyLabel}`}
+          设置
         </Button>
         <Button type="button" variant="outline" onClick={() => setIsTutorialOpen(true)} className="h-9 text-sm">
           玩法教学
@@ -407,9 +490,9 @@ export function WelcomeScreen({
             {devTab === "roles" && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-semibold text-gray-300">身份配置（10人局）</div>
+                  <div className="text-xs font-semibold text-gray-300">{`身份配置（${playerCount}人局）`}</div>
                   <div className={`text-xs ${roleConfigValid ? "text-green-400" : "text-gray-400"}`}>
-                    {roleConfigValid ? "配置完成" : "需满足：3狼 预女猎守 3民"}
+                    {roleConfigValid ? "配置完成" : roleConfigHint}
                   </div>
                 </div>
 
