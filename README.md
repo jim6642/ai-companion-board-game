@@ -1,7 +1,7 @@
-# Wolfcha (狼猹杀)
+# Wolfcha (猹人杀)
 
 <div align="center">
-  <img src="public/icon.png" alt="Wolfcha Icon" width="120" />
+  <img width="1496" height="861" alt="image" src="https://github.com/user-attachments/assets/60d58878-1373-4fe7-b88f-d927a4901db1" />
   <br />
   <h3>在狼人杀里，和 AI 赛博斗蛐蛐</h3>
   <p>
