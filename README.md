@@ -1,4 +1,4 @@
-# Wolfcha (猹人杀)
+# Wolfcha (猹杀)
 
 <div align="center">
   <img src="public/logo.png" alt="Wolfcha Logo" width="240" />

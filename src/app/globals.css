@@ -620,6 +620,36 @@ input[type="submit"]:not(:disabled),
   opacity: 0.65;
 }
 
+.wc-wax-seal--auth {
+  animation: wc-seal-breathe 1.6s ease-in-out infinite;
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.4),
+    0 0 28px rgba(185, 54, 54, 0.35),
+    inset 2px 2px 10px rgba(255, 255, 255, 0.2),
+    inset -2px -2px 12px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes wc-seal-breathe {
+  0% {
+    transform: scale(1);
+    filter: saturate(1);
+  }
+  50% {
+    transform: scale(1.05);
+    filter: saturate(1.15);
+  }
+  100% {
+    transform: scale(1);
+    filter: saturate(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-wax-seal--auth {
+    animation: none;
+  }
+}
+
 .wc-wax-seal-icon {
   color: rgba(88, 16, 16, 0.66);
   filter: drop-shadow(1px 1px 0 rgba(255, 255, 255, 0.16));
