@@ -60,6 +60,7 @@ const DAY_NIGHT_BLINK = {
 };
 const dayBgm = "/bgm/day.mp3";
 const nightBgm = "/bgm/night.mp3";
+const REFERRAL_STORAGE_KEY = "wolfcha_referral";
 
 const dicebearUrl = (seed: string) => buildSimpleAvatarUrl(seed);
 
@@ -156,6 +157,14 @@ export default function Home() {
   useEffect(() => {
     visualIsNightRef.current = visualIsNight;
   }, [visualIsNight]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const referral = params.get("ref")?.trim();
+    if (referral) {
+      localStorage.setItem(REFERRAL_STORAGE_KEY, referral);
+    }
+  }, []);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 768px)");

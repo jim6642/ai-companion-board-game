@@ -51,7 +51,7 @@ export default function RootLayout({
         </Script>
       </head>
       <body className={`${cinzel.variable} ${notoSerifSC.variable} antialiased`}>
-        <Toaster richColors position="top-center" closeButton />
+        <Toaster position="top-center" closeButton />
         {children}
       </body>
     </html>
