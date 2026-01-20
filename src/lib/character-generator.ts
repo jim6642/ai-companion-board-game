@@ -159,24 +159,12 @@ export const generateGenshinModeCharacters = async (
   const modelUsageCounts = new Map<string, number>();
   const modelVoiceMap = new Map<string, string>();
   const resolvedRefs = modelRefs.length >= count ? modelRefs : buildGenshinModelRefs(count);
-  const modelLabels = resolvedRefs.slice(0, count).map(getModelDisplayName);
-  const modelCounts = modelLabels.reduce<Record<string, number>>((acc, label) => {
-    acc[label] = (acc[label] ?? 0) + 1;
-    return acc;
-  }, {});
-  const nicknameMap = await resolveNicknameMap(
-    Object.entries(modelCounts).map(([model, count]) => ({ model, count }))
-  );
 
   return resolvedRefs.slice(0, count).map((modelRef) => {
     const modelLabel = getModelDisplayName(modelRef);
-    const nicknames = nicknameMap.get(modelLabel);
-    if (!nicknames || nicknames.length === 0) {
-      throw new Error(`Missing nickname for ${modelLabel}`);
-    }
     const usageCount = modelUsageCounts.get(modelLabel) ?? 0;
-    const preferredName = nicknames[usageCount] ?? nicknames[0];
     modelUsageCounts.set(modelLabel, usageCount + 1);
+    const preferredName = usageCount === 0 ? modelLabel : `${modelLabel} ${usageCount + 1}`;
 
     let voiceId = modelVoiceMap.get(modelLabel);
     if (!voiceId) {
@@ -384,6 +372,7 @@ ${roster}
 
 【重要约束】
 - 这是狼人杀游戏，角色需要能正常讨论、分析、投票
+- 角色发言需聚焦局内，不要引导编剧情节或场外聊天
 - voiceRules 需体现具体说话特征
 - backgroundStory 是简单职业描述，10-20字，如"暴躁的卡车司机"、"刚睡醒的宅男"
 - styleLabel 用简短标签概括性格或表达方式

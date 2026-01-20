@@ -103,10 +103,10 @@ export function GameSetupModal({
 
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-[var(--text-primary)]">原神形态</div>
-              <div className="text-xs text-[var(--text-muted)]">
-                开启后，角色使用模型名称与 logo，不再生成场景与人设；模型会以它自己的性格发挥，只围绕每轮规则行动与发言
-              </div>
+            <div className="text-sm font-medium text-[var(--text-primary)]">大模型原神模式</div>
+            <div className="text-xs text-[var(--text-muted)]">
+              默认情况下会为每位 AI 生成接近真实用户的角色背景与名字。开启后不再生成角色背景与名字，直接使用模型原名；如有重名会自动在后面加序号
+            </div>
             </div>
             <Switch className="shrink-0 mt-1" checked={isGenshinMode} onCheckedChange={onGenshinModeChange} />
           </div>
