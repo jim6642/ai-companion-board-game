@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Microphone, Sparkle } from "@phosphor-icons/react";
 import type { Player, Role } from "@/types/game";
 import { cn } from "@/lib/utils";
-import { buildSimpleAvatarUrl } from "@/lib/avatar-config";
+import { buildSimpleAvatarUrl, getModelLogoUrl } from "@/lib/avatar-config";
 
 interface PlayerCardCompactProps {
   player: Player;
@@ -13,6 +13,7 @@ interface PlayerCardCompactProps {
   canClick: boolean;
   isSelected: boolean;
   isNight?: boolean;
+  isGenshinMode?: boolean;
   onClick: () => void;
   onDetailClick?: () => void;
   animationDelay?: number;
@@ -46,6 +47,7 @@ export function PlayerCardCompact({
   canClick,
   isSelected,
   isNight = false,
+  isGenshinMode = false,
   onClick,
   onDetailClick,
   animationDelay = 0,
@@ -117,12 +119,20 @@ export function PlayerCardCompact({
   })();
 
   const persona = player.agentProfile?.persona;
-  const styleLabel = persona?.styleLabel || (isMe ? "你" : "");
+  const styleLabel = isGenshinMode ? (isMe ? "你" : "") : persona?.styleLabel || (isMe ? "你" : "");
   const modelLabel = player.agentProfile?.modelRef?.model;
 
-  const avatarSrc = buildSimpleAvatarUrl(player.playerId, {
-    gender: player.agentProfile?.persona?.gender,
-  });
+  const isModelAvatar = isGenshinMode && !player.isHuman;
+  const avatarSrc = isModelAvatar
+    ? getModelLogoUrl(player.agentProfile?.modelRef)
+    : buildSimpleAvatarUrl(player.playerId, {
+        gender: player.agentProfile?.persona?.gender,
+      });
+  const avatarClassName = cn(
+    "w-full h-full transition-transform duration-500",
+    isModelAvatar ? "object-contain p-2 bg-[var(--bg-secondary)]" : "object-cover group-hover:scale-110",
+    isSpeaking && "border-[var(--color-gold)]"
+  );
 
   const handleClick = (e: React.MouseEvent) => {
     if (!isReady) return; // Prevent clicking when not ready
@@ -192,10 +202,7 @@ export function PlayerCardCompact({
               <img 
                 src={avatarSrc} 
                 alt={player.displayName} 
-                className={cn(
-                  "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",
-                  isSpeaking && "border-[var(--color-gold)]"
-                )} 
+                className={avatarClassName} 
               />
             </motion.div>
           ) : (

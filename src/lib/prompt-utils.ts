@@ -106,8 +106,8 @@ export const buildDifficultyDecisionHint = (difficulty: DifficultyLevel, role: s
   }
 };
 
-export const buildPersonaSection = (player: Player): string => {
-  if (!player.agentProfile) return "";
+export const buildPersonaSection = (player: Player, isGenshinMode: boolean = false): string => {
+  if (isGenshinMode || !player.agentProfile) return "";
   const { persona } = player.agentProfile;
 
   return `【角色设定】

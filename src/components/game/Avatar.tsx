@@ -6,8 +6,10 @@ import {
   getIdleLipsForSeed,
   getTalkingLips,
   getDefaultIdleLips,
+  getModelLogoUrl,
   type AvatarUrlOptions,
 } from "@/lib/avatar-config";
+import type { ModelRef } from "@/types/game";
 import type { Gender } from "@/lib/character-generator";
 
 // ============================================
@@ -19,6 +21,10 @@ export interface AvatarProps {
   seed: string;
   /** 性别 - 影响发型选择 */
   gender?: Gender;
+  /** 模型引用（原神形态使用） */
+  modelRef?: ModelRef;
+  /** 是否使用模型 logo 替代头像 */
+  useModelLogo?: boolean;
   /** 是否正在说话（触发嘴型动画） */
   isTalking?: boolean;
   /** CSS 类名 */
@@ -56,6 +62,8 @@ const SIZE_CLASSES: Record<NonNullable<AvatarProps["size"]>, string> = {
 export function Avatar({
   seed,
   gender,
+  modelRef,
+  useModelLogo = false,
   isTalking = false,
   className = "",
   alt = "Avatar",
@@ -66,6 +74,13 @@ export function Avatar({
   talkingSpeed = 120,
   size,
 }: AvatarProps) {
+  const sizeClass = size ? SIZE_CLASSES[size] : "";
+  const combinedClassName = `${sizeClass} ${className}`.trim();
+
+  if (useModelLogo) {
+    return <img src={getModelLogoUrl(modelRef)} alt={alt} className={combinedClassName} />;
+  }
+
   // 获取说话嘴型列表
   const talkingLips = useMemo(() => getTalkingLips(), []);
   
@@ -169,11 +184,6 @@ export function Avatar({
   );
 
   // 组合类名
-  const combinedClassName = useMemo(() => {
-    const sizeClass = size ? SIZE_CLASSES[size] : "";
-    return `${sizeClass} ${className}`.trim();
-  }, [size, className]);
-
   return (
     <>
       {/* 预加载的隐藏图片 */}
@@ -202,6 +212,8 @@ export function Avatar({
 export interface AvatarSmallProps {
   seed: string;
   gender?: Gender;
+  modelRef?: ModelRef;
+  useModelLogo?: boolean;
   isTalking?: boolean;
   className?: string;
   alt?: string;
@@ -211,11 +223,20 @@ export interface AvatarSmallProps {
 export function AvatarSmall({
   seed,
   gender,
+  modelRef,
+  useModelLogo = false,
   isTalking = false,
   className = "w-8 h-8 rounded-full",
   alt = "Avatar",
   size,
 }: AvatarSmallProps) {
+  const sizeClass = size ? SIZE_CLASSES[size] : "";
+  const combinedClassName = `${sizeClass} ${className}`.trim();
+
+  if (useModelLogo) {
+    return <img src={getModelLogoUrl(modelRef)} alt={alt} className={combinedClassName} />;
+  }
+
   const talkingLips = useMemo(() => getTalkingLips(), []);
   const idleLips = useMemo(() => getIdleLipsForSeed(seed), [seed]);
   const [currentLips, setCurrentLips] = useState(idleLips);
@@ -278,9 +299,6 @@ export function AvatarSmall({
 
   const currentUrl = buildAvatarUrl({ ...urlOptions, lips: currentLips });
 
-  const sizeClass = size ? SIZE_CLASSES[size] : "";
-  const combinedClassName = `${sizeClass} ${className}`.trim();
-
   return (
     <img
       src={currentUrl}
@@ -297,6 +315,8 @@ export function AvatarSmall({
 export interface StaticAvatarProps {
   seed: string;
   gender?: Gender;
+  modelRef?: ModelRef;
+  useModelLogo?: boolean;
   className?: string;
   alt?: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
@@ -306,11 +326,20 @@ export interface StaticAvatarProps {
 export function StaticAvatar({
   seed,
   gender,
+  modelRef,
+  useModelLogo = false,
   className = "",
   alt = "Avatar",
   size,
   backgroundColor,
 }: StaticAvatarProps) {
+  const sizeClass = size ? SIZE_CLASSES[size] : "";
+  const combinedClassName = `${sizeClass} ${className}`.trim();
+
+  if (useModelLogo) {
+    return <img src={getModelLogoUrl(modelRef)} alt={alt} className={combinedClassName} />;
+  }
+
   const url = useMemo(
     () =>
       buildAvatarUrl({
@@ -321,9 +350,6 @@ export function StaticAvatar({
       }),
     [seed, gender, backgroundColor]
   );
-
-  const sizeClass = size ? SIZE_CLASSES[size] : "";
-  const combinedClassName = `${sizeClass} ${className}`.trim();
 
   return <img src={url} alt={alt} className={combinedClassName} />;
 }

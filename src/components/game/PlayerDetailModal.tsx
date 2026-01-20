@@ -12,17 +12,20 @@ import {
   HunterIcon,
   GuardIcon
 } from "@/components/icons/FlatIcons";
-import { buildSimpleAvatarUrl } from "@/lib/avatar-config";
+import { buildSimpleAvatarUrl, getModelLogoUrl } from "@/lib/avatar-config";
 
 interface PlayerDetailModalProps {
   player: Player | null;
   isOpen: boolean;
   onClose: () => void;
   humanPlayer?: Player | null;
+  isGenshinMode?: boolean;
 }
 
-const dicebearUrl = (player: Player) =>
-  buildSimpleAvatarUrl(player.playerId, { gender: player.agentProfile?.persona?.gender });
+const getPlayerAvatarUrl = (player: Player, isGenshinMode: boolean) =>
+  isGenshinMode && !player.isHuman
+    ? getModelLogoUrl(player.agentProfile?.modelRef)
+    : buildSimpleAvatarUrl(player.playerId, { gender: player.agentProfile?.persona?.gender });
 
 const getRoleIcon = (role: string, size: number = 20) => {
   switch (role) {
@@ -54,7 +57,7 @@ const getStrategyLabel = (strategy: string) => {
   }
 };
 
-export function PlayerDetailModal({ player, isOpen, onClose, humanPlayer }: PlayerDetailModalProps) {
+export function PlayerDetailModal({ player, isOpen, onClose, humanPlayer, isGenshinMode = false }: PlayerDetailModalProps) {
   const [renderPlayer, setRenderPlayer] = useState<Player | null>(player);
 
   useEffect(() => {
@@ -68,9 +71,11 @@ export function PlayerDetailModal({ player, isOpen, onClose, humanPlayer }: Play
   const persona = renderPlayer.agentProfile?.persona;
   const modelLabel = renderPlayer.agentProfile?.modelRef?.model;
   const isMe = renderPlayer.isHuman;
+  const showPersona = !!persona && !isGenshinMode;
   const isWolfTeammate = humanPlayer?.role === "Werewolf" && renderPlayer.role === "Werewolf" && !renderPlayer.isHuman;
   const canSeeRole = isMe || isWolfTeammate || !renderPlayer.alive;
   const isIdentityReady = isMe ? !!renderPlayer.displayName?.trim() : !!persona;
+  const avatarSrc = getPlayerAvatarUrl(renderPlayer, isGenshinMode);
 
   return (
     <AnimatePresence
@@ -115,7 +120,7 @@ export function PlayerDetailModal({ player, isOpen, onClose, humanPlayer }: Play
                   <div className="absolute inset-0 bg-gradient-to-tr from-[var(--color-accent)]/30 to-transparent rounded-full blur-xl" />
                   {isIdentityReady ? (
                     <img
-                      src={dicebearUrl(renderPlayer)}
+                      src={avatarSrc}
                       alt={renderPlayer.displayName}
                       className={`w-full h-full rounded-full border-4 border-white shadow-lg relative z-10 ${!renderPlayer.alive ? 'grayscale opacity-60' : ''}`}
                     />
@@ -151,7 +156,7 @@ export function PlayerDetailModal({ player, isOpen, onClose, humanPlayer }: Play
 
               {/* 内容区 - 背景信息 */}
               <div className="px-6 pb-6 space-y-4">
-                {persona && (
+                {showPersona && (
                   <>
                     {/* 性格标签 */}
                     <div className="flex flex-wrap gap-2">

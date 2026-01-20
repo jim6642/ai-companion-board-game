@@ -70,6 +70,7 @@ export function SettingsModal({
               disabled={!isSoundEnabled}
             />
           </div>
+
         </div>
       </DialogContent>
     </Dialog>

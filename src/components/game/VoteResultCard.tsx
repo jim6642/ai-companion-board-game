@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { CheckCircle } from "@phosphor-icons/react";
 import type { Player } from "@/types/game";
-import { buildSimpleAvatarUrl } from "@/lib/avatar-config";
+import { buildSimpleAvatarUrl, getModelLogoUrl } from "@/lib/avatar-config";
 
 interface VoteResultData {
   targetSeat: number;
@@ -17,9 +17,21 @@ interface VoteResultCardProps {
   results: VoteResultData[];
   players: Player[];
   isNight?: boolean;
+  isGenshinMode?: boolean;
 }
 
-export function VoteResultCard({ title, results, players, isNight = false }: VoteResultCardProps) {
+const getPlayerAvatarUrl = (player: Player, isGenshinMode: boolean) =>
+  isGenshinMode && !player.isHuman
+    ? getModelLogoUrl(player.agentProfile?.modelRef)
+    : buildSimpleAvatarUrl(player.playerId, { gender: player.agentProfile?.persona?.gender });
+
+export function VoteResultCard({
+  title,
+  results,
+  players,
+  isNight = false,
+  isGenshinMode = false,
+}: VoteResultCardProps) {
   return (
     <div className={`wc-vote-result-card rounded-lg border ${isNight ? 'border-white/10 bg-black/20' : 'border-[var(--border-color)] bg-[var(--bg-secondary)]'} p-4 my-3`}>
       {/* 标题 */}
@@ -49,7 +61,7 @@ export function VoteResultCard({ title, results, players, isNight = false }: Vot
               <div className="wc-vote-result-target flex items-center gap-2 min-w-[100px]">
                 {target && (
                   <img
-                    src={buildSimpleAvatarUrl(target.playerId, { gender: target.agentProfile?.persona?.gender })}
+                    src={getPlayerAvatarUrl(target, isGenshinMode)}
                     alt={target.displayName}
                     className="w-7 h-7 rounded-full"
                   />
@@ -84,7 +96,7 @@ export function VoteResultCard({ title, results, players, isNight = false }: Vot
                     >
                       {voter && (
                         <img
-                          src={buildSimpleAvatarUrl(voter.playerId, { gender: voter.agentProfile?.persona?.gender })}
+                          src={getPlayerAvatarUrl(voter, isGenshinMode)}
                           alt={voter.displayName}
                           className="w-3.5 h-3.5 rounded-full"
                         />

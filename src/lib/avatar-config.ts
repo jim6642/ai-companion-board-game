@@ -6,7 +6,9 @@
  * - 嘴型共 30 个变量 (variant01 - variant30)
  */
 
+import type { ModelRef } from "@/types/game";
 import type { Gender } from "./character-generator";
+import { getModelLogoPath } from "./model-logo";
 
 // ============================================
 // 发型配置 (Hair)
@@ -256,6 +258,8 @@ export function buildSimpleAvatarUrl(
     backgroundColor: backgroundColor || getAvatarBgColor(seed),
   });
 }
+
+export const getModelLogoUrl = (modelRef?: ModelRef): string => getModelLogoPath(modelRef);
 
 // ============================================
 // 导出常量供外部使用

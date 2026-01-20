@@ -11,7 +11,7 @@ import { WolfPlanningPanel } from "./WolfPlanningPanel";
 import { MentionInput } from "./MentionInput";
 import { TalkingAvatar } from "./TalkingAvatar";
 import { VoiceRecorder, type VoiceRecorderHandle } from "./VoiceRecorder";
-import { buildSimpleAvatarUrl } from "@/lib/avatar-config";
+import { buildSimpleAvatarUrl, getModelLogoUrl } from "@/lib/avatar-config";
 import { VoteResultCard } from "./VoteResultCard";
 import LoadingMiniGame from "./MiniGame/LoadingMiniGame";
 import type { GameState, Player, ChatMessage, Phase } from "@/types/game";
@@ -58,15 +58,22 @@ const getPhaseRole = (phase: Phase): string | null => {
   }
 };
 
-const dicebearUrl = (player: Player) =>
-  buildSimpleAvatarUrl(player.playerId, { gender: player.agentProfile?.persona?.gender });
+const getPlayerAvatarUrl = (player: Player, isGenshinMode: boolean) =>
+  isGenshinMode && !player.isHuman
+    ? getModelLogoUrl(player.agentProfile?.modelRef)
+    : buildSimpleAvatarUrl(player.playerId, { gender: player.agentProfile?.persona?.gender });
 
 function isTurnPromptSystemMessage(content: string) {
   return content.includes("轮到你发言") || content.includes("轮到你发表遗言");
 }
 
 // 将消息中的"@X号 玩家名"或"X号"渲染为小标签
-function renderPlayerMentions(text: string, players: Player[], isNight: boolean = false): React.ReactNode {
+function renderPlayerMentions(
+  text: string,
+  players: Player[],
+  isNight: boolean = false,
+  isGenshinMode: boolean = false
+): React.ReactNode {
   // Only match @X号 or X号 pattern, don't consume any text after it
   // This prevents truncating content that follows the mention
   const regex = /@?(\d{1,2})号/g;
@@ -97,7 +104,7 @@ function renderPlayerMentions(text: string, players: Player[], isNight: boolean 
         >
           {isPlayerReady ? (
             <img
-              src={dicebearUrl(player)}
+              src={getPlayerAvatarUrl(player, isGenshinMode)}
               alt={player.displayName}
               className="w-4 h-4 rounded-full"
             />
@@ -271,6 +278,7 @@ export function DialogArea({
   onBadgeSignup,
   onRestart,
 }: DialogAreaProps) {
+  const isGenshinMode = !!gameState.isGenshinMode;
   const phase = gameState.phase;
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -473,6 +481,8 @@ export function DialogArea({
               <TalkingAvatar
                 seed={stablePortraitPlayer.playerId}
                 gender={stablePortraitPlayer.agentProfile?.persona?.gender}
+                modelRef={stablePortraitPlayer.agentProfile?.modelRef}
+                useModelLogo={isGenshinMode && !stablePortraitPlayer.isHuman}
                 isTalking={talkingPlayerId === stablePortraitPlayer.playerId || (isTyping && !talkingPlayerId)}
                 alt={stablePortraitPlayer.displayName}
                 className="relative z-10 w-[220px] lg:w-[260px] xl:w-[300px] h-auto object-contain"
@@ -772,6 +782,7 @@ export function DialogArea({
                     humanPlayerId={humanPlayer?.playerId}
                     showDivider={showDivider}
                     isNight={isNight}
+                    isGenshinMode={isGenshinMode}
                   />
                 );
               })}
@@ -1202,6 +1213,7 @@ export function DialogArea({
                       }}
                       placeholder={gameState.phase === "DAY_LAST_WORDS" ? "有什么想说的？" : "你怎么看？"}
                       isNight={isNight}
+                      isGenshinMode={isGenshinMode}
                       players={gameState.players.filter((p) => p.alive)}
                     />
                     
@@ -1262,7 +1274,8 @@ export function DialogArea({
                       {renderPlayerMentions(
                         waitingForNextRound ? "轻触继续，轮到下一位" : dialogueText,
                         gameState.players,
-                        isNight
+                        isNight,
+                        isGenshinMode
                       )}
                       {isTyping && <span className="wc-typing-cursor"></span>}
                     </div>
@@ -1347,12 +1360,14 @@ function ChatMessageItem({
   humanPlayerId,
   showDivider = false,
   isNight = false,
+  isGenshinMode = false,
 }: { 
   msg: ChatMessage; 
   players: Player[];
   humanPlayerId?: string;
   showDivider?: boolean;
   isNight?: boolean;
+  isGenshinMode?: boolean;
 }) {
   const player = players.find(p => p.playerId === msg.playerId);
   const isHuman = msg.playerId === humanPlayerId;
@@ -1371,6 +1386,7 @@ function ChatMessageItem({
             results={voteData.results}
             players={players}
             isNight={isNight}
+            isGenshinMode={isGenshinMode}
           />
         );
       } catch (e) {
@@ -1407,7 +1423,7 @@ function ChatMessageItem({
         )}>
           {player && isPlayerReady ? (
             <img
-              src={dicebearUrl(player)}
+              src={getPlayerAvatarUrl(player, isGenshinMode)}
               alt={msg.playerName}
               className="w-full h-full object-cover"
             />
@@ -1430,7 +1446,7 @@ function ChatMessageItem({
           </div>
           
           <div className="text-base leading-relaxed text-[var(--text-primary)] break-words text-left">
-            {renderPlayerMentions(msg.content, players, isNight)}
+            {renderPlayerMentions(msg.content, players, isNight, isGenshinMode)}
           </div>
         </div>
       </div>

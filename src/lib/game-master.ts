@@ -160,7 +160,8 @@ export function setupPlayers(
   humanName: string = "你",
   playerCount: number = 10,
   fixedRoles?: Role[],
-  seedPlayerIds?: string[]
+  seedPlayerIds?: string[],
+  modelRefs?: ModelRef[]
 ): Player[] {
   const totalPlayers = playerCount;
   const roles = getRoleConfiguration(totalPlayers);
@@ -190,7 +191,7 @@ export function setupPlayers(
     } else {
       const charIndex = seat > humanSeat ? seat - 1 : seat;
       const character = characters[charIndex];
-      const modelRef = getRandomModelRef();
+      const modelRef = modelRefs?.[charIndex] ?? getRandomModelRef();
 
       players.push({
         playerId: getPlayerIdForSeat(seat),

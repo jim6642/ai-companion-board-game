@@ -131,8 +131,8 @@ export default function Home() {
     scrollToBottom,
     advanceSpeech,
   } = useGameLogic();
-  const { settings, setBgmVolume, setSoundEnabled, setAiVoiceEnabled } = useSettings();
-  const { bgmVolume, isSoundEnabled, isAiVoiceEnabled } = settings;
+  const { settings, setBgmVolume, setSoundEnabled, setAiVoiceEnabled, setGenshinMode } = useSettings();
+  const { bgmVolume, isSoundEnabled, isAiVoiceEnabled, isGenshinMode } = settings;
   const shouldUseAiVoice = isSoundEnabled && isAiVoiceEnabled && bgmVolume > 0;
   const {
     state: tutorialState,
@@ -1074,8 +1074,10 @@ export default function Home() {
             <WelcomeScreen
               humanName={humanName}
               setHumanName={setHumanName}
-              onStart={startGame}
+              onStart={(options) => startGame({ ...(options ?? {}), isGenshinMode })}
               isLoading={isLoading}
+              isGenshinMode={isGenshinMode}
+              onGenshinModeChange={setGenshinMode}
             />
           </motion.div>
         ) : (
@@ -1290,6 +1292,7 @@ export default function Home() {
                             onDetailClick={isSelectionPhase ? undefined : () => setDetailPlayer(player)}
                             animationDelay={index * 0.05}
                             isNight={visualIsNight}
+                            isGenshinMode={gameState?.isGenshinMode ?? isGenshinMode}
                             humanPlayer={humanPlayer}
                             seerCheckResult={seerResult}
                             isBadgeHolder={gameState.badge.holderSeat === player.seat}
@@ -1356,6 +1359,7 @@ export default function Home() {
                               onDetailClick={isSelectionPhase ? undefined : () => setDetailPlayer(player)}
                               animationDelay={index * 0.02}
                               isNight={visualIsNight}
+                              isGenshinMode={gameState?.isGenshinMode ?? isGenshinMode}
                               humanPlayer={humanPlayer}
                               seerCheckResult={seerResult}
                               isBadgeHolder={gameState.badge.holderSeat === player.seat}
@@ -1393,6 +1397,7 @@ export default function Home() {
                             onDetailClick={isSelectionPhase ? undefined : () => setDetailPlayer(player)}
                             animationDelay={index * 0.05}
                             isNight={visualIsNight}
+                            isGenshinMode={gameState?.isGenshinMode ?? isGenshinMode}
                             humanPlayer={humanPlayer}
                             seerCheckResult={seerResult}
                             isBadgeHolder={gameState.badge.holderSeat === player.seat}
@@ -1448,6 +1453,7 @@ export default function Home() {
         isOpen={detailPlayer !== null}
         onClose={() => setDetailPlayer(null)}
         humanPlayer={humanPlayer}
+        isGenshinMode={gameState?.isGenshinMode ?? isGenshinMode}
       />
 
       <SettingsModal

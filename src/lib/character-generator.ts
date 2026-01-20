@@ -1,9 +1,9 @@
 import { generateJSON } from "./openrouter";
-import { GENERATOR_MODEL, type GameScenario, type Persona } from "@/types/game";
+import { AVAILABLE_MODELS, GENERATOR_MODEL, type GameScenario, type ModelRef, type Persona } from "@/types/game";
 import { aiLogger } from "./ai-logger";
-import { GAME_TEMPERATURE } from "./ai-config";
+import { AI_TEMPERATURE, GAME_TEMPERATURE } from "./ai-config";
 import { getRandomScenario } from "./scenarios";
-import { resolveVoiceId } from "./voice-constants";
+import { resolveVoiceId, VOICE_PRESETS } from "./voice-constants";
 
 export interface GeneratedCharacter {
   displayName: string;
@@ -15,6 +15,184 @@ export interface GeneratedCharacters {
 }
 
 export type Gender = "male" | "female" | "nonbinary";
+
+const MODEL_DISPLAY_NAME_MAP: Array<{ match: RegExp; label: string }> = [
+  { match: /gemini/i, label: "Gemini" },
+  { match: /deepseek/i, label: "DeepSeek" },
+  { match: /claude/i, label: "Claude" },
+  { match: /qwen/i, label: "Qwen" },
+  { match: /doubao/i, label: "Doubao" },
+  { match: /bytedance|seed/i, label: "ByteDance" },
+  { match: /openai|gpt/i, label: "OpenAI" },
+  { match: /kimi|moonshot/i, label: "Kimi" },
+];
+
+const getModelDisplayName = (modelRef: ModelRef): string => {
+  const raw = modelRef.model ?? "";
+  const mapped = MODEL_DISPLAY_NAME_MAP.find((entry) => entry.match.test(raw))?.label;
+  if (mapped) return mapped;
+  const fallback = raw.split("/").pop() ?? raw;
+  return fallback.split("-")[0] || fallback || "AI";
+};
+
+type NicknameItem = { model: string; nicknames: string[] };
+
+const nicknameCache = new Map<string, string[]>();
+
+const buildNicknamePrompt = (requirements: Array<{ model: string; count: number }>) => {
+  const list = requirements.map((r) => `- ${r.model} x${r.count}`).join("\n");
+
+  return `你是取名助手，为模型英文名生成中文昵称。
+
+【模型列表】
+${list}
+
+【要求】
+1. 每个模型给对应数量的昵称（同一模型昵称彼此不同）
+2. 1-4 字为主，可中英混合
+3. 有趣、好记，能呼应英文名
+4. items[].model 必须与上方列表中的模型名称完全一致
+5. 不要重复，不要加引号或编号
+
+【输出 JSON】
+{
+  "items": [
+    { "model": "ModelX", "nicknames": ["小X", "X仔"] }
+  ]
+}
+
+现在输出：`;
+};
+
+const normalizeNicknameResponse = (raw: unknown): Map<string, string[]> => {
+  const result = new Map<string, string[]>();
+  if (!raw || typeof raw !== "object" || !("items" in raw) || !Array.isArray((raw as any).items)) {
+    return result;
+  }
+
+  const items = (raw as { items: NicknameItem[] }).items;
+  items.forEach((item) => {
+    if (!item || typeof item.model !== "string" || !Array.isArray(item.nicknames)) return;
+    const model = item.model.trim().toLowerCase();
+    if (!model) return;
+    const nicknames = item.nicknames
+      .map((n) => String(n ?? "").trim())
+      .filter(Boolean);
+    if (nicknames.length === 0) return;
+    result.set(model, nicknames);
+  });
+
+  return result;
+};
+
+const resolveNicknameMap = async (requirements: Array<{ model: string; count: number }>): Promise<Map<string, string[]>> => {
+  const missing = requirements.filter((req) => (nicknameCache.get(req.model)?.length ?? 0) < req.count);
+  if (missing.length === 0) {
+    return new Map(requirements.map((req) => [req.model, nicknameCache.get(req.model) as string[]]));
+  }
+
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const prompt = buildNicknamePrompt(missing);
+      const raw = await generateJSON<unknown>({
+        model: GENERATOR_MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: AI_TEMPERATURE.BALANCED,
+        max_tokens: 800,
+      });
+      const normalized = normalizeNicknameResponse(raw);
+      missing.forEach((req) => {
+        const nicknames = normalized.get(req.model.toLowerCase());
+        if (!nicknames || nicknames.length < req.count) {
+          throw new Error(`Missing nicknames for ${req.model}`);
+        }
+        const unique = Array.from(new Set(nicknames));
+        if (unique.length < req.count) {
+          throw new Error(`Duplicate nicknames for ${req.model}`);
+        }
+        nicknameCache.set(req.model, unique.slice(0, req.count));
+      });
+
+      const allNicknames = Array.from(nicknameCache.values()).flat();
+      const uniqueAll = new Set(allNicknames);
+      if (uniqueAll.size !== allNicknames.length) {
+        throw new Error("Duplicate nicknames across models");
+      }
+      lastError = undefined;
+      break;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError) {
+    console.warn("[wolfcha] Nickname generation failed after retry.", lastError);
+    throw lastError;
+  }
+
+  return new Map(requirements.map((req) => [req.model, nicknameCache.get(req.model) as string[]]));
+};
+
+const createGenshinPersona = (voiceId?: string): Persona => {
+  return {
+    styleLabel: "neutral",
+    voiceRules: ["concise"],
+    riskBias: "balanced",
+    mbti: "NA",
+    gender: "nonbinary",
+    age: 0,
+    backgroundStory: "",
+    voiceId,
+  };
+};
+
+export const buildGenshinModelRefs = (count: number): ModelRef[] => {
+  const pool = AVAILABLE_MODELS.length > 0 ? AVAILABLE_MODELS : [{ provider: "openrouter" as const, model: GENERATOR_MODEL }];
+  return Array.from({ length: count }, (_, index) => pool[index % pool.length]);
+};
+
+export const generateGenshinModeCharacters = async (
+  count: number,
+  modelRefs: ModelRef[]
+): Promise<GeneratedCharacter[]> => {
+  const modelUsageCounts = new Map<string, number>();
+  const modelVoiceMap = new Map<string, string>();
+  const resolvedRefs = modelRefs.length >= count ? modelRefs : buildGenshinModelRefs(count);
+  const modelLabels = resolvedRefs.slice(0, count).map(getModelDisplayName);
+  const modelCounts = modelLabels.reduce<Record<string, number>>((acc, label) => {
+    acc[label] = (acc[label] ?? 0) + 1;
+    return acc;
+  }, {});
+  const nicknameMap = await resolveNicknameMap(
+    Object.entries(modelCounts).map(([model, count]) => ({ model, count }))
+  );
+
+  return resolvedRefs.slice(0, count).map((modelRef) => {
+    const modelLabel = getModelDisplayName(modelRef);
+    const nicknames = nicknameMap.get(modelLabel);
+    if (!nicknames || nicknames.length === 0) {
+      throw new Error(`Missing nickname for ${modelLabel}`);
+    }
+    const usageCount = modelUsageCounts.get(modelLabel) ?? 0;
+    const preferredName = nicknames[usageCount] ?? nicknames[0];
+    modelUsageCounts.set(modelLabel, usageCount + 1);
+
+    let voiceId = modelVoiceMap.get(modelLabel);
+    if (!voiceId) {
+      const preset = VOICE_PRESETS[Math.floor(Math.random() * VOICE_PRESETS.length)];
+      voiceId = preset?.id;
+      if (voiceId) {
+        modelVoiceMap.set(modelLabel, voiceId);
+      }
+    }
+
+    return {
+      displayName: preferredName,
+      persona: createGenshinPersona(voiceId),
+    };
+  });
+};
 
 const isValidMbti = (v: any): v is string => typeof v === "string" && /^[A-Z]{4}$/.test(v.trim());
 
@@ -315,9 +493,8 @@ export async function generateCharacters(
   }
 ): Promise<GeneratedCharacter[]> {
   const usedScenario = scenario ?? getRandomScenario();
-  const startTime = Date.now();
-
-  try {
+  const runOnce = async () => {
+    const startTime = Date.now();
     const basePrompt = buildBaseProfilesPrompt(count, usedScenario);
 
     const baseResult = await generateJSON<unknown>({
@@ -413,22 +590,29 @@ export async function generateCharacters(
     });
 
     return finalizedCharacters;
-  } catch (error) {
-    console.error("Character generation failed:", error);
+  };
 
-    await aiLogger.log({
-      type: "character_generation",
-      request: { 
-        model: GENERATOR_MODEL,
-        messages: [{ role: "user", content: "(two-stage generation)" }],
-      },
-      response: { 
-        content: "[]", 
-        duration: Date.now() - startTime 
-      },
-      error: String(error),
-    });
-
-    throw error;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await runOnce();
+    } catch (error) {
+      lastError = error;
+      if (attempt === 0) {
+        continue;
+      }
+      console.error("Character generation failed:", error);
+      await aiLogger.log({
+        type: "character_generation",
+        request: { 
+          model: GENERATOR_MODEL,
+          messages: [{ role: "user", content: "(two-stage generation)" }],
+        },
+        response: { content: "[]", duration: 0 },
+        error: String(error),
+      });
+    }
   }
+
+  throw lastError;
 }

@@ -41,7 +41,7 @@ import {
   generateDailySummary,
   getNextAliveSeat,
 } from "@/lib/game-master";
-import { generateCharacters } from "@/lib/character-generator";
+import { buildGenshinModelRefs, generateCharacters, generateGenshinModeCharacters } from "@/lib/character-generator";
 import { SYSTEM_MESSAGES, UI_TEXT } from "@/lib/game-texts";
 import { getRandomScenario } from "@/lib/scenarios";
 import { DELAY_CONFIG, getRoleName } from "@/lib/game-constants";
@@ -797,7 +797,7 @@ export function useGameLogic() {
 
   /** 开始游戏 */
   const startGame = useCallback(async (options?: StartGameOptions) => {
-    const { fixedRoles, devPreset, difficulty = "normal", playerCount = 10 } = options || {};
+    const { fixedRoles, devPreset, difficulty = "normal", playerCount = 10, isGenshinMode = false } = options || {};
     const totalPlayers = Math.min(12, Math.max(8, playerCount));
 
     // 清理状态
@@ -816,7 +816,7 @@ export function useGameLogic() {
 
     setIsLoading(true);
     try {
-      const scenario = getRandomScenario();
+      const scenario = isGenshinMode ? undefined : getRandomScenario();
       const makeId = () => generateUUID();
 
       const humanSeat = 0;
@@ -842,48 +842,65 @@ export function useGameLogic() {
         phase: "LOBBY",
         day: 0,
         difficulty,
+        isGenshinMode,
       });
 
       setGameStarted(true);
       setShowTable(true);
 
-      const characters = await generateCharacters(totalPlayers - 1, scenario, {
-        onBaseProfiles: (profiles) => {
-          profiles.forEach((p, i) => {
+      let characters = [];
+      let genshinModelRefs: ModelRef[] | undefined = undefined;
+
+      if (isGenshinMode) {
+        genshinModelRefs = buildGenshinModelRefs(totalPlayers - 1);
+        characters = await generateGenshinModeCharacters(totalPlayers - 1, genshinModelRefs);
+      } else {
+        characters = await generateCharacters(totalPlayers - 1, scenario, {
+          onBaseProfiles: (profiles) => {
+            profiles.forEach((p, i) => {
+              window.setTimeout(() => {
+                setGameState((prev) => {
+                  const nextPlayers = prev.players.map((pl) => {
+                    if (pl.seat === i + 1) return { ...pl, displayName: p.displayName };
+                    return pl;
+                  });
+                  return { ...prev, players: nextPlayers };
+                });
+              }, 420 + i * 260);
+            });
+          },
+          onCharacter: (index, character) => {
+            const seat = index + 1;
             window.setTimeout(() => {
               setGameState((prev) => {
                 const nextPlayers = prev.players.map((pl) => {
-                  if (pl.seat === i + 1) return { ...pl, displayName: p.displayName };
-                  return pl;
+                  if (pl.seat !== seat) return pl;
+                  if (pl.isHuman) return pl;
+                  return {
+                    ...pl,
+                    displayName: character.displayName,
+                    agentProfile: {
+                      modelRef: getRandomModelRef(),
+                      persona: character.persona,
+                    },
+                  };
                 });
                 return { ...prev, players: nextPlayers };
               });
-            }, 420 + i * 260);
-          });
-        },
-        onCharacter: (index, character) => {
-          const seat = index + 1;
-          window.setTimeout(() => {
-            setGameState((prev) => {
-              const nextPlayers = prev.players.map((pl) => {
-                if (pl.seat !== seat) return pl;
-                if (pl.isHuman) return pl;
-                return {
-                  ...pl,
-                  displayName: character.displayName,
-                  agentProfile: {
-                    modelRef: getRandomModelRef(),
-                    persona: character.persona,
-                  },
-                };
-              });
-              return { ...prev, players: nextPlayers };
-            });
-          }, 120);
-        },
-      });
+            }, 120);
+          },
+        });
+      }
 
-      const players = setupPlayers(characters, 0, humanName || "你", totalPlayers, fixedRoles, seedPlayerIds);
+      const players = setupPlayers(
+        characters,
+        0,
+        humanName || "你",
+        totalPlayers,
+        fixedRoles,
+        seedPlayerIds,
+        genshinModelRefs
+      );
 
       let newState: GameState = {
         ...createInitialGameState(),
@@ -892,6 +909,7 @@ export function useGameLogic() {
         phase: "NIGHT_START",
         day: 1,
         difficulty,
+        isGenshinMode,
       };
 
       newState = addSystemMessage(newState, SYSTEM_MESSAGES.gameStart);

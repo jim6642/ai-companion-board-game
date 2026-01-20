@@ -5,12 +5,16 @@ import {
   buildAvatarUrl,
   getIdleLipsForSeed,
   getTalkingLips,
+  getModelLogoUrl,
 } from "@/lib/avatar-config";
 import type { Gender } from "@/lib/character-generator";
+import type { ModelRef } from "@/types/game";
 
 interface TalkingAvatarProps {
   seed: string;
   gender?: Gender;
+  modelRef?: ModelRef;
+  useModelLogo?: boolean;
   isTalking?: boolean;
   className?: string;
   alt?: string;
@@ -21,12 +25,18 @@ interface TalkingAvatarProps {
 export function TalkingAvatar({ 
   seed, 
   gender,
+  modelRef,
+  useModelLogo = false,
   isTalking = false, 
   className = "",
   alt = "Avatar",
   scale = 120,
   translateY = -5,
 }: TalkingAvatarProps) {
+  if (useModelLogo) {
+    return <img src={getModelLogoUrl(modelRef)} alt={alt} className={className} />;
+  }
+
   const TALKING_LIPS = useMemo(() => getTalkingLips(), []);
   const IDLE_LIPS = useMemo(() => getIdleLipsForSeed(seed), [seed]);
   
@@ -136,6 +146,8 @@ export function TalkingAvatar({
 interface TalkingAvatarSmallProps {
   seed: string;
   gender?: Gender;
+  modelRef?: ModelRef;
+  useModelLogo?: boolean;
   isTalking?: boolean;
   className?: string;
   alt?: string;
@@ -144,10 +156,16 @@ interface TalkingAvatarSmallProps {
 export function TalkingAvatarSmall({ 
   seed, 
   gender,
+  modelRef,
+  useModelLogo = false,
   isTalking = false, 
   className = "w-8 h-8 rounded-full",
   alt = "Avatar",
 }: TalkingAvatarSmallProps) {
+  if (useModelLogo) {
+    return <img src={getModelLogoUrl(modelRef)} alt={alt} className={className} />;
+  }
+
   const TALKING_LIPS = useMemo(() => getTalkingLips(), []);
   const IDLE_LIPS = useMemo(() => getIdleLipsForSeed(seed), [seed]);
   

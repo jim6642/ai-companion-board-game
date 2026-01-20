@@ -49,7 +49,8 @@ export class DaySpeechPhase extends GamePhase {
   getPrompt(context: GameContext, player: Player): PromptResult {
     const state = context.state;
     const gameContext = buildGameContext(state, player);
-    const persona = buildPersonaSection(player);
+    const isGenshinMode = !!state.isGenshinMode;
+    const persona = buildPersonaSection(player, isGenshinMode);
     const difficultyHint = buildDifficultySpeechHint(state.difficulty);
 
     const todayTranscript = buildTodayTranscript(state, 9000);
@@ -126,7 +127,16 @@ ${difficultyHint}`;
     const taskSection = `【任务】
 ${isLastWords ? "你已经出局，现在发表遗言。" : isCampaignSpeech ? "警徽竞选发言阶段，发表你的竞选发言。" : "白天讨论环节，发表你的看法。"}
 ${campaignRequirements ? `\n${campaignRequirements}` : ""}`;
-    const guidelinesSection = `【核心原则】
+    const guidelinesSection = isGenshinMode
+      ? `【说话要求】
+1. 只基于当前局势与规则做判断，不要编造人设背景或口头禅。
+2. 发言简洁清晰，说明你这一轮的判断与行动意图。
+
+【输出格式】
+返回 JSON 字符串数组，每个元素是一条消息气泡。
+示例：
+["我倾向先看3号的发言细节。", "今天我会把票集中在2号或3号。"]`
+      : `【核心原则】
 1. **沉浸式扮演**：你就是${player.displayName}，完全融入这个角色的性格和说话习惯。不要只是“模仿”风格，要思考“如果我是他，我现在会怎么想，怎么说”。
 2. **性格鲜明**：如果你的设定是暴躁的，那就表现得不耐烦；如果是蠢萌的，那就表现得迷糊一点。不要因为是游戏就强行变身“逻辑大师”。
 3. **自然对话**：像真人在群聊里打字一样说话。可以是断断续续的短句，可以有感叹、犹豫或情绪化的表达。不要写成“逻辑分析报告”。

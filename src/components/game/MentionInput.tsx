@@ -5,9 +5,9 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Mention from "@tiptap/extension-mention";
 import { type SuggestionKeyDownProps, type SuggestionProps } from "@tiptap/suggestion";
-import type { Player } from "@/types/game";
+import type { ModelRef, Player } from "@/types/game";
 import type { Gender } from "@/lib/character-generator";
-import { buildSimpleAvatarUrl } from "@/lib/avatar-config";
+import { buildSimpleAvatarUrl, getModelLogoUrl } from "@/lib/avatar-config";
 
 type MentionCandidate = {
   id: string;
@@ -16,6 +16,7 @@ type MentionCandidate = {
   displayName: string;
   playerId: string;
   gender?: Gender;
+  modelRef?: ModelRef;
 };
 
 type SuggestionLike = {
@@ -35,6 +36,7 @@ interface MentionInputProps {
   onVoiceHoldEnd?: () => void;
   placeholder?: string;
   isNight?: boolean;
+  isGenshinMode?: boolean;
   players: Player[];
 }
 
@@ -50,6 +52,7 @@ function createSuggestionItems(players: Player[]) {
         displayName: p.displayName,
         playerId: p.playerId,
         gender: p.agentProfile?.persona?.gender,
+        modelRef: p.agentProfile?.modelRef,
       }))
       .filter((item) => {
         if (!q) return true;
@@ -59,7 +62,7 @@ function createSuggestionItems(players: Player[]) {
   };
 }
 
-function renderSuggestionList(onOpenChange?: (open: boolean) => void) {
+function renderSuggestionList(isGenshinMode: boolean, onOpenChange?: (open: boolean) => void) {
   let el: HTMLDivElement | null = null;
   let selectedIndex = 0;
   let lastItems: MentionCandidate[] = [];
@@ -132,7 +135,10 @@ function renderSuggestionList(onOpenChange?: (open: boolean) => void) {
             (idx === selectedIndex ? "bg-[var(--color-gold)]/20" : "");
           
           // Avatar
-          const avatarUrl = buildSimpleAvatarUrl(item.playerId, { gender: item.gender });
+          const avatarUrl =
+            isGenshinMode && item.modelRef
+              ? getModelLogoUrl(item.modelRef)
+              : buildSimpleAvatarUrl(item.playerId, { gender: item.gender });
           
           const avatar = document.createElement("img");
           avatar.src = avatarUrl;
@@ -211,6 +217,7 @@ export function MentionInput({
   placeholder,
   isNight,
   players,
+  isGenshinMode = false,
 }: MentionInputProps) {
   const items = useMemo(() => createSuggestionItems(players), [players]);
   const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
@@ -222,10 +229,10 @@ export function MentionInput({
   const slashHoldThresholdMs = 260;
   
   const suggestionRenderer = useMemo(() => {
-    return () => renderSuggestionList((open) => {
+    return () => renderSuggestionList(isGenshinMode, (open) => {
       setIsSuggestionOpen(open);
     });
-  }, []);
+  }, [isGenshinMode]);
 
   const editor = useEditor({
     immediatelyRender: false,

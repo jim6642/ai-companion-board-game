@@ -95,6 +95,8 @@ interface WelcomeScreenProps {
   setHumanName: (name: string) => void;
   onStart: (options?: StartGameOptions) => void | Promise<void>;
   isLoading: boolean;
+  isGenshinMode: boolean;
+  onGenshinModeChange: (value: boolean) => void;
 }
 
 export function WelcomeScreen({
@@ -102,6 +104,8 @@ export function WelcomeScreen({
   setHumanName,
   onStart,
   isLoading,
+  isGenshinMode,
+  onGenshinModeChange,
 }: WelcomeScreenProps) {
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isSetupOpen, setIsSetupOpen] = useState(false);
@@ -289,6 +293,8 @@ export function WelcomeScreen({
         onDifficultyChange={setDifficulty}
         playerCount={playerCount}
         onPlayerCountChange={setPlayerCount}
+        isGenshinMode={isGenshinMode}
+        onGenshinModeChange={onGenshinModeChange}
       />
 
       <div className="wc-welcome-actions absolute top-6 right-6 z-20 flex items-center gap-2">
