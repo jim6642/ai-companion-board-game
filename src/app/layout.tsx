@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Cinzel, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -36,6 +37,18 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet" />
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-3SSRH8KPLY"
+          strategy="afterInteractive"
+        />
+        <Script id="ga-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-3SSRH8KPLY');
+          `}
+        </Script>
       </head>
       <body className={`${cinzel.variable} ${notoSerifSC.variable} antialiased`}>
         <Toaster richColors position="top-center" closeButton />
