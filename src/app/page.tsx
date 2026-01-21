@@ -564,7 +564,8 @@ export default function Home() {
     if (!showTable || isRoleRevealOpen) return;
     
     const text = ritualCue.title.trim();
-    if (!NIGHTFALL_CUE_REGEX.test(text)) return;
+    const nightFallRegex = new RegExp(getSystemPatterns().nightFall);
+    if (!nightFallRegex.test(text)) return;
     if (lastNightCueIdRef.current === ritualCue.id) return;
 
     lastNightCueIdRef.current = ritualCue.id;
@@ -581,7 +582,8 @@ export default function Home() {
     if (!lastSystemMsg) return;
     
     const text = lastSystemMsg.content.trim();
-    if (!NIGHTFALL_CUE_REGEX.test(text)) return;
+    const nightFallRegex = new RegExp(getSystemPatterns().nightFall);
+    if (!nightFallRegex.test(text)) return;
     
     const cueId = ritualCue.id;
     if (lastNightCueIdRef.current === cueId) return;
