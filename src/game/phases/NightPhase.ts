@@ -4,6 +4,7 @@ import type { GameAction, GameContext, PromptResult, SystemPromptPart } from "..
 import {
   buildGameContext,
   buildDifficultyDecisionHint,
+  getRoleText,
   getWinCondition,
   buildSystemTextFromParts,
 } from "@/lib/prompt-utils";

@@ -35,7 +35,7 @@ export function I18nProvider({ children }: I18nProviderProps) {
   const messages = useMemo(() => getMessages(locale), [locale]);
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Shanghai">
       {children}
     </NextIntlClientProvider>
   );

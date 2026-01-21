@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "Wolfcha",
-    "description": "Single-player immersive retro fairytale Werewolf"
+    "title": "Wolfcha | Immersive Solo Werewolf",
+    "description": "Single-player immersive werewolf experience with AI narration, voice acting, and strategic deduction."
   },
   "locale": {
     "label": "Language",

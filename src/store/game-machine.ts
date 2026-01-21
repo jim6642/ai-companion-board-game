@@ -349,7 +349,8 @@ export const phaseDescriptionAtom = atom((get) => {
   if (config.humanDescription) {
     return config.humanDescription(humanPlayer, gameState);
   }
-  return t(config.description);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return t(config.description as any);
 });
 
 // 是否需要人类输入

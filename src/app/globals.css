@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  --font-title: "Cinzel";
+  --font-chinese: "Noto Serif SC";
   /* ========== 核心色板 (参考 style-unification-preview.html) ========== */
   --color-blood: #8a1c1c;
   --color-blood-light: #b93636;

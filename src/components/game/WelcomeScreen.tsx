@@ -389,24 +389,19 @@ export function WelcomeScreen({
       />
 
       <div className="wc-welcome-actions absolute top-6 right-6 z-20 flex items-center gap-2">
-        <div className="hidden sm:flex items-center gap-1 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] px-2 py-1 text-xs text-[var(--text-primary)]">
-          <span className="uppercase tracking-wider opacity-60">{t("locale.label")}</span>
-          <button
-            type="button"
-            onClick={() => setLocale("zh")}
-            aria-pressed={locale === "zh"}
-            className={`px-1.5 py-0.5 rounded ${locale === "zh" ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)]" : "opacity-70"}`}
+        <div className="relative hidden sm:flex">
+          <select
+            value={locale}
+            onChange={(event) => setLocale(event.target.value as "zh" | "en")}
+            className="h-9 w-9 cursor-pointer appearance-none rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] text-transparent focus:outline-none"
+            aria-label={t("locale.label")}
           >
-            {t("locale.zh")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocale("en")}
-            aria-pressed={locale === "en"}
-            className={`px-1.5 py-0.5 rounded ${locale === "en" ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)]" : "opacity-70"}`}
-          >
-            {t("locale.en")}
-          </button>
+            <option value="zh">{t("locale.zh")}</option>
+            <option value="en">{t("locale.en")}</option>
+          </select>
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[var(--text-primary)]">
+            <GearSix size={16} />
+          </div>
         </div>
         {user ? (
           <button
