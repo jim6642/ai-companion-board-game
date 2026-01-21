@@ -16,8 +16,8 @@ import { SharePanel } from "@/components/game/SharePanel";
 import { AccountModal } from "@/components/game/AccountModal";
 import { ResetPasswordModal } from "@/components/game/ResetPasswordModal";
 import { UserProfileModal } from "@/components/game/UserProfileModal";
+import { LocaleSwitcher } from "@/components/game/LocaleSwitcher";
 import { useCredits } from "@/hooks/useCredits";
-import { useAppLocale } from "@/i18n/useAppLocale";
 
 function buildDefaultRoles(playerCount: number): Role[] {
   switch (playerCount) {
@@ -119,7 +119,6 @@ export function WelcomeScreen({
   onGenshinModeChange,
 }: WelcomeScreenProps) {
   const t = useTranslations();
-  const { locale, setLocale } = useAppLocale();
   const {
     user,
     credits,
@@ -389,20 +388,7 @@ export function WelcomeScreen({
       />
 
       <div className="wc-welcome-actions absolute top-6 right-6 z-20 flex items-center gap-2">
-        <div className="relative hidden sm:flex">
-          <select
-            value={locale}
-            onChange={(event) => setLocale(event.target.value as "zh" | "en")}
-            className="h-9 w-9 cursor-pointer appearance-none rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] text-transparent focus:outline-none"
-            aria-label={t("locale.label")}
-          >
-            <option value="zh">{t("locale.zh")}</option>
-            <option value="en">{t("locale.en")}</option>
-          </select>
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[var(--text-primary)]">
-            <GearSix size={16} />
-          </div>
-        </div>
+        <LocaleSwitcher className="hidden sm:block" />
         {user ? (
           <button
             type="button"
