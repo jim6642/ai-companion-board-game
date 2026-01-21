@@ -998,7 +998,7 @@ export default function Home() {
     if (config.humanDescription) {
       return config.humanDescription(humanPlayer, gameState);
     }
-    return t(config.description);
+    return t(config.description as Parameters<typeof t>[0]);
   }, [gameState, humanPlayer, t]);
 
   const needsHumanAction = useMemo(() => {

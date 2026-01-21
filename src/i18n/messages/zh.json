@@ -31,6 +31,33 @@
     "auth": {
       "signIn": "登录/注册"
     },
+    "github": {
+      "title": "在 GitHub 查看"
+    },
+    "sponsor": {
+      "title": "成为赞助商",
+      "subtitle": "你的支持会直接帮助 Wolfcha 跑得更稳、让更多人可以免费玩到。",
+      "description": "Wolfcha 是一个公益性质的 AI 狼人杀项目。我们把成本主要花在模型调用、语音合成、服务器与内容生产上。如果你愿意帮我们一把，无论支持多少、以什么形式，我们都会非常感激。",
+      "items": {
+        "credits": "模型额度 / 算力 / 服务器资源",
+        "media": "语音、音效、立绘等素材支持",
+        "collaboration": "设计、产品、运营协作与建议",
+        "community": "渠道与社区传播（转发也很有帮助）"
+      },
+      "note": "我们会在首页以“印章”的方式向赞助方致谢；如需匿名，也完全没问题。",
+      "copyEmail": "复制邮箱",
+      "sendEmail": "发邮件联系",
+      "action": "成为赞助商",
+      "showcaseLabel": "赞助商展示",
+      "cards": {
+        "openCreator": "OpenCreator 帮助我们生成夜晚所有的角色立绘",
+        "minimax": "Minimax 帮助我们生成过场音效与白天语音"
+      },
+      "copySuccess": "已复制邮箱",
+      "copyFallback": "邮箱地址",
+      "mailSubject": "Wolfcha 赞助合作",
+      "mailBody": "你好，我对 Wolfcha 项目很感兴趣，希望能够提供以下支持：\n\n-（模型额度/算力）\n-（语音/音效资源）\n-（设计/产品协作）\n-（其他）\n\n我的联系方式：\n\n"
+    },
     "settings": "设置",
     "tutorial": "玩法教学",
     "subtitle": "The Shadow Game",

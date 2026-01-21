@@ -91,7 +91,7 @@
 1.  **克隆仓库**
 
 ```bash
-git clone https://github.com/yourusername/wolfcha.git
+git clone https://github.com/oil-oil/wolfcha.git
 cd wolfcha
 ```
 

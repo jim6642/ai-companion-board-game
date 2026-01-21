@@ -31,6 +31,33 @@
     "auth": {
       "signIn": "Sign in / Sign up"
     },
+    "github": {
+      "title": "View on GitHub"
+    },
+    "sponsor": {
+      "title": "Become a sponsor",
+      "subtitle": "Your support helps Wolfcha stay reliable and free to play.",
+      "description": "Wolfcha is a public-benefit AI Werewolf project. We spend most costs on model usage, voice synthesis, servers, and content. Any support, in any form, means a lot to us.",
+      "items": {
+        "credits": "Model credits / compute / server resources",
+        "media": "Voice, sound effects, character art assets",
+        "collaboration": "Design, product, or operations collaboration",
+        "community": "Community and channel sharing"
+      },
+      "note": "We thank sponsors on the homepage with a seal; anonymous support is also welcome.",
+      "copyEmail": "Copy email",
+      "sendEmail": "Send an email",
+      "action": "Become a sponsor",
+      "showcaseLabel": "Sponsor showcase",
+      "cards": {
+        "openCreator": "OpenCreator helps us generate all night-time character art",
+        "minimax": "Minimax helps us generate transition SFX and daytime voice"
+      },
+      "copySuccess": "Email copied",
+      "copyFallback": "Email address",
+      "mailSubject": "Wolfcha sponsorship inquiry",
+      "mailBody": "Hi, I'm interested in supporting Wolfcha and would like to offer help in the following ways:\n\n- (Model credits / compute)\n- (Voice / SFX assets)\n- (Design / product collaboration)\n- (Other)\n\nMy contact info:\n\n"
+    },
     "settings": "Settings",
     "tutorial": "How to play",
     "subtitle": "The Shadow Game",

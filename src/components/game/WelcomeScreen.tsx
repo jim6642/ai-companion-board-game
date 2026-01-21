@@ -1,12 +1,13 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { FingerprintSimple, PawPrint, Sparkle, Wrench, GearSix, UserCircle } from "@phosphor-icons/react";
+import { FingerprintSimple, PawPrint, Sparkle, Wrench, GearSix, UserCircle, GithubLogo, Star, EnvelopeSimple, Handshake } from "@phosphor-icons/react";
 import { WerewolfIcon } from "@/components/icons/FlatIcons";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { TutorialModal } from "@/components/game/TutorialModal";
 import type { DevPreset, DifficultyLevel, Role, StartGameOptions } from "@/types/game";
 import { DevModeButton } from "@/components/DevTools";
@@ -16,8 +17,60 @@ import { SharePanel } from "@/components/game/SharePanel";
 import { AccountModal } from "@/components/game/AccountModal";
 import { ResetPasswordModal } from "@/components/game/ResetPasswordModal";
 import { UserProfileModal } from "@/components/game/UserProfileModal";
-import { LocaleSwitcher } from "@/components/game/LocaleSwitcher";
 import { useCredits } from "@/hooks/useCredits";
+
+type SponsorCardProps = {
+  href: string;
+  className: string;
+  rotate: string;
+  delay: number;
+  logoSrc?: string;
+  logoAlt?: string;
+  label?: string;
+  name?: string;
+  note?: string;
+  children?: React.ReactNode;
+};
+
+function SponsorCard({
+  href,
+  className,
+  rotate,
+  delay,
+  logoSrc,
+  logoAlt,
+  label,
+  name,
+  note,
+  children,
+}: SponsorCardProps) {
+  const ariaLabel = [label, name, note].filter(Boolean).join(" · ");
+  return (
+    <motion.a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay, duration: 0.5 }}
+      className={className}
+      style={{ "--card-rotate": rotate } as React.CSSProperties}
+      aria-label={ariaLabel || undefined}
+      title={ariaLabel || undefined}
+    >
+      <span className="wc-sponsor-card__border" aria-hidden="true" />
+      <div className="wc-sponsor-card__content">
+        {logoSrc && (
+          <img src={logoSrc} alt={logoAlt ?? ""} className="wc-sponsor-card__logo" />
+        )}
+        {label && <div className="wc-sponsor-card__label">{label}</div>}
+        {name && <div className="wc-sponsor-card__name">{name}</div>}
+        {note && <div className="wc-sponsor-card__note">{note}</div>}
+        {children}
+      </div>
+    </motion.a>
+  );
+}
 
 function buildDefaultRoles(playerCount: number): Role[] {
   switch (playerCount) {
@@ -119,6 +172,13 @@ export function WelcomeScreen({
   onGenshinModeChange,
 }: WelcomeScreenProps) {
   const t = useTranslations();
+  const sponsorEmail = "zhihuang.oiloil@gmail.com";
+  const sponsorMailto = useMemo(() => {
+    const subject = t("welcome.sponsor.mailSubject");
+    const body = t("welcome.sponsor.mailBody");
+    return `mailto:${sponsorEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }, [sponsorEmail, t]);
+
   const {
     user,
     credits,
@@ -140,8 +200,10 @@ export function WelcomeScreen({
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
+  const [isSponsorOpen, setIsSponsorOpen] = useState(false);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>("normal");
   const [playerCount, setPlayerCount] = useState(10);
+  const [githubStars, setGithubStars] = useState<number | null>(null);
 
   // 调试面板状态
   const [isDevModeEnabled, setIsDevModeEnabled] = useState(false);
@@ -152,20 +214,37 @@ export function WelcomeScreen({
     process.env.NODE_ENV !== "production" && (process.env.NEXT_PUBLIC_SHOW_DEVTOOLS ?? "true") === "true";
 
   const roleOptions: Role[] = ["Villager", "Werewolf", "Seer", "Witch", "Hunter", "Guard"];
-  const roleLabels: Record<Role, string> = useMemo(() => ({
-    Villager: t("roles.villager"),
-    Werewolf: t("roles.werewolf"),
-    Seer: t("roles.seer"),
-    Witch: t("roles.witch"),
-    Hunter: t("roles.hunter"),
-    Guard: t("roles.guard"),
-  }), [t]);
+  const roleLabels = useMemo<Record<Role, string>>(
+    () => ({
+      Villager: t("roles.villager"),
+      Werewolf: t("roles.werewolf"),
+      Seer: t("roles.seer"),
+      Witch: t("roles.witch"),
+      Hunter: t("roles.hunter"),
+      Guard: t("roles.guard"),
+    }),
+    [t]
+  );
 
   const [fixedRoles, setFixedRoles] = useState<(Role | "")[]>(() => buildDefaultRoles(10));
 
   useEffect(() => {
     setFixedRoles(buildDefaultRoles(playerCount));
   }, [playerCount]);
+
+  // Fetch GitHub stars
+  useEffect(() => {
+    fetch('https://api.github.com/repos/oil-oil/wolfcha')
+      .then(res => res.json())
+      .then(data => {
+        if (data.stargazers_count !== undefined) {
+          setGithubStars(data.stargazers_count);
+        }
+      })
+      .catch(() => {
+        // Silently fail, stars will remain null
+      });
+  }, []);
 
   const roleConfigValid = useMemo(() => {
     if (fixedRoles.length !== playerCount) return false;
@@ -196,9 +275,8 @@ export function WelcomeScreen({
 
   const roleConfigHint = useMemo(() => {
     const expected = getRoleCountConfig(playerCount);
-    const godLabel = expected.guardCount > 0
-      ? t("welcome.roleConfig.godLabelFull")
-      : t("welcome.roleConfig.godLabelNoGuard");
+    const godLabel =
+      expected.guardCount > 0 ? t("welcome.roleConfig.godLabelFull") : t("welcome.roleConfig.godLabelNoGuard");
     return t("welcome.roleConfig.hint", {
       wolfCount: expected.wolfCount,
       godLabel,
@@ -209,6 +287,15 @@ export function WelcomeScreen({
   const canConfirm = useMemo(() => {
     return !!humanName.trim() && !isLoading && !isTransitioning && !creditsLoading;
   }, [humanName, isLoading, isTransitioning, creditsLoading]);
+
+  const difficultyLabel = useMemo(() => {
+    const labels: Record<DifficultyLevel, string> = {
+      easy: t("difficulty.easy"),
+      normal: t("difficulty.normal"),
+      hard: t("difficulty.hard"),
+    };
+    return labels[difficulty];
+  }, [difficulty, t]);
 
   useEffect(() => {
     const paper = paperRef.current;
@@ -288,6 +375,15 @@ export function WelcomeScreen({
     }
   };
 
+  const handleCopySponsorEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(sponsorEmail);
+      toast.success(t("welcome.sponsor.copySuccess"), { description: sponsorEmail });
+    } catch {
+      toast(t("welcome.sponsor.copyFallback"), { description: sponsorEmail });
+    }
+  };
+
   const handleConfirm = async () => {
     if (!canConfirm) return;
     if (isStartingRef.current) return;
@@ -300,9 +396,7 @@ export function WelcomeScreen({
 
     if (credits !== null && credits <= 0) {
       setIsShareOpen(true);
-      toast(t("welcome.toast.noCredits.title"), {
-        description: t("welcome.toast.noCredits.description"),
-      });
+      toast(t("welcome.toast.noCredits.title"), { description: t("welcome.toast.noCredits.description") });
       return;
     }
 
@@ -327,18 +421,14 @@ export function WelcomeScreen({
         setIsTransitioning(false);
         onAbort?.();
         setIsShareOpen(true);
-        toast.error(t("welcome.toast.creditFail.title"), {
-          description: t("welcome.toast.creditFail.description"),
-        });
+        toast.error(t("welcome.toast.creditFail.title"), { description: t("welcome.toast.creditFail.description") });
       })
       .catch(() => {
         // Credit deduction failed, abort the game and show share panel
         setIsTransitioning(false);
         onAbort?.();
         setIsShareOpen(true);
-        toast.error(t("welcome.toast.creditFail.title"), {
-          description: t("welcome.toast.creditFail.description"),
-        });
+        toast.error(t("welcome.toast.creditFail.title"), { description: t("welcome.toast.creditFail.description") });
       })
       .finally(() => {
         isStartingRef.current = false;
@@ -387,8 +477,103 @@ export function WelcomeScreen({
         totalReferrals={totalReferrals}
       />
 
+      <Dialog open={isSponsorOpen} onOpenChange={setIsSponsorOpen}>
+        <DialogContent className="max-w-[560px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Handshake size={18} weight="duotone" />
+              {t("welcome.sponsor.title")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("welcome.sponsor.subtitle")}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 text-sm leading-relaxed text-[var(--text-primary)]">
+            <p>
+              {t("welcome.sponsor.description")}
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-[var(--text-secondary)]">
+              <li>{t("welcome.sponsor.items.credits")}</li>
+              <li>{t("welcome.sponsor.items.media")}</li>
+              <li>{t("welcome.sponsor.items.collaboration")}</li>
+              <li>{t("welcome.sponsor.items.community")}</li>
+            </ul>
+            <p className="text-[var(--text-secondary)]">
+              {t("welcome.sponsor.note")}
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+            <Button type="button" variant="outline" onClick={handleCopySponsorEmail} className="gap-2">
+              <EnvelopeSimple size={16} />
+              {t("welcome.sponsor.copyEmail")}
+            </Button>
+            <Button asChild className="gap-2">
+              <a href={sponsorMailto} target="_blank" rel="noopener noreferrer">
+                <EnvelopeSimple size={16} />
+                {t("welcome.sponsor.sendEmail")}
+              </a>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Scattered sponsor cards */}
+      <div className="wc-sponsor-cards" aria-label={t("welcome.sponsor.showcaseLabel")}>
+        {/* Sponsor card - OpenCreator (左侧) */}
+        <SponsorCard
+          href="https://opencreator.io/"
+          className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--left-center wc-sponsor-card--featured"
+          rotate="-6deg"
+          delay={0.3}
+          logoSrc="/sponsor/opencreator.png"
+          logoAlt="OpenCreator"
+          name="OpenCreator"
+          note={t("welcome.sponsor.cards.openCreator")}
+        />
+
+        {/* Sponsor card - Minimax (右上) */}
+        <SponsorCard
+          href="https://minimaxi.com/"
+          className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--right-top"
+          rotate="5deg"
+          delay={0.45}
+          logoSrc="/sponsor/minimax.png"
+          logoAlt="Minimax"
+          name="Minimax"
+          note={t("welcome.sponsor.cards.minimax")}
+        />
+      </div>
+
       <div className="wc-welcome-actions absolute top-6 right-6 z-20 flex items-center gap-2">
-        <LocaleSwitcher className="hidden sm:block" />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setIsSponsorOpen(true)}
+          className="h-9 text-sm gap-2"
+        >
+          <Handshake size={16} />
+          {t("welcome.sponsor.action")}
+        </Button>
+
+        <a
+          href="https://github.com/oil-oil/wolfcha"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden sm:flex items-center gap-1.5 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all group"
+          title={t("welcome.github.title")}
+        >
+          <GithubLogo size={16} className="group-hover:scale-110 transition-transform" />
+          <span className="hidden lg:inline">GitHub</span>
+          <span className="flex items-center gap-1 text-[var(--color-gold)]">
+            <Star size={13} weight="fill" className="group-hover:scale-110 transition-transform" />
+            <span className="font-serif text-sm font-bold tabular-nums tracking-tight" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+              {githubStars !== null ? githubStars.toLocaleString() : '···'}
+            </span>
+          </span>
+        </a>
+
         {user ? (
           <button
             type="button"
@@ -399,7 +584,7 @@ export function WelcomeScreen({
             <UserCircle size={16} />
             <span className="truncate max-w-[160px]">{user.email ?? t("welcome.account.loggedIn")}</span>
             <span className="opacity-70">
-              {t("welcome.account.remaining", { count: creditsLoading ? "..." : (credits ?? 0) })}
+              {creditsLoading ? "..." : t("welcome.account.remaining", { count: credits ?? 0 })}
             </span>
           </button>
         ) : (
