@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { FingerprintSimple, PawPrint, Sparkle, Wrench, GearSix, UserCircle } from "@phosphor-icons/react";
+import { FingerprintSimple, PawPrint, Sparkle, Wrench, GearSix, UserCircle, GithubLogo, Star } from "@phosphor-icons/react";
 import { WerewolfIcon } from "@/components/icons/FlatIcons";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -139,6 +139,7 @@ export function WelcomeScreen({
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>("normal");
   const [playerCount, setPlayerCount] = useState(10);
+  const [githubStars, setGithubStars] = useState<number | null>(null);
 
   // 调试面板状态
   const [isDevModeEnabled, setIsDevModeEnabled] = useState(false);
@@ -163,6 +164,20 @@ export function WelcomeScreen({
   useEffect(() => {
     setFixedRoles(buildDefaultRoles(playerCount));
   }, [playerCount]);
+
+  // Fetch GitHub stars
+  useEffect(() => {
+    fetch('https://api.github.com/repos/oil-oil/wolfcha')
+      .then(res => res.json())
+      .then(data => {
+        if (data.stargazers_count !== undefined) {
+          setGithubStars(data.stargazers_count);
+        }
+      })
+      .catch(() => {
+        // Silently fail, stars will remain null
+      });
+  }, []);
 
   const roleConfigValid = useMemo(() => {
     if (fixedRoles.length !== playerCount) return false;
@@ -382,6 +397,23 @@ export function WelcomeScreen({
       />
 
       <div className="wc-welcome-actions absolute top-6 right-6 z-20 flex items-center gap-2">
+        <a
+          href="https://github.com/oil-oil/wolfcha"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden sm:flex items-center gap-1.5 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all group"
+          title="View on GitHub"
+        >
+          <GithubLogo size={16} className="group-hover:scale-110 transition-transform" />
+          <span className="hidden lg:inline">GitHub</span>
+          <span className="flex items-center gap-1 text-[var(--color-gold)]">
+            <Star size={13} weight="fill" className="group-hover:scale-110 transition-transform" />
+            <span className="font-serif text-sm font-bold tabular-nums tracking-tight" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+              {githubStars !== null ? githubStars.toLocaleString() : '···'}
+            </span>
+          </span>
+        </a>
+
         {user ? (
           <button
             type="button"
