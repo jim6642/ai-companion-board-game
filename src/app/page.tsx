@@ -1472,6 +1472,7 @@ export default function Home() {
         bgmVolume={bgmVolume}
         isSoundEnabled={isSoundEnabled}
         isAiVoiceEnabled={isAiVoiceEnabled}
+        gameState={gameState}
         onBgmVolumeChange={setBgmVolume}
         onSoundEnabledChange={setSoundEnabled}
         onAiVoiceEnabledChange={setAiVoiceEnabled}
