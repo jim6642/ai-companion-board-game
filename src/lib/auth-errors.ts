@@ -20,7 +20,7 @@ export const authErrorTranslations: Record<string, string> = {
 export function translateAuthError(message: string): string {
   const { t } = getI18n();
   if (authErrorTranslations[message]) {
-    return t(authErrorTranslations[message]);
+    return t(authErrorTranslations[message] as Parameters<typeof t>[0]);
   }
 
   for (const [key, translation] of Object.entries(authErrorTranslations)) {
@@ -29,7 +29,7 @@ export function translateAuthError(message: string): string {
       if (secondsMatch) {
         return t("authErrors.rateLimitSeconds", { seconds: secondsMatch[1] });
       }
-      return t(translation);
+      return t(translation as Parameters<typeof t>[0]);
     }
   }
 

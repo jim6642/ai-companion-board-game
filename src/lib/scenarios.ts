@@ -145,9 +145,9 @@ const localizeScenario = (scenario: GameScenario): GameScenario => {
   const baseKey = `scenarios.${scenario.id}`;
   return {
     ...scenario,
-    title: t(`${baseKey}.title`),
-    description: t(`${baseKey}.description`),
-    rolesHint: t(`${baseKey}.rolesHint`),
+    title: t(`${baseKey}.title` as Parameters<typeof t>[0]),
+    description: t(`${baseKey}.description` as Parameters<typeof t>[0]),
+    rolesHint: t(`${baseKey}.rolesHint` as Parameters<typeof t>[0]),
   };
 };
 

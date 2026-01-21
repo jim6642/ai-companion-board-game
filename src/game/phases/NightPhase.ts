@@ -497,13 +497,13 @@ export class NightPhase extends GamePhase {
     );
 
     const teammateVotesStr = teammates
-      .map((t) => {
-        const vote = existingVotes[t.playerId];
+      .map((teammate) => {
+        const vote = existingVotes[teammate.playerId];
         if (vote === undefined) return null;
         const target = state.players.find((p) => p.seat === vote);
         return t("prompts.night.wolf.voteLine", {
-          seat: t.seat + 1,
-          name: t.displayName,
+          seat: teammate.seat + 1,
+          name: teammate.displayName,
           targetSeat: vote + 1,
           targetName: target ? t("prompts.night.optionName", { name: target.displayName }) : "",
         });
