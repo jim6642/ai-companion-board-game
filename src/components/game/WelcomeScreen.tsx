@@ -17,6 +17,7 @@ import { SharePanel } from "@/components/game/SharePanel";
 import { AccountModal } from "@/components/game/AccountModal";
 import { ResetPasswordModal } from "@/components/game/ResetPasswordModal";
 import { UserProfileModal } from "@/components/game/UserProfileModal";
+import { LocaleSwitcher } from "@/components/game/LocaleSwitcher";
 import { useCredits } from "@/hooks/useCredits";
 
 type SponsorCardProps = {
@@ -547,6 +548,8 @@ export function WelcomeScreen({
       </div>
 
       <div className="wc-welcome-actions absolute top-6 right-6 z-20 flex items-center gap-2">
+        <LocaleSwitcher className="hidden sm:block" />
+
         <Button
           type="button"
           variant="outline"
