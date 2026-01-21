@@ -831,6 +831,11 @@
         "noTranscript": "(None)",
         "user": "{context}\n\n【Today's discussion】\n{todayTranscript}\n\nWhich seat do you transfer the badge to? (Reply \"0\" to tear it)"
       }
+    },
+    "hunter": {
+      "base": "【Identity】\nYou are Seat {seat} \"{name}\"\nRole: {role}\n\n{winCondition}\n\n{difficultyHint}",
+      "task": "【Task】\nYou have been eliminated and may shoot one player.\nOnly output a seat number or pass. No analysis or roleplay.\n\nOptions: {options}",
+      "user": "{context}\n\nWhich seat do you want to shoot?\n\n【Format】\nReply with a seat number only, e.g., 5\nIf you don't want to shoot, reply: pass\nNo explanations, no extra text, no code blocks"
     }
   },
   "badgePhase": {

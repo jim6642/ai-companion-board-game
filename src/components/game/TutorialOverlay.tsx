@@ -110,12 +110,13 @@ export function TutorialOverlay({
       Guard: t("roles.guard"),
       Villager: t("roles.villager"),
     };
-    const roleData = t.raw(`tutorialOverlay.roles.${roleKey}`) as {
+    const roleDataMap = t.raw("tutorialOverlay.roles" as any) as Record<Role, {
       desc: string;
       points: string[];
       action: string;
       tips: string[];
-    };
+    }>;
+    const roleData = roleDataMap[roleKey];
     const roleMeta = ROLE_META[roleKey];
     return {
       icon: roleMeta.Icon,

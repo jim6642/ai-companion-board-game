@@ -831,6 +831,11 @@
         "noTranscript": "（无）",
         "user": "{context}\n\n【本日讨论记录】\n{todayTranscript}\n\n你把警徽移交给几号？（回复\"0\"表示撕毁警徽）"
       }
+    },
+    "hunter": {
+      "base": "【身份】\n你是 {seat}号「{name}」\n身份: {role}\n\n{winCondition}\n\n{difficultyHint}",
+      "task": "【任务】\n你已死亡，现在可以开枪带走一人。\n本环节只需要给出座位数字或 pass，不要分析，不要角色扮演。\n\n可选: {options}",
+      "user": "{context}\n\n你要带走几号？\n\n【格式】\n只回复座位数字，如: 5\n如果不想开枪，回复: pass\n不要解释，不要输出多余文字，不要代码块"
     }
   },
   "badgePhase": {
