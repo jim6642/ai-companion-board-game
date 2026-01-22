@@ -195,7 +195,7 @@ export const AVAILABLE_MODELS: ModelRef[] = [
   {provider:"openrouter",model:"google/gemini-3-flash-preview"},
   // { provider: "openrouter", model: "anthropic/claude-haiku-4.5" },
   // { provider: "openrouter", model: "minimax/minimax-m2.1" },
-  { provider: "openrouter", model: "qwen/qwen3-235b-a22b-2507" },
+  {provider:"openrouter",model:"qwen/qwen-plus-2025-07-28"},
   { provider: "openrouter", model: "moonshotai/kimi-k2-0905" },
   // { provider: "openrouter", model: "qwen/qwen3-max" },
    { provider: "openrouter", model: "bytedance-seed/seed-1.6" },
