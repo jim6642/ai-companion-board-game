@@ -10,6 +10,8 @@
 
 ## 🙏 感谢赞助
 
+![ZenMux Banner](public/sponsor/zenmux-banner.png)
+
 ![Minimax Banner](public/sponsor/minimax-banner.jpg)
 
 现有赞助商：
