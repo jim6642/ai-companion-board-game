@@ -31,7 +31,7 @@ const DIFFICULTY_OPTIONS: Array<{ value: DifficultyLevel; label: string; descrip
 const PLAYER_COUNT_OPTIONS: Array<{ value: number; label: string; description: string; roles: string }> = [
   { value: 8, label: "8人局", description: "3狼 3神 2民", roles: "神职：预言家、女巫、猎人" },
   { value: 9, label: "9人局", description: "3狼 3神 3民", roles: "神职：预言家、女巫、猎人" },
-  { value: 10, label: "10人局", description: "3狼 3神 4民", roles: "神职：预言家、女巫、猎人" },
+  { value: 10, label: "10人局", description: "3狼 4神 3民", roles: "神职：预言家、女巫、猎人、守卫" },
   { value: 11, label: "11人局", description: "4狼 4神 3民", roles: "神职：预言家、女巫、猎人、守卫" },
   { value: 12, label: "12人局", description: "4狼 4神 4民", roles: "神职：预言家、女巫、猎人、守卫" },
 ];
