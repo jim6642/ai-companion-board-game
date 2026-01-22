@@ -287,6 +287,19 @@ export const buildGameContext = (
 存活玩家:
 ${playerList}`;
 
+  // Always include sheriff info as a stable field (do not rely on truncated announcements).
+  const sheriffSeat = state.badge.holderSeat;
+  if (sheriffSeat === null) {
+    context += `\n\n【当前警长】无`;
+  } else {
+    const sheriffPlayer = state.players.find((p) => p.seat === sheriffSeat) || null;
+    if (sheriffPlayer) {
+      context += `\n\n【当前警长】${sheriffSeat + 1}号 ${sheriffPlayer.displayName}${sheriffPlayer.alive ? "" : "（已出局）"}`;
+    } else {
+      context += `\n\n【当前警长】${sheriffSeat + 1}号（未知）`;
+    }
+  }
+
   context += `\n\n${buildAliveCountsSection(state)}`;
 
   const summarySection = buildDailySummariesSection(state);
