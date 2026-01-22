@@ -38,8 +38,8 @@
 *   **DeepSeek V3.2**
 *   **Qwen3-235B-A22B**
 *   **Kimi K2**
-*   **Qwen3-Max**
-*   **Seed 1.6 (ByteDance)**
+*   **Gemini 3 Flash**
+*   **Seed 1.8 (ByteDance)**
 
 <div align="center">
   <img src="https://img.shields.io/badge/DeepSeek-V3.2-1B75FF?style=for-the-badge" alt="DeepSeek" />
@@ -81,7 +81,7 @@
 *   **Editor**: [Tiptap](https://tiptap.dev/) (For rich text interactions)
 *   **Animations**: [Framer Motion](https://www.framer.com/motion/)
 *   **Avatar Generation**: [DiceBear](https://www.dicebear.com/) (Notionists style)
-*   **AI Integration**: OpenRouter (Unified interface for LLMs)
+*   **AI Integration**: ZenMux (Unified interface for LLMs)
 *   **TTS**: Minimax
 
 ## 🚀 本地运行
@@ -107,7 +107,7 @@ npm install
 
 3.  **配置环境变量**
 
-你需要配置相应的 API Keys (OpenRouter, Minimax 等) 才能运行完整功能。请参考 `.env.example` (如果有) 或自行创建 `.env.local`。
+你需要配置相应的 API Keys (ZenMux, Minimax 等) 才能运行完整功能。请参考 `.env.example` 并创建 `.env.local`。
 
 4.  **启动开发服务器**
 
