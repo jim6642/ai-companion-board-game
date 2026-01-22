@@ -99,7 +99,6 @@ const resolveNicknameMap = async (requirements: Array<{ model: string; count: nu
         model: GENERATOR_MODEL,
         messages: [{ role: "user", content: prompt }],
         temperature: AI_TEMPERATURE.BALANCED,
-        max_tokens: 800,
       });
       const normalized = normalizeNicknameResponse(raw);
       missing.forEach((req) => {

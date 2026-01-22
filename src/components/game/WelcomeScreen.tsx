@@ -19,6 +19,7 @@ import { UserProfileModal } from "@/components/game/UserProfileModal";
 import { useCredits } from "@/hooks/useCredits";
 
 type SponsorCardProps = {
+  sponsorId: string;
   href: string;
   className: string;
   rotate: string;
@@ -31,7 +32,21 @@ type SponsorCardProps = {
   children?: React.ReactNode;
 };
 
+// Track sponsor click
+async function trackSponsorClick(sponsorId: string) {
+  try {
+    await fetch("/api/sponsor/click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sponsorId, ref: "homepage" }),
+    });
+  } catch {
+    // Silently fail - don't block navigation
+  }
+}
+
 function SponsorCard({
+  sponsorId,
   href,
   className,
   rotate,
@@ -44,9 +59,17 @@ function SponsorCard({
   children,
 }: SponsorCardProps) {
   const ariaLabel = [label, name, note].filter(Boolean).join(" · ");
+  
+  const handleClick = () => {
+    void trackSponsorClick(sponsorId);
+  };
+
+  // Add ref parameter to href for tracking on sponsor's side
+  const hrefWithRef = href.includes("?") ? `${href}&ref=wolfcha` : `${href}?ref=wolfcha`;
+
   return (
     <motion.a
-      href={href}
+      href={hrefWithRef}
       target="_blank"
       rel="noopener noreferrer"
       initial={{ opacity: 0 }}
@@ -56,6 +79,7 @@ function SponsorCard({
       style={{ "--card-rotate": rotate } as React.CSSProperties}
       aria-label={ariaLabel || undefined}
       title={ariaLabel || undefined}
+      onClick={handleClick}
     >
       <span className="wc-sponsor-card__border" aria-hidden="true" />
       <div className="wc-sponsor-card__content">
@@ -125,7 +149,7 @@ function buildDefaultRoles(playerCount: number): Role[] {
         "Seer",
         "Witch",
         "Hunter",
-        "Villager",
+        "Guard",
         "Villager",
         "Villager",
         "Villager",
@@ -135,7 +159,7 @@ function buildDefaultRoles(playerCount: number): Role[] {
 
 function getRoleCountConfig(playerCount: number) {
   const wolfCount = playerCount >= 11 ? 4 : 3;
-  const guardCount = playerCount >= 11 ? 1 : 0;
+  const guardCount = playerCount >= 10 ? 1 : 0;
   const seerCount = 1;
   const witchCount = 1;
   const hunterCount = 1;
@@ -159,6 +183,12 @@ interface WelcomeScreenProps {
   isLoading: boolean;
   isGenshinMode: boolean;
   onGenshinModeChange: (value: boolean) => void;
+  bgmVolume: number;
+  isSoundEnabled: boolean;
+  isAiVoiceEnabled: boolean;
+  onBgmVolumeChange: (value: number) => void;
+  onSoundEnabledChange: (value: boolean) => void;
+  onAiVoiceEnabledChange: (value: boolean) => void;
 }
 
 export function WelcomeScreen({
@@ -169,6 +199,12 @@ export function WelcomeScreen({
   isLoading,
   isGenshinMode,
   onGenshinModeChange,
+  bgmVolume,
+  isSoundEnabled,
+  isAiVoiceEnabled,
+  onBgmVolumeChange,
+  onSoundEnabledChange,
+  onAiVoiceEnabledChange,
 }: WelcomeScreenProps) {
   const sponsorEmail = "zhihuang.oiloil@gmail.com";
   const sponsorMailto =
@@ -439,6 +475,12 @@ export function WelcomeScreen({
         onPlayerCountChange={setPlayerCount}
         isGenshinMode={isGenshinMode}
         onGenshinModeChange={onGenshinModeChange}
+        bgmVolume={bgmVolume}
+        isSoundEnabled={isSoundEnabled}
+        isAiVoiceEnabled={isAiVoiceEnabled}
+        onBgmVolumeChange={onBgmVolumeChange}
+        onSoundEnabledChange={onSoundEnabledChange}
+        onAiVoiceEnabledChange={onAiVoiceEnabledChange}
       />
       <AuthModal open={isAuthOpen} onOpenChange={setIsAuthOpen} />
       <AccountModal open={isAccountOpen} onOpenChange={setIsAccountOpen} />
@@ -596,6 +638,7 @@ export function WelcomeScreen({
       <div className="wc-sponsor-cards" aria-label="赞助商展示">
         {/* Sponsor card - OpenCreator (左侧) */}
         <SponsorCard
+          sponsorId="opencreator"
           href="https://opencreator.io/"
           className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--left-center wc-sponsor-card--featured"
           rotate="-6deg"
@@ -608,6 +651,7 @@ export function WelcomeScreen({
 
         {/* Sponsor card - Minimax (右上) */}
         <SponsorCard
+          sponsorId="minimax"
           href="https://minimaxi.com/"
           className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--right-top"
           rotate="5deg"
@@ -616,6 +660,19 @@ export function WelcomeScreen({
           logoAlt="Minimax"
           name="Minimax"
           note="Minimax 帮助我们生成过场音效与白天语音"
+        />
+
+        {/* Sponsor card - Zenmux (右下) */}
+        <SponsorCard
+          sponsorId="zenmux"
+          href="https://zenmux.ai/aboutus"
+          className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--right-bottom"
+          rotate="-4deg"
+          delay={0.6}
+          logoSrc="/sponsor/zenmux.png"
+          logoAlt="Zenmux"
+          name="Zenmux"
+          note="聚合全球顶尖大模型，为每一场逻辑博弈注入敏锐灵魂。"
         />
       </div>
 
@@ -731,24 +788,37 @@ export function WelcomeScreen({
           {/* Mobile: inline sponsor stamps at top of paper */}
           <div className="wc-paper-sponsors sm:hidden">
             <a
-              href="https://opencreator.io/"
+              href="https://opencreator.io/?ref=wolfcha"
               target="_blank"
               rel="noopener noreferrer"
               className="wc-paper-stamp"
               style={{ "--stamp-rotate": "-8deg" } as React.CSSProperties}
+              onClick={() => void trackSponsorClick("opencreator")}
             >
               <img src="/sponsor/opencreator.png" alt="OpenCreator" className="wc-paper-stamp__logo" />
               <span className="wc-paper-stamp__name">OpenCreator</span>
             </a>
             <a
-              href="https://minimaxi.com/"
+              href="https://minimaxi.com/?ref=wolfcha"
               target="_blank"
               rel="noopener noreferrer"
               className="wc-paper-stamp"
               style={{ "--stamp-rotate": "6deg" } as React.CSSProperties}
+              onClick={() => void trackSponsorClick("minimax")}
             >
               <img src="/sponsor/minimax.png" alt="Minimax" className="wc-paper-stamp__logo" />
               <span className="wc-paper-stamp__name">Minimax</span>
+            </a>
+            <a
+              href="https://zenmux.ai/aboutus?ref=wolfcha"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="wc-paper-stamp"
+              style={{ "--stamp-rotate": "-3deg" } as React.CSSProperties}
+              onClick={() => void trackSponsorClick("zenmux")}
+            >
+              <img src="/sponsor/zenmux.png" alt="Zenmux" className="wc-paper-stamp__logo" />
+              <span className="wc-paper-stamp__name">Zenmux</span>
             </a>
           </div>
 

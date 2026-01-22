@@ -23,6 +23,10 @@ export interface AILogEntry {
   response: {
     content: string;
     duration: number;
+    raw?: string; // Original raw response content before processing
+    rawResponse?: string; // Full API response object as JSON string
+    finishReason?: string; // finish_reason from API response
+    parsed?: unknown; // Parsed/structured result
   };
   error?: string;
 }
@@ -89,6 +93,12 @@ class AILogger {
     console.log("Model:", entry.request.model);
     console.log("Messages:", entry.request.messages);
     console.log("Response:", entry.response.content);
+    if (entry.response.raw && entry.response.raw !== entry.response.content) {
+      console.log("Raw Response:", entry.response.raw);
+    }
+    if (entry.response.parsed) {
+      console.log("Parsed Result:", entry.response.parsed);
+    }
     console.log("Duration:", `${entry.response.duration}ms`);
     if (entry.error) {
       console.error("Error:", entry.error);

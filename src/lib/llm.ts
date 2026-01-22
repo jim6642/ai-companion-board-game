@@ -35,7 +35,7 @@ export type ResponseFormat =
         name: string;
         description?: string;
         schema: unknown;
-        strict?: boolean | null;
+        // Note: 'strict' is not supported by ZenMux, use json_object for simple cases
       };
     };
 
@@ -140,11 +140,19 @@ export async function generateCompletion(
   }
 
   const result: ChatCompletionResponse = await response.json();
-  const assistantMessage = result.choices?.[0]?.message;
+  const choice = result.choices?.[0];
+  const assistantMessage = choice?.message;
 
   if (!assistantMessage) {
     throw new Error(
       `No response from model. Raw response: ${JSON.stringify(result).slice(0, 500)}`
+    );
+  }
+
+  // Warn if output was truncated due to max_tokens
+  if (choice.finish_reason === "length") {
+    console.warn(
+      `[LLM] Output truncated (finish_reason=length). Consider increasing max_tokens.`
     );
   }
 

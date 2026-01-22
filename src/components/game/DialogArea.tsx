@@ -1288,9 +1288,7 @@ export function DialogArea({
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                           <span>正在陈述…</span>
                         </>
-                      ) : (
-                        <span className="opacity-60">{visibleMessages.length} 条消息</span>
-                      )}
+                      ) : null}
                     </div>
                     <AnimatePresence>
                       {!isTyping && needsManualContinue && (

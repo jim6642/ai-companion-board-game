@@ -8,6 +8,16 @@
   </p>
 </div>
 
+## 🙏 感谢赞助
+
+![Minimax Banner](public/sponsor/minimax-banner.jpg)
+
+现有赞助商：
+
+*   [Zenmux](https://zenmux.ai/invite/DMMBVZ) - 提供 AI 模型能力支持
+*   [Minimax](https://platform.minimaxi.com/subscribe/coding-plan?code=I6GrZd4xLt&source=link) - 提供语音与过场音效能力支持
+*   [OpenCreator](https://opencreator.io/) - 提供角色立绘生成支持
+
 ---
 
 > **Note**: 这是一个诞生于 **「观猹 + 魔搭 环球黑客松」** 的 AI 原生游戏项目。
@@ -77,12 +87,12 @@
 *   **Language**: [TypeScript](https://www.typescriptlang.org/)
 *   **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
 *   **UI Components**: [Radix UI](https://www.radix-ui.com/), [Lucide React](https://lucide.dev/)
-*   **State Management**: [Jotai](https://jotai.org/)
+*   **State Management**: [Jotai](https://jotai.org/) 
 *   **Editor**: [Tiptap](https://tiptap.dev/) (For rich text interactions)
 *   **Animations**: [Framer Motion](https://www.framer.com/motion/)
 *   **Avatar Generation**: [DiceBear](https://www.dicebear.com/) (Notionists style)
-*   **AI Integration**: OpenRouter (Unified interface for LLMs)
-*   **TTS**: Minimax
+*   **AI Integration**: [Zenmux](https://zenmux.ai/invite/DMMBVZ) (Unified interface for LLMs)
+*   **TTS**: [Minimax](https://platform.minimaxi.com/subscribe/coding-plan?code=I6GrZd4xLt&source=link)
 
 ## 🚀 本地运行
 

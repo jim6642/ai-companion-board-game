@@ -35,8 +35,8 @@ const PLAYER_COUNT_OPTIONS: Array<{
     count: 10,
     title: "10人局",
     subtitle: "标准配置",
-    description: "3狼 3神 4民",
-    roles: "神职：预言家、女巫、猎人",
+    description: "3狼 4神 3民",
+    roles: "神职：预言家、女巫、猎人、守卫",
   },
   {
     count: 11,

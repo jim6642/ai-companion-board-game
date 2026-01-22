@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { DifficultyLevel } from "@/types/game";
+import { SoundSettingsSection } from "@/components/game/SettingsModal";
 
 interface GameSetupModalProps {
   open: boolean;
@@ -20,6 +21,12 @@ interface GameSetupModalProps {
   onPlayerCountChange: (value: number) => void;
   isGenshinMode: boolean;
   onGenshinModeChange: (value: boolean) => void;
+  bgmVolume: number;
+  isSoundEnabled: boolean;
+  isAiVoiceEnabled: boolean;
+  onBgmVolumeChange: (value: number) => void;
+  onSoundEnabledChange: (value: boolean) => void;
+  onAiVoiceEnabledChange: (value: boolean) => void;
 }
 
 const DIFFICULTY_OPTIONS: Array<{ value: DifficultyLevel; label: string; description: string }> = [
@@ -31,7 +38,7 @@ const DIFFICULTY_OPTIONS: Array<{ value: DifficultyLevel; label: string; descrip
 const PLAYER_COUNT_OPTIONS: Array<{ value: number; label: string; description: string; roles: string }> = [
   { value: 8, label: "8人局", description: "3狼 3神 2民", roles: "神职：预言家、女巫、猎人" },
   { value: 9, label: "9人局", description: "3狼 3神 3民", roles: "神职：预言家、女巫、猎人" },
-  { value: 10, label: "10人局", description: "3狼 3神 4民", roles: "神职：预言家、女巫、猎人" },
+  { value: 10, label: "10人局", description: "3狼 4神 3民", roles: "神职：预言家、女巫、猎人、守卫" },
   { value: 11, label: "11人局", description: "4狼 4神 3民", roles: "神职：预言家、女巫、猎人、守卫" },
   { value: 12, label: "12人局", description: "4狼 4神 4民", roles: "神职：预言家、女巫、猎人、守卫" },
 ];
@@ -45,6 +52,12 @@ export function GameSetupModal({
   onPlayerCountChange,
   isGenshinMode,
   onGenshinModeChange,
+  bgmVolume,
+  isSoundEnabled,
+  isAiVoiceEnabled,
+  onBgmVolumeChange,
+  onSoundEnabledChange,
+  onAiVoiceEnabledChange,
 }: GameSetupModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,6 +122,18 @@ export function GameSetupModal({
             </div>
             </div>
             <Switch className="shrink-0 mt-1" checked={isGenshinMode} onCheckedChange={onGenshinModeChange} />
+          </div>
+
+          <div className="border-t border-[var(--border-color)] pt-4">
+            <div className="text-sm font-medium text-[var(--text-primary)] mb-3">声音</div>
+            <SoundSettingsSection
+              bgmVolume={bgmVolume}
+              isSoundEnabled={isSoundEnabled}
+              isAiVoiceEnabled={isAiVoiceEnabled}
+              onBgmVolumeChange={onBgmVolumeChange}
+              onSoundEnabledChange={onSoundEnabledChange}
+              onAiVoiceEnabledChange={onAiVoiceEnabledChange}
+            />
           </div>
         </div>
       </DialogContent>
