@@ -41,7 +41,7 @@ import {
   generateDailySummary,
   getNextAliveSeat,
 } from "@/lib/game-master";
-import { buildGenshinModelRefs, generateCharacters, generateGenshinModeCharacters } from "@/lib/character-generator";
+import { buildGenshinModelRefs, generateCharacters, generateGenshinModeCharacters, sampleModelRefs } from "@/lib/character-generator";
 import { SYSTEM_MESSAGES, UI_TEXT } from "@/lib/game-texts";
 import { getRandomScenario } from "@/lib/scenarios";
 import { DELAY_CONFIG, getRoleName } from "@/lib/game-constants";
@@ -863,17 +863,18 @@ export function useGameLogic() {
     })();
   }, [gameState.devPhaseJump, getToken, runNightPhaseAction, resolveNight, startDayPhaseInternal, enterVotePhase, startLastWordsPhase, resolveVotePhase, proceedToNight, setGameState]);
 
-  // ============================================
-  // 公开 API
-  // ============================================
-
   /** 开始游戏 */
-  const startGame = useCallback(async (options?: StartGameOptions) => {
-    const { fixedRoles, devPreset, difficulty = "normal", playerCount = 10, isGenshinMode = false } = options || {};
-    const totalPlayers = Math.min(12, Math.max(8, playerCount));
+  const startGame = useCallback(async (options?: Partial<StartGameOptions>) => {
+    const {
+      fixedRoles,
+      devPreset,
+      difficulty = "normal",
+      playerCount = 10,
+      isGenshinMode = false,
+    } = options ?? {};
 
-    // 清理状态
-    setGameState({ ...createInitialGameState(), difficulty });
+    const totalPlayers = playerCount;
+
     resetDialogueState();
     setInputText("");
     setShowTable(false);
@@ -892,6 +893,20 @@ export function useGameLogic() {
       const makeId = () => generateUUID();
 
       const humanSeat = 0;
+
+      const aiSeats = Array.from({ length: totalPlayers }, (_, seat) => seat).filter(
+        (seat) => seat !== humanSeat
+      );
+      const aiSeatOrder = (() => {
+        const shuffled = [...aiSeats];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      })();
+
+      const aiModelRefs = sampleModelRefs(totalPlayers - 1);
       const initialPlayers: Player[] = Array.from({ length: totalPlayers }).map((_, seat) => {
         const isHuman = seat === humanSeat;
         return {
@@ -930,10 +945,11 @@ export function useGameLogic() {
         characters = await generateCharacters(totalPlayers - 1, scenario, {
           onBaseProfiles: (profiles) => {
             profiles.forEach((p, i) => {
+              const seat = aiSeatOrder[i] ?? i + 1;
               window.setTimeout(() => {
                 setGameState((prev) => {
                   const nextPlayers = prev.players.map((pl) => {
-                    if (pl.seat === i + 1) return { ...pl, displayName: p.displayName };
+                    if (pl.seat === seat) return { ...pl, displayName: p.displayName };
                     return pl;
                   });
                   return { ...prev, players: nextPlayers };
@@ -942,7 +958,7 @@ export function useGameLogic() {
             });
           },
           onCharacter: (index, character) => {
-            const seat = index + 1;
+            const seat = aiSeatOrder[index] ?? index + 1;
             window.setTimeout(() => {
               setGameState((prev) => {
                 const nextPlayers = prev.players.map((pl) => {
@@ -952,7 +968,7 @@ export function useGameLogic() {
                     ...pl,
                     displayName: character.displayName,
                     agentProfile: {
-                      modelRef: getRandomModelRef(),
+                      modelRef: aiModelRefs[index] ?? getRandomModelRef(),
                       persona: character.persona,
                     },
                   };
@@ -971,7 +987,8 @@ export function useGameLogic() {
         totalPlayers,
         fixedRoles,
         seedPlayerIds,
-        genshinModelRefs
+        isGenshinMode ? genshinModelRefs : aiModelRefs,
+        aiSeatOrder
       );
 
       let newState: GameState = {
@@ -1049,7 +1066,7 @@ export function useGameLogic() {
     } finally {
       setIsLoading(false);
     }
-  }, [humanName, setGameState, setDialogue, resetDialogueState]);
+  }, [humanName, resetDialogueState, setDialogue, setGameStarted, setGameState, setInputText, setIsLoading, setShowTable]);
 
   /** 角色揭示后继续 */
   const continueAfterRoleReveal = useCallback(async () => {
@@ -1443,19 +1460,21 @@ export function useGameLogic() {
 
     const { segments, currentIndex, player, afterSpeech } = queue;
 
+    let nextState = gameStateRef.current;
+
     // 将当前句子添加到消息列表
     const currentSegment = segments[currentIndex];
     if (currentSegment && currentSegment.trim().length > 0) {
-      const newState = addPlayerMessage(gameStateRef.current, player.playerId, currentSegment);
-      setGameState(newState);
+      nextState = addPlayerMessage(nextState, player.playerId, currentSegment);
+      setGameState(nextState);
 
-      const rawTranscript = buildRawDayTranscript(newState);
+      const rawTranscript = buildRawDayTranscript(nextState);
       const shouldSummarizeEarly =
-        newState.day > 0 &&
-        !newState.dailySummaries?.[newState.day]?.length &&
+        nextState.day > 0 &&
+        !nextState.dailySummaries?.[nextState.day]?.length &&
         rawTranscript.length > 9000;
       if (shouldSummarizeEarly) {
-        void maybeGenerateDailySummary(newState)
+        void maybeGenerateDailySummary(nextState)
           .then((summarized) => {
             setGameState((prev) => {
               if (prev.gameId !== summarized.gameId || prev.day !== summarized.day) return prev;
@@ -1480,7 +1499,7 @@ export function useGameLogic() {
     setIsWaitingForAI(false);
 
     if (result.afterSpeech) {
-      await result.afterSpeech(gameStateRef.current);
+      await result.afterSpeech(nextState);
       return { finished: true, shouldAdvanceToNextSpeaker: false };
     }
 

@@ -204,11 +204,13 @@ export interface DailySummaryFact {
 export const AVAILABLE_MODELS: ModelRef[] = [
   // { provider: "zenmux", model: "deepseek/deepseek-v3.2" },
   { provider: "dashscope", model: "deepseek-v3.2" },
-  { provider: "dashscope", model: "google/gemini-3-flash-preview" },
+  { provider: "dashscope", model: "qwen-plus-2025-12-01" },
+  { provider: "dashscope", model: "Moonshot-Kimi-K2-Instruct" },
+  { provider: "dashscope", model: "qwen3-vl-235b-a22b-instruct" },
+
   { provider: "zenmux", model: "google/gemini-3-flash-preview" },
   // { provider: "openrouter", model: "anthropic/claude-haiku-4.5" },
   // { provider: "openrouter", model: "minimax/minimax-m2.1" },
-  { provider: "dashscope", model: "qwen/qwen3-235b-a22b-2507" },
   { provider: "zenmux", model: "moonshotai/kimi-k2-0905" },
   // { provider: "zenmux", model: "z-ai/glm-4.7-flashx" },
   // { provider: "zenmux", model: "qwen/qwen3-max" },

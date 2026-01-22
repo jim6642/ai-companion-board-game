@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { AVAILABLE_MODELS } from "@/types/game";
 
 const ZENMUX_API_URL = "https://zenmux.ai/api/v1/chat/completions";
-const DASHSCOPE_API_BASE_URL = "https://dashscope.aliyuncs.com/api/v1";
+const DASHSCOPE_API_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
 const DASHSCOPE_CHAT_COMPLETIONS_URL = `${DASHSCOPE_API_BASE_URL}/chat/completions`;
 
 type Provider = "zenmux" | "dashscope";
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       typeof temperature === "number" && Number.isFinite(temperature) ? temperature : 0.7;
     const cappedTemperature = (() => {
       const lower = typeof model === "string" ? model.toLowerCase() : "";
-      if (lower.startsWith("moonshotai/")) {
+      if (lower.startsWith("moonshotai/") || lower.includes("kimi")) {
         return Math.min(Math.max(0, normalizedTemperature), 1);
       }
       return Math.max(0, normalizedTemperature);
@@ -169,22 +169,9 @@ export async function POST(request: NextRequest) {
 
       if (stream) {
         requestBody.stream = true;
-        requestBody.stream_options = { include_usage: true };
       }
 
       if (response_format) {
-        if (response_format.type === "json_object") {
-          const hasJsonKeyword = JSON.stringify(processedMessages).toLowerCase().includes("json");
-          if (!hasJsonKeyword) {
-            return NextResponse.json(
-              {
-                error:
-                  "When using response_format with type 'json_object', messages must contain the word 'json' (case-insensitive)",
-              },
-              { status: 400 }
-            );
-          }
-        }
         requestBody.response_format = response_format;
       }
 
@@ -199,8 +186,17 @@ export async function POST(request: NextRequest) {
 
       if (!response.ok) {
         const errorText = await response.text();
+        let parsed: unknown = undefined;
+        try {
+          parsed = JSON.parse(errorText);
+        } catch {
+          // ignore
+        }
         return NextResponse.json(
-          { error: `DashScope API error: ${response.status} - ${errorText}` },
+          {
+            error: `DashScope API error: ${response.status}`,
+            details: parsed ?? errorText,
+          },
           { status: response.status }
         );
       }
