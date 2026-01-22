@@ -31,6 +31,7 @@ export type ResponseFormat =
   | { type: "json_object" }
   | {
       type: "json_schema";
+      strict?: boolean;
       json_schema: {
         name: string;
         description?: string;
