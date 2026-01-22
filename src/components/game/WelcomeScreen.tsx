@@ -183,6 +183,12 @@ interface WelcomeScreenProps {
   isLoading: boolean;
   isGenshinMode: boolean;
   onGenshinModeChange: (value: boolean) => void;
+  bgmVolume: number;
+  isSoundEnabled: boolean;
+  isAiVoiceEnabled: boolean;
+  onBgmVolumeChange: (value: number) => void;
+  onSoundEnabledChange: (value: boolean) => void;
+  onAiVoiceEnabledChange: (value: boolean) => void;
 }
 
 export function WelcomeScreen({
@@ -193,6 +199,12 @@ export function WelcomeScreen({
   isLoading,
   isGenshinMode,
   onGenshinModeChange,
+  bgmVolume,
+  isSoundEnabled,
+  isAiVoiceEnabled,
+  onBgmVolumeChange,
+  onSoundEnabledChange,
+  onAiVoiceEnabledChange,
 }: WelcomeScreenProps) {
   const sponsorEmail = "zhihuang.oiloil@gmail.com";
   const sponsorMailto =
@@ -463,6 +475,12 @@ export function WelcomeScreen({
         onPlayerCountChange={setPlayerCount}
         isGenshinMode={isGenshinMode}
         onGenshinModeChange={onGenshinModeChange}
+        bgmVolume={bgmVolume}
+        isSoundEnabled={isSoundEnabled}
+        isAiVoiceEnabled={isAiVoiceEnabled}
+        onBgmVolumeChange={onBgmVolumeChange}
+        onSoundEnabledChange={onSoundEnabledChange}
+        onAiVoiceEnabledChange={onAiVoiceEnabledChange}
       />
       <AuthModal open={isAuthOpen} onOpenChange={setIsAuthOpen} />
       <AccountModal open={isAccountOpen} onOpenChange={setIsAccountOpen} />
@@ -643,6 +661,19 @@ export function WelcomeScreen({
           name="Minimax"
           note="Minimax 帮助我们生成过场音效与白天语音"
         />
+
+        {/* Sponsor card - Zenmux (右下) */}
+        <SponsorCard
+          sponsorId="zenmux"
+          href="https://zenmux.ai/aboutus"
+          className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--right-bottom"
+          rotate="-4deg"
+          delay={0.6}
+          logoSrc="/sponsor/zenmux.png"
+          logoAlt="Zenmux"
+          name="Zenmux"
+          note="聚合全球顶尖大模型，为每一场逻辑博弈注入敏锐灵魂。"
+        />
       </div>
 
       <div className="wc-welcome-actions absolute top-6 right-6 z-20 flex items-center gap-2">
@@ -777,6 +808,17 @@ export function WelcomeScreen({
             >
               <img src="/sponsor/minimax.png" alt="Minimax" className="wc-paper-stamp__logo" />
               <span className="wc-paper-stamp__name">Minimax</span>
+            </a>
+            <a
+              href="https://zenmux.ai/aboutus?ref=wolfcha"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="wc-paper-stamp"
+              style={{ "--stamp-rotate": "-3deg" } as React.CSSProperties}
+              onClick={() => void trackSponsorClick("zenmux")}
+            >
+              <img src="/sponsor/zenmux.png" alt="Zenmux" className="wc-paper-stamp__logo" />
+              <span className="wc-paper-stamp__name">Zenmux</span>
             </a>
           </div>
 
