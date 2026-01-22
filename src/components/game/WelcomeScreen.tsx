@@ -149,7 +149,7 @@ function buildDefaultRoles(playerCount: number): Role[] {
         "Seer",
         "Witch",
         "Hunter",
-        "Villager",
+        "Guard",
         "Villager",
         "Villager",
         "Villager",
@@ -159,7 +159,7 @@ function buildDefaultRoles(playerCount: number): Role[] {
 
 function getRoleCountConfig(playerCount: number) {
   const wolfCount = playerCount >= 11 ? 4 : 3;
-  const guardCount = playerCount >= 11 ? 1 : 0;
+  const guardCount = playerCount >= 10 ? 1 : 0;
   const seerCount = 1;
   const witchCount = 1;
   const hunterCount = 1;

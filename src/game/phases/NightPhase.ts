@@ -104,11 +104,12 @@ export class NightPhase extends GamePhase {
   }
 
   private async runGuardAction(state: GameState, runtime: NightPhaseRuntime): Promise<GameState> {
+    const guard = state.players.find((p) => p.role === "Guard" && p.alive);
+    if (!guard) return state;
+
     let currentState = this.transitionPhase(state, "NIGHT_GUARD_ACTION");
     currentState = addSystemMessage(currentState, SYSTEM_MESSAGES.guardActionStart);
     runtime.setGameState(currentState);
-
-    const guard = currentState.players.find((p) => p.role === "Guard" && p.alive);
 
     if (guard) {
       if (guard.isHuman) {
@@ -216,12 +217,13 @@ export class NightPhase extends GamePhase {
   }
 
   private async runWitchAction(state: GameState, runtime: NightPhaseRuntime): Promise<GameState> {
+    const witch = state.players.find((p) => p.role === "Witch" && p.alive);
+    const canWitchAct = witch && (!state.roleAbilities.witchHealUsed || !state.roleAbilities.witchPoisonUsed);
+    if (!witch || !canWitchAct) return state;
+
     let currentState = this.transitionPhase(state, "NIGHT_WITCH_ACTION");
     currentState = addSystemMessage(currentState, SYSTEM_MESSAGES.witchActionStart);
     runtime.setGameState(currentState);
-
-    const witch = currentState.players.find((p) => p.role === "Witch" && p.alive);
-    const canWitchAct = witch && (!currentState.roleAbilities.witchHealUsed || !currentState.roleAbilities.witchPoisonUsed);
 
     if (witch && canWitchAct) {
       if (witch.isHuman) {
@@ -265,11 +267,12 @@ export class NightPhase extends GamePhase {
   }
 
   private async runSeerAction(state: GameState, runtime: NightPhaseRuntime): Promise<GameState> {
+    const seer = state.players.find((p) => p.role === "Seer" && p.alive);
+    if (!seer) return state;
+
     let currentState = this.transitionPhase(state, "NIGHT_SEER_ACTION");
     currentState = addSystemMessage(currentState, SYSTEM_MESSAGES.seerActionStart);
     runtime.setGameState(currentState);
-
-    const seer = currentState.players.find((p) => p.role === "Seer" && p.alive);
 
     if (seer) {
       if (seer.isHuman) {
