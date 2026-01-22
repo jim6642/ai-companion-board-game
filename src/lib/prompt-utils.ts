@@ -1,6 +1,6 @@
 import type { DifficultyLevel, GameState, Player } from "@/types/game";
 import type { SystemPromptPart } from "@/game/core/types";
-import type { OpenRouterMessage } from "./openrouter";
+import type { LLMMessage } from "./llm";
 
 /**
  * Prompt helper utilities used by Phase prompts.
@@ -124,22 +124,37 @@ export const buildAliveCountsSection = (state: GameState): string => {
 };
 
 export const buildDailySummariesSection = (state: GameState): string => {
+  const factEntries = Object.entries(state.dailySummaryFacts || {})
+    .map(([day, facts]) => ({ day: Number(day), facts }))
+    .filter((x) => Number.isFinite(x.day) && Array.isArray(x.facts));
+
   const entries = Object.entries(state.dailySummaries || {})
     .map(([day, bullets]) => ({ day: Number(day), bullets }))
-    .filter((x) => Number.isFinite(x.day) && Array.isArray(x.bullets))
-    .sort((a, b) => a.day - b.day);
+    .filter((x) => Number.isFinite(x.day) && Array.isArray(x.bullets));
 
-  if (entries.length === 0) return "";
+  const merged = new Map<number, { facts?: typeof factEntries[number]["facts"]; bullets?: string[] }>();
+  factEntries.forEach((entry) => {
+    merged.set(entry.day, { facts: entry.facts });
+  });
+  entries.forEach((entry) => {
+    const prev = merged.get(entry.day) || {};
+    merged.set(entry.day, { ...prev, bullets: entry.bullets });
+  });
+
+  if (merged.size === 0) return "";
 
   const lines: string[] = [];
-  for (const e of entries) {
-    const cleaned = e.bullets
+  for (const [day, entry] of Array.from(merged.entries()).sort((a, b) => a[0] - b[0])) {
+    const factTexts = (entry.facts || [])
+      .map((f) => (typeof f.fact === "string" ? f.fact.trim() : ""))
+      .filter(Boolean);
+    const bulletTexts = (entry.bullets || [])
       .filter((x): x is string => typeof x === "string")
       .map((s) => s.trim())
-      .filter(Boolean)
-      .slice(0, 8);
+      .filter(Boolean);
+    const cleaned = (factTexts.length > 0 ? factTexts : bulletTexts).slice(0, 8);
     if (cleaned.length === 0) continue;
-    lines.push(`第${e.day}天: ${cleaned.join("；")}`);
+    lines.push(`第${day}天: ${cleaned.join("；")}`);
   }
 
   if (lines.length === 0) return "";
@@ -147,7 +162,6 @@ export const buildDailySummariesSection = (state: GameState): string => {
 };
 
 export const buildTodayTranscript = (state: GameState, maxChars: number): string => {
-  const aliveIds = new Set(state.players.filter((p) => p.alive).map((p) => p.playerId));
   const dayStartIndex = (() => {
     for (let i = state.messages.length - 1; i >= 0; i--) {
       const m = state.messages[i];
@@ -170,18 +184,23 @@ export const buildTodayTranscript = (state: GameState, maxChars: number): string
   );
 
   const transcript = slice
-    .filter((m) => !m.isSystem && aliveIds.has(m.playerId))
+    .filter((m) => !m.isSystem)
     .map((m) => `${m.playerName}: ${m.content}`)
     .join("\n");
 
   if (!transcript) return "";
   if (transcript.length <= maxChars) return transcript;
 
+  const summaryFacts = state.dailySummaryFacts?.[state.day];
   const summaryBullets = state.dailySummaries?.[state.day];
-  if (summaryBullets && summaryBullets.length > 0) {
+  const summaryItems =
+    summaryFacts && summaryFacts.length > 0
+      ? summaryFacts.map((f) => f.fact).filter(Boolean)
+      : summaryBullets || [];
+  if (summaryItems.length > 0) {
     // 使用更多摘要条目（最多8条），保留更多信息
-    const summaryText = summaryBullets
-      .map((s) => s.trim())
+    const summaryText = summaryItems
+      .map((s) => String(s).trim())
       .filter(Boolean)
       .slice(0, 8)
       .join("；");
@@ -242,11 +261,12 @@ export const buildSystemAnnouncementsSinceDawn = (state: GameState, maxLines: nu
   const systemLines = slice
     .filter((m) => m.isSystem)
     .map((m) => String(m.content || "").trim())
-    .filter((c) => c && c !== "天亮了" && c !== "进入投票环节")
-    .slice(0, Math.max(0, maxLines));
+    .filter((c) => c && c !== "天亮了" && c !== "进入投票环节");
 
-  if (systemLines.length === 0) return "";
-  return systemLines.join("\n");
+  const limit = Math.max(0, maxLines);
+  if (limit === 0 || systemLines.length === 0) return "";
+  const recentLines = systemLines.length > limit ? systemLines.slice(-limit) : systemLines;
+  return recentLines.join("\n");
 };
 
 export const buildGameContext = (
@@ -266,6 +286,19 @@ export const buildGameContext = (
 有效座位号范围: 1号-${totalSeats}号（共${totalSeats}人），严禁提及范围外座位号
 存活玩家:
 ${playerList}`;
+
+  // Always include sheriff info as a stable field (do not rely on truncated announcements).
+  const sheriffSeat = state.badge.holderSeat;
+  if (sheriffSeat === null) {
+    context += `\n\n【当前警长】无`;
+  } else {
+    const sheriffPlayer = state.players.find((p) => p.seat === sheriffSeat) || null;
+    if (sheriffPlayer) {
+      context += `\n\n【当前警长】${sheriffSeat + 1}号 ${sheriffPlayer.displayName}${sheriffPlayer.alive ? "" : "（已出局）"}`;
+    } else {
+      context += `\n\n【当前警长】${sheriffSeat + 1}号（未知）`;
+    }
+  }
 
   context += `\n\n${buildAliveCountsSection(state)}`;
 
@@ -328,6 +361,10 @@ ${playerList}`;
 
   if (state.voteHistory && Object.keys(state.voteHistory).length > 0) {
     context += `\n\n【历史投票】`;
+    const sheriffSeat = state.badge.holderSeat;
+    const sheriffPlayer =
+      sheriffSeat !== null ? state.players.find((p) => p.seat === sheriffSeat) : null;
+    const sheriffPlayerId = sheriffPlayer?.playerId;
     Object.entries(state.voteHistory).forEach(([day, votes]) => {
       context += `\n第${day}天投票:`;
       const voteGroups: Record<number, number[]> = {};
@@ -343,7 +380,15 @@ ${playerList}`;
         .forEach(([target, voters]) => {
           const targetPlayer = state.players.find(p => p.seat === Number(target));
           const voterNumbers = voters.map(s => `${s + 1}号`).join('、');
-          context += `\n  ${Number(target) + 1}号${targetPlayer?.displayName}(共${voters.length}票): ${voterNumbers}`;
+          const weightedVotes = voters.reduce((sum, seat) => {
+            const voter = state.players.find((p) => p.seat === seat);
+            if (!voter) return sum;
+            return sum + (voter.playerId === sheriffPlayerId ? 1.5 : 1);
+          }, 0);
+          const voteLabel = Number.isInteger(weightedVotes)
+            ? `${weightedVotes}`
+            : weightedVotes.toFixed(1);
+          context += `\n  ${Number(target) + 1}号${targetPlayer?.displayName}(共${voteLabel}票): ${voterNumbers}`;
         });
     });
   }
@@ -393,7 +438,7 @@ ${playerList}`;
 
   if (player.role === "Werewolf") {
     const teammates = state.players.filter(
-      (p) => p.role === "Werewolf" && p.playerId !== player.playerId
+      (p) => p.role === "Werewolf" && p.alive && p.playerId !== player.playerId
     );
     if (teammates.length > 0) {
       context += `\n\n【狼队友】
@@ -401,7 +446,8 @@ ${teammates.map((t) => `${t.seat + 1}号 ${t.displayName}`).join(", ")}`;
     }
   }
 
-  const voteEntries = Object.entries(state.votes);
+  const showCurrentVotes = state.phase === "DAY_VOTE" || state.phase === "DAY_RESOLVE";
+  const voteEntries = showCurrentVotes ? Object.entries(state.votes) : [];
   if (voteEntries.length > 0) {
     const voteLines = voteEntries
       .map(([voterId, targetSeat]) => {
@@ -423,7 +469,7 @@ ${teammates.map((t) => `${t.seat + 1}号 ${t.displayName}`).join(", ")}`;
  * @param dynamicContent - Dynamic content that changes per request (game state, player-specific info)
  * @param useCache - Whether to enable caching (default: true)
  * @param ttl - Cache TTL: "5m" (default) or "1h"
- * @returns OpenRouterMessage with cache_control breakpoints
+ * @returns LLMMessage with cache_control breakpoints
  */
 export function buildSystemTextFromParts(parts: SystemPromptPart[]): string {
   return parts
@@ -437,7 +483,7 @@ export function buildCachedSystemMessageFromParts(
   parts: SystemPromptPart[] | undefined,
   fallbackSystem: string,
   useCache: boolean = true
-): OpenRouterMessage {
+): LLMMessage {
   if (!parts || parts.length === 0 || !useCache) {
     return { role: "system", content: fallbackSystem };
   }

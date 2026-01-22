@@ -121,10 +121,11 @@ export class VotePhase extends GamePhase {
     const todayTranscript = buildTodayTranscript(state, 9000);
     const selfSpeech = buildPlayerTodaySpeech(state, player, 1200);
 
+    const seerHistory = state.nightActions.seerHistory || [];
     const roleHints =
       player.role === "Werewolf"
         ? "提示：避免投狼队友，但也别太明显保人"
-        : player.role === "Seer" && state.nightActions.seerResult
+        : player.role === "Seer" && seerHistory.length > 0
           ? "提示：根据查验结果决定"
           : "";
 

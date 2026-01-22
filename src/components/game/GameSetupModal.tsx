@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { DifficultyLevel } from "@/types/game";
+import { SoundSettingsSection } from "@/components/game/SettingsModal";
 
 interface GameSetupModalProps {
   open: boolean;
@@ -20,6 +21,12 @@ interface GameSetupModalProps {
   onPlayerCountChange: (value: number) => void;
   isGenshinMode: boolean;
   onGenshinModeChange: (value: boolean) => void;
+  bgmVolume: number;
+  isSoundEnabled: boolean;
+  isAiVoiceEnabled: boolean;
+  onBgmVolumeChange: (value: number) => void;
+  onSoundEnabledChange: (value: boolean) => void;
+  onAiVoiceEnabledChange: (value: boolean) => void;
 }
 
 const DIFFICULTY_OPTIONS: Array<{ value: DifficultyLevel; label: string; description: string }> = [
@@ -45,6 +52,12 @@ export function GameSetupModal({
   onPlayerCountChange,
   isGenshinMode,
   onGenshinModeChange,
+  bgmVolume,
+  isSoundEnabled,
+  isAiVoiceEnabled,
+  onBgmVolumeChange,
+  onSoundEnabledChange,
+  onAiVoiceEnabledChange,
 }: GameSetupModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,6 +122,18 @@ export function GameSetupModal({
             </div>
             </div>
             <Switch className="shrink-0 mt-1" checked={isGenshinMode} onCheckedChange={onGenshinModeChange} />
+          </div>
+
+          <div className="border-t border-[var(--border-color)] pt-4">
+            <div className="text-sm font-medium text-[var(--text-primary)] mb-3">声音</div>
+            <SoundSettingsSection
+              bgmVolume={bgmVolume}
+              isSoundEnabled={isSoundEnabled}
+              isAiVoiceEnabled={isAiVoiceEnabled}
+              onBgmVolumeChange={onBgmVolumeChange}
+              onSoundEnabledChange={onSoundEnabledChange}
+              onAiVoiceEnabledChange={onAiVoiceEnabledChange}
+            />
           </div>
         </div>
       </DialogContent>

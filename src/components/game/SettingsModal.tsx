@@ -6,6 +6,15 @@ import { toast } from "sonner";
 import { useCallback, useMemo, useState } from "react";
 import type { GameState } from "@/types/game";
 
+interface SoundSettingsSectionProps {
+  bgmVolume: number;
+  isSoundEnabled: boolean;
+  isAiVoiceEnabled: boolean;
+  onBgmVolumeChange: (value: number) => void;
+  onSoundEnabledChange: (value: boolean) => void;
+  onAiVoiceEnabledChange: (value: boolean) => void;
+}
+
 interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -16,6 +25,56 @@ interface SettingsModalProps {
   onBgmVolumeChange: (value: number) => void;
   onSoundEnabledChange: (value: boolean) => void;
   onAiVoiceEnabledChange: (value: boolean) => void;
+}
+
+export function SoundSettingsSection({
+  bgmVolume,
+  isSoundEnabled,
+  isAiVoiceEnabled,
+  onBgmVolumeChange,
+  onSoundEnabledChange,
+  onAiVoiceEnabledChange,
+}: SoundSettingsSectionProps) {
+  const volumePercent = Math.round(bgmVolume * 100);
+
+  return (
+    <div className="space-y-5">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-sm text-[var(--text-primary)]">
+          <span>背景音量</span>
+          <span className="text-[var(--text-secondary)]">{volumePercent}%</span>
+        </div>
+        <Slider
+          min={0}
+          max={100}
+          step={1}
+          value={volumePercent}
+          onValueChange={(value) => onBgmVolumeChange(value / 100)}
+          disabled={!isSoundEnabled}
+        />
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <div className="text-sm font-medium text-[var(--text-primary)]">总开关</div>
+          <div className="text-xs text-[var(--text-muted)]">关闭后将静音所有音效</div>
+        </div>
+        <Switch checked={isSoundEnabled} onCheckedChange={onSoundEnabledChange} />
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <div className="text-sm font-medium text-[var(--text-primary)]">角色配音</div>
+          <div className="text-xs text-[var(--text-muted)]">控制 AI 角色语音播放</div>
+        </div>
+        <Switch
+          checked={isAiVoiceEnabled}
+          onCheckedChange={onAiVoiceEnabledChange}
+          disabled={!isSoundEnabled}
+        />
+      </div>
+    </div>
+  );
 }
 
 export function SettingsModal({
@@ -29,8 +88,6 @@ export function SettingsModal({
   onSoundEnabledChange,
   onAiVoiceEnabledChange,
 }: SettingsModalProps) {
-  const volumePercent = Math.round(bgmVolume * 100);
-
   const [view, setView] = useState<"settings" | "about">("settings");
   const [groupImgOk, setGroupImgOk] = useState<boolean | null>(null);
 
@@ -144,42 +201,14 @@ export function SettingsModal({
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="space-y-5">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm text-[var(--text-primary)]">
-                  <span>背景音量</span>
-                  <span className="text-[var(--text-secondary)]">{volumePercent}%</span>
-                </div>
-                <Slider
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={volumePercent}
-                  onValueChange={(value) => onBgmVolumeChange(value / 100)}
-                  disabled={!isSoundEnabled}
-                />
-              </div>
-
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-medium text-[var(--text-primary)]">总开关</div>
-                  <div className="text-xs text-[var(--text-muted)]">关闭后将静音所有音效</div>
-                </div>
-                <Switch checked={isSoundEnabled} onCheckedChange={onSoundEnabledChange} />
-              </div>
-
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-medium text-[var(--text-primary)]">角色配音</div>
-                  <div className="text-xs text-[var(--text-muted)]">控制 AI 角色语音播放</div>
-                </div>
-                <Switch
-                  checked={isAiVoiceEnabled}
-                  onCheckedChange={onAiVoiceEnabledChange}
-                  disabled={!isSoundEnabled}
-                />
-              </div>
-            </div>
+            <SoundSettingsSection
+              bgmVolume={bgmVolume}
+              isSoundEnabled={isSoundEnabled}
+              isAiVoiceEnabled={isAiVoiceEnabled}
+              onBgmVolumeChange={onBgmVolumeChange}
+              onSoundEnabledChange={onSoundEnabledChange}
+              onAiVoiceEnabledChange={onAiVoiceEnabledChange}
+            />
 
             <div className="rounded-lg border-2 border-[var(--border-color)] bg-[var(--bg-secondary)] p-3 space-y-3">
               <div>
