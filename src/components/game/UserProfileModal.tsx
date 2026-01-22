@@ -21,7 +21,7 @@
    totalReferrals?: number | null;
    onChangePassword: () => void;
    onShareInvite: () => void;
-   onSignOut: () => void;
+  onSignOut: () => void | Promise<void>;
  }
  
  export function UserProfileModal({
@@ -50,6 +50,14 @@
      }
    };
  
+  const handleSignOut = async () => {
+    try {
+      await onSignOut();
+    } finally {
+      onOpenChange(false);
+    }
+  };
+
    return (
      <Dialog open={open} onOpenChange={onOpenChange}>
        <DialogContent className="max-w-md">
@@ -104,7 +112,7 @@
              </Button>
            </div>
  
-           <Button type="button" variant="outline" onClick={onSignOut} className="w-full gap-2">
+          <Button type="button" variant="outline" onClick={handleSignOut} className="w-full gap-2">
              <SignOut size={16} />
              退出登录
            </Button>

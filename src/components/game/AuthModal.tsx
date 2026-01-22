@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import {
@@ -33,7 +34,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<ReactNode | null>(null);
   const [emailCooldownUntilMs, setEmailCooldownUntilMs] = useState<number | null>(null);
 
   const emailCooldownSecondsLeft = useMemo(() => {
@@ -182,8 +183,20 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
         resetForm();
       } else if (data.user) {
         // New user, needs email confirmation
-        setSuccessMessage("注册成功！请检查邮箱完成验证。");
-        toast.success("注册成功", { description: "请检查邮箱完成验证" });
+        setSuccessMessage(
+          <div className="space-y-1">
+            <div>注册成功！我们已向您的邮箱发送验证邮件，请打开邮件完成验证。</div>
+            <div className="font-semibold text-amber-700">
+              没有收到？邮件服务商有时会把自动验证邮件误判为广告/群发，可能会被放到垃圾箱/广告邮件。
+            </div>
+            <div className="text-[var(--text-muted)]">
+              建议将发件人加入白名单/通讯录，并稍等 1–2 分钟再刷新收件箱。
+            </div>
+          </div>
+        );
+        toast.success("注册成功", {
+          description: "请查收邮箱完成验证（可能被误判到垃圾箱/广告邮件）",
+        });
       }
     }
   };
