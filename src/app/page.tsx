@@ -182,6 +182,11 @@ export default function Home() {
     document.documentElement.setAttribute("data-theme", visualIsNight ? "dark" : "light");
   }, [visualIsNight]);
 
+  useEffect(() => {
+    if (gameState.phase !== "GAME_END") return;
+    setAiVoiceEnabled(false);
+  }, [gameState.phase, setAiVoiceEnabled]);
+
   const clearDayNightBlinkTimers = useCallback(() => {
     dayNightBlinkTimeoutsRef.current.forEach((t) => window.clearTimeout(t));
     dayNightBlinkTimeoutsRef.current = [];
@@ -1095,7 +1100,10 @@ export default function Home() {
             <WelcomeScreen
               humanName={humanName}
               setHumanName={setHumanName}
-              onStart={(options) => startGame({ ...(options ?? {}), isGenshinMode })}
+              onStart={(options) => {
+                setAiVoiceEnabled(false);
+                startGame({ ...(options ?? {}), isGenshinMode });
+              }}
               onAbort={restartGame}
               isLoading={isLoading}
               isGenshinMode={isGenshinMode}

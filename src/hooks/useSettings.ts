@@ -14,7 +14,7 @@ export interface AudioSettings {
 const defaultSettings: AudioSettings = {
   bgmVolume: 0.35,
   isSoundEnabled: true,
-  isAiVoiceEnabled: true,
+  isAiVoiceEnabled: false,
   isGenshinMode: false,
 };
 
@@ -27,8 +27,7 @@ const normalizeSettings = (value: Partial<AudioSettings>): AudioSettings => {
     ),
     isSoundEnabled:
       typeof value.isSoundEnabled === "boolean" ? value.isSoundEnabled : defaultSettings.isSoundEnabled,
-    isAiVoiceEnabled:
-      typeof value.isAiVoiceEnabled === "boolean" ? value.isAiVoiceEnabled : defaultSettings.isAiVoiceEnabled,
+    isAiVoiceEnabled: defaultSettings.isAiVoiceEnabled,
     isGenshinMode:
       typeof value.isGenshinMode === "boolean" ? value.isGenshinMode : defaultSettings.isGenshinMode,
   };
@@ -57,7 +56,12 @@ export function useSettings() {
 
   useEffect(() => {
     if (!isLoaded) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    const persisted: Partial<AudioSettings> = {
+      bgmVolume: settings.bgmVolume,
+      isSoundEnabled: settings.isSoundEnabled,
+      isGenshinMode: settings.isGenshinMode,
+    };
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
   }, [settings, isLoaded]);
 
   const setBgmVolume = useCallback((value: number) => {
