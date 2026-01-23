@@ -1,3 +1,5 @@
+import { getDashscopeApiKey, getZenmuxApiKey, isCustomKeyEnabled } from "@/lib/api-keys";
+
 export type LLMContentPart =
   | { type: "text"; text: string; cache_control?: { type: "ephemeral"; ttl?: "1h" } }
   | { type: "image_url"; image_url: { url: string; detail?: string } }
@@ -111,12 +113,25 @@ export async function generateCompletion(
       ? Math.max(16, Math.floor(options.max_tokens))
       : undefined;
 
+  const customEnabled = isCustomKeyEnabled();
+  const headerApiKey = customEnabled ? getZenmuxApiKey() : "";
+  const dashscopeApiKey = customEnabled ? getDashscopeApiKey() : "";
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (headerApiKey) {
+    headers["X-Zenmux-Api-Key"] = headerApiKey;
+  }
+  if (dashscopeApiKey) {
+    headers["X-Dashscope-Api-Key"] = dashscopeApiKey;
+  }
+
   const response = await fetchWithRetry(
     "/api/chat",
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        ...headers,
       },
       body: JSON.stringify({
         model: options.model,
@@ -172,12 +187,25 @@ export async function* generateCompletionStream(
       ? Math.max(16, Math.floor(options.max_tokens))
       : undefined;
 
+  const customEnabled = isCustomKeyEnabled();
+  const headerApiKey = customEnabled ? getZenmuxApiKey() : "";
+  const dashscopeApiKey = customEnabled ? getDashscopeApiKey() : "";
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (headerApiKey) {
+    headers["X-Zenmux-Api-Key"] = headerApiKey;
+  }
+  if (dashscopeApiKey) {
+    headers["X-Dashscope-Api-Key"] = dashscopeApiKey;
+  }
+
   const response = await fetchWithRetry(
     "/api/chat",
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        ...headers,
       },
       body: JSON.stringify({
         model: options.model,

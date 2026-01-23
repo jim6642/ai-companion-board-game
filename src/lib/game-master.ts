@@ -15,7 +15,7 @@ import {
   type ModelRef,
 } from "@/types/game";
 import { GAME_TEMPERATURE } from "./ai-config";
-import { type GeneratedCharacter } from "./character-generator";
+import { sampleModelRefs, type GeneratedCharacter } from "./character-generator";
 import { aiLogger } from "./ai-logger";
 import { PhaseManager } from "@/game/core/PhaseManager";
 import type { PromptResult } from "@/game/core/types";
@@ -31,6 +31,8 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 function getRandomModelRef(): ModelRef {
+  const fallback = sampleModelRefs(1)[0];
+  if (fallback) return fallback;
   if (AVAILABLE_MODELS.length === 0) {
     // Fallback to GENERATOR_MODEL if no models available
     return { provider: "zenmux" as const, model: GENERATOR_MODEL };

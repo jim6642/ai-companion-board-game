@@ -1,5 +1,6 @@
 import { generateJSON } from "./llm";
 import { AVAILABLE_MODELS, GENERATOR_MODEL, type GameScenario, type ModelRef, type Persona } from "@/types/game";
+import { getSelectedModels, hasDashscopeKey, hasZenmuxKey, isCustomKeyEnabled } from "@/lib/api-keys";
 import { aiLogger } from "./ai-logger";
 import { AI_TEMPERATURE, GAME_TEMPERATURE } from "./ai-config";
 import { getRandomScenario } from "./scenarios";
@@ -37,10 +38,23 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 export const sampleModelRefs = (count: number): ModelRef[] => {
-  const pool =
+  const basePool =
     AVAILABLE_MODELS.length > 0
       ? AVAILABLE_MODELS
       : [{ provider: "zenmux" as const, model: GENERATOR_MODEL }];
+  const pool = (() => {
+    if (!isCustomKeyEnabled()) return basePool;
+    const allowedProviders = new Set<ModelRef["provider"]>();
+    if (hasZenmuxKey()) allowedProviders.add("zenmux");
+    if (hasDashscopeKey()) allowedProviders.add("dashscope");
+    if (allowedProviders.size === 0) return basePool;
+    const allowedPool = basePool.filter((ref) => allowedProviders.has(ref.provider));
+    if (allowedPool.length === 0) return basePool;
+    const selectedModels = getSelectedModels();
+    if (selectedModels.length === 0) return allowedPool;
+    const selectedPool = allowedPool.filter((ref) => selectedModels.includes(ref.model));
+    return selectedPool.length > 0 ? selectedPool : allowedPool;
+  })();
 
   if (!Number.isFinite(count) || count <= 0) return [];
 

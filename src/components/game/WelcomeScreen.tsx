@@ -16,6 +16,7 @@ import { AccountModal } from "@/components/game/AccountModal";
 import { ResetPasswordModal } from "@/components/game/ResetPasswordModal";
 import { UserProfileModal } from "@/components/game/UserProfileModal";
 import { useCredits } from "@/hooks/useCredits";
+import { hasDashscopeKey, hasZenmuxKey, isCustomKeyEnabled } from "@/lib/api-keys";
 
 type SponsorCardProps = {
   sponsorId: string;
@@ -418,7 +419,8 @@ export function WelcomeScreen({
       return;
     }
 
-    if (credits !== null && credits <= 0) {
+    const hasUserKey = isCustomKeyEnabled() && (hasZenmuxKey() || hasDashscopeKey());
+    if (!hasUserKey && credits !== null && credits <= 0) {
       setIsShareOpen(true);
       toast("额度不足", { description: "分享邀请可获得更多额度。" });
       return;
@@ -437,6 +439,11 @@ export function WelcomeScreen({
       const preset = devTab === "preset" && devPreset ? (devPreset as DevPreset) : undefined;
       void onStart({ fixedRoles: roles, devPreset: preset, difficulty, playerCount });
     }, 800);
+
+    if (hasUserKey) {
+      isStartingRef.current = false;
+      return;
+    }
 
     void consumeCredit()
       .then((consumed) => {

@@ -23,6 +23,8 @@ import { GENERATOR_MODEL, AVAILABLE_MODELS, type GameState, type Player, type Ph
 import { gameStateAtom, isValidTransition } from "@/store/game-machine";
 
 function getRandomModelRef(): ModelRef {
+  const fallback = sampleModelRefs(1)[0];
+  if (fallback) return fallback;
   if (AVAILABLE_MODELS.length === 0) {
     // Fallback to GENERATOR_MODEL if no models available
     return { provider: "zenmux" as const, model: GENERATOR_MODEL };

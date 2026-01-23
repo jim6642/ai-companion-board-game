@@ -146,7 +146,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (modelProvider === "dashscope") {
-      const dashscopeApiKey = process.env.DASHSCOPE_API_KEY;
+      const headerDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim();
+      const dashscopeApiKey = headerDashscopeKey || process.env.DASHSCOPE_API_KEY;
       if (!dashscopeApiKey) {
         return NextResponse.json(
           { error: "DASHSCOPE_API_KEY not configured on server" },
@@ -215,7 +216,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     }
 
-    const apiKey = process.env.ZENMUX_API_KEY;
+    const headerApiKey = request.headers.get("x-zenmux-api-key")?.trim();
+    const apiKey = headerApiKey || process.env.ZENMUX_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
         { error: "ZENMUX_API_KEY not configured on server" },
