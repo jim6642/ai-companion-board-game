@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState, useMemo, useCallback, useRef, type CSSProperties } from "react";
+import { AnimatePresence, motion, type TargetAndTransition } from "framer-motion";
 import { toast } from "sonner";
 import {
   Users,
@@ -61,6 +61,9 @@ const DAY_NIGHT_BLINK = {
 const dayBgm = "/bgm/day.mp3";
 const nightBgm = "/bgm/night.mp3";
 const REFERRAL_STORAGE_KEY = "wolfcha_referral";
+
+const WC_EYE_FEATHER_VAR = "--wc-eye-feather";
+const WC_LID_VAR = "--wc-lid";
 
 const dicebearUrl = (seed: string) => buildSimpleAvatarUrl(seed);
 
@@ -819,17 +822,23 @@ export default function Home() {
     if (!hasShownRoleReveal && gameState.phase === "NIGHT_START") return;
 
     if (!tutorialState.seenNightIntro && gameState.phase.includes("NIGHT") && visualIsNight) {
-      openTutorial({ kind: "night_intro", phase: gameState.phase });
+      queueMicrotask(() => {
+        openTutorial({ kind: "night_intro", phase: gameState.phase });
+      });
       return;
     }
 
     if (!tutorialState.seenDayIntro && gameState.phase.startsWith("DAY") && !visualIsNight) {
-      openTutorial({ kind: "day_intro", phase: gameState.phase });
+      queueMicrotask(() => {
+        openTutorial({ kind: "day_intro", phase: gameState.phase });
+      });
       return;
     }
 
     if (isRoleActionForHuman && !tutorialState.seenRoles[humanPlayer.role]) {
-      openTutorial({ kind: "role", role: humanPlayer.role, phase: gameState.phase });
+      queueMicrotask(() => {
+        openTutorial({ kind: "role", role: humanPlayer.role, phase: gameState.phase });
+      });
     }
   }, [
     gameState.phase,
@@ -890,8 +899,10 @@ export default function Home() {
 
   useEffect(() => {
     if (showTable) return;
-    setActiveTutorial(null);
-    setIsTutorialOpen(false);
+    queueMicrotask(() => {
+      setActiveTutorial(null);
+      setIsTutorialOpen(false);
+    });
   }, [showTable]);
 
   const triggerNightOverlay = useCallback((type: NightActionOverlayType, targetSeat?: number) => {
@@ -920,7 +931,9 @@ export default function Home() {
   useEffect(() => {
     if (!showTable) {
       lastNightActionRef.current = {};
-      setNightActionOverlay(null);
+      queueMicrotask(() => {
+        setNightActionOverlay(null);
+      });
       return;
     }
 
@@ -934,19 +947,27 @@ export default function Home() {
     const canSeeHunter = role === "Hunter";
 
     if (canSeeWolf && typeof wolfTarget === "number" && wolfTarget !== last.wolfTarget) {
-      triggerNightOverlay("wolf", wolfTarget);
+      queueMicrotask(() => {
+        triggerNightOverlay("wolf", wolfTarget);
+      });
     }
 
     if (canSeeWitch && witchSave && witchSave !== last.witchSave) {
-      triggerNightOverlay("witch-save", wolfTarget);
+      queueMicrotask(() => {
+        triggerNightOverlay("witch-save", wolfTarget);
+      });
     }
 
     if (canSeeWitch && typeof witchPoison === "number" && witchPoison !== last.witchPoison) {
-      triggerNightOverlay("witch-poison", witchPoison);
+      queueMicrotask(() => {
+        triggerNightOverlay("witch-poison", witchPoison);
+      });
     }
 
     if (canSeeSeer && typeof seerTarget === "number" && seerTarget !== last.seerTarget) {
-      triggerNightOverlay("seer", seerTarget);
+      queueMicrotask(() => {
+        triggerNightOverlay("seer", seerTarget);
+      });
     }
 
     const hunterShot =
@@ -956,7 +977,9 @@ export default function Home() {
       ? `${gameState.day}-${hunterShot.hunterSeat}-${hunterShot.targetSeat}`
       : null;
     if (canSeeHunter && hunterShot && hunterShotKey && hunterShotKey !== last.hunterShotKey) {
-      triggerNightOverlay("hunter", hunterShot.targetSeat);
+      queueMicrotask(() => {
+        triggerNightOverlay("hunter", hunterShot.targetSeat);
+      });
     }
 
     lastNightActionRef.current = {
@@ -1134,13 +1157,13 @@ export default function Home() {
       <motion.div
         className="wc-eyelid-overlay"
         style={{
-          ["--wc-eye-feather" as any]: 16,
-        }}
+          [WC_EYE_FEATHER_VAR]: 16,
+        } as CSSProperties}
         initial={false}
         animate={{
           opacity: dayNightBlinkPhase ? 1 : 0,
-          ["--wc-lid" as any]: dayNightBlinkPhase === "closing" ? 1 : 0,
-        }}
+          [WC_LID_VAR]: dayNightBlinkPhase === "closing" ? 1 : 0,
+        } as unknown as TargetAndTransition}
         transition={
           dayNightBlinkPhase === "closing"
             ? { duration: DAY_NIGHT_BLINK.closeMs / 1000, ease: [0.22, 0.72, 0.24, 1] }

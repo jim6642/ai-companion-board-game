@@ -10,11 +10,11 @@ interface SoundSettingsSectionProps {
   bgmVolume: number;
   isSoundEnabled: boolean;
   isAiVoiceEnabled: boolean;
-  isAutoAdvanceDialogueEnabled: boolean;
+  isAutoAdvanceDialogueEnabled?: boolean;
   onBgmVolumeChange: (value: number) => void;
   onSoundEnabledChange: (value: boolean) => void;
   onAiVoiceEnabledChange: (value: boolean) => void;
-  onAutoAdvanceDialogueEnabledChange: (value: boolean) => void;
+  onAutoAdvanceDialogueEnabledChange?: (value: boolean) => void;
 }
 
 interface SettingsModalProps {
@@ -35,7 +35,7 @@ export function SoundSettingsSection({
   bgmVolume,
   isSoundEnabled,
   isAiVoiceEnabled,
-  isAutoAdvanceDialogueEnabled,
+  isAutoAdvanceDialogueEnabled = false,
   onBgmVolumeChange,
   onSoundEnabledChange,
   onAiVoiceEnabledChange,
@@ -80,16 +80,18 @@ export function SoundSettingsSection({
         />
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <div className="text-sm font-medium text-[var(--text-primary)]">自动播放对话</div>
-          <div className="text-xs text-[var(--text-muted)]">开启后将自动推进对话，无需按回车</div>
+      {onAutoAdvanceDialogueEnabledChange && (
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="text-sm font-medium text-[var(--text-primary)]">自动播放对话</div>
+            <div className="text-xs text-[var(--text-muted)]">开启后将自动推进对话，无需按回车</div>
+          </div>
+          <Switch
+            checked={isAutoAdvanceDialogueEnabled}
+            onCheckedChange={onAutoAdvanceDialogueEnabledChange}
+          />
         </div>
-        <Switch
-          checked={isAutoAdvanceDialogueEnabled}
-          onCheckedChange={onAutoAdvanceDialogueEnabledChange}
-        />
-      </div>
+      )}
     </div>
   );
 }
