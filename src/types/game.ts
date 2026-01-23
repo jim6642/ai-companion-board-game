@@ -38,12 +38,12 @@ export type Phase =
 
 export type Alignment = "village" | "wolf";
 
-export interface GameScenario {
-  id: string;
-  title: string;
-  description: string;
-  rolesHint: string;
-}
+ export interface GameScenario {
+   id: string;
+   title: string;
+   description: string;
+   rolesHint: string;
+ }
 
 export interface ModelRef {
   provider: "zenmux" | "dashscope";
@@ -207,10 +207,9 @@ export const AVAILABLE_MODELS: ModelRef[] = [
   { provider: "dashscope", model: "qwen-plus-2025-12-01" },
   { provider: "dashscope", model: "Moonshot-Kimi-K2-Instruct" },
   { provider: "dashscope", model: "qwen3-vl-235b-a22b-instruct" },
-  { provider: "dashscope", model: "Moonshot-Kimi-K2-Instruct" },
+  
 
   { provider: "zenmux", model: "google/gemini-3-flash-preview" },
-  // { provider: "openrouter", model: "anthropic/claude-haiku-4.5" },
   // { provider: "openrouter", model: "minimax/minimax-m2.1" },
   // { provider: "zenmux", model: "moonshotai/kimi-k2-0905" },
   // { provider: "zenmux", model: "z-ai/glm-4.7-flashx" },

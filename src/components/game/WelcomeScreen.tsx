@@ -649,6 +649,19 @@ export function WelcomeScreen({
           note="OpenCreator 帮助我们生成夜晚所有的角色立绘"
         />
 
+        {/* Sponsor card - Bailian (左上) */}
+        <SponsorCard
+          sponsorId="bailian"
+          href="https://bailian.console.aliyun.com/"
+          className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--top-left"
+          rotate="4deg"
+          delay={0.15}
+          logoSrc="/sponsor/bailian.png"
+          logoAlt="百炼"
+          name="百炼"
+          note="百炼为我们提供部分 AI 模型能力支持"
+        />
+
         {/* Sponsor card - Minimax (右上) */}
         <SponsorCard
           sponsorId="minimax"
@@ -797,6 +810,17 @@ export function WelcomeScreen({
             >
               <img src="/sponsor/opencreator.png" alt="OpenCreator" className="wc-paper-stamp__logo" />
               <span className="wc-paper-stamp__name">OpenCreator</span>
+            </a>
+            <a
+              href="https://bailian.console.aliyun.com/?ref=wolfcha"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="wc-paper-stamp"
+              style={{ "--stamp-rotate": "4deg" } as React.CSSProperties}
+              onClick={() => void trackSponsorClick("bailian")}
+            >
+              <img src="/sponsor/bailian.png" alt="百炼" className="wc-paper-stamp__logo" />
+              <span className="wc-paper-stamp__name">百炼</span>
             </a>
             <a
               href="https://minimaxi.com/?ref=wolfcha"
