@@ -608,6 +608,15 @@ export async function* generateAISpeechStream(
       response: { content: sanitizedSpeech, duration: Date.now() - startTime },
       error: String(error),
     });
+
+    const raw = String(error);
+    if (raw.includes("429") || raw.includes("limit_requests")) {
+      if (!fullResponse.trim()) {
+        yield "（请求过于频繁，稍后再试）";
+      }
+      return;
+    }
+
     throw error;
   }
 }
@@ -761,6 +770,12 @@ export async function generateAISpeechSegments(
       response: { content: "", duration: Date.now() - startTime },
       error: String(error),
     });
+
+    const raw = String(error);
+    if (raw.includes("429") || raw.includes("limit_requests")) {
+      return ["（请求过于频繁，稍后再试）"];
+    }
+
     throw error;
   }
 }

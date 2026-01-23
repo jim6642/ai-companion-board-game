@@ -1137,22 +1137,39 @@ export function useGameLogic() {
       return;
     }
 
+    const startState = gameStateRef.current;
+    const startGameId = startState.gameId;
+    const startPhase = startState.phase;
+
     await delay(300);
+
+    const liveState = gameStateRef.current;
+    if (liveState.gameId !== startGameId) return;
+    if (liveState.phase !== startPhase) return;
+
     const token = getToken();
-    await runDaySpeechAction(gameStateRef.current, token, "ADVANCE_SPEAKER");
+    await runDaySpeechAction(liveState, token, "ADVANCE_SPEAKER");
   }, [humanPlayer, getToken, runDaySpeechAction]);
 
   /** 下一轮按钮 */
   const handleNextRound = useCallback(async () => {
-    const phase = gameStateRef.current.phase;
-    if (phase !== "DAY_SPEECH" && phase !== "DAY_LAST_WORDS" && phase !== "DAY_BADGE_SPEECH" && phase !== "DAY_PK_SPEECH") {
+    const startState = gameStateRef.current;
+    const startGameId = startState.gameId;
+    const startPhase = startState.phase;
+
+    if (startPhase !== "DAY_SPEECH" && startPhase !== "DAY_LAST_WORDS" && startPhase !== "DAY_BADGE_SPEECH" && startPhase !== "DAY_PK_SPEECH") {
       return;
     }
 
     setWaitingForNextRound(false);
     await delay(300);
+
+    const liveState = gameStateRef.current;
+    if (liveState.gameId !== startGameId) return;
+    if (liveState.phase !== startPhase) return;
+
     const token = getToken();
-    await runDaySpeechAction(gameStateRef.current, token, "ADVANCE_SPEAKER");
+    await runDaySpeechAction(liveState, token, "ADVANCE_SPEAKER");
   }, [getToken, runDaySpeechAction, setWaitingForNextRound]);
 
   /** 人类投票 */

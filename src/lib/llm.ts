@@ -51,6 +51,36 @@ export interface GenerateOptions {
 
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
+function parseRetryAfterMs(response: Response): number | null {
+  const raw = response.headers.get("retry-after");
+  if (!raw) return null;
+  const sec = Number(raw);
+  if (Number.isFinite(sec) && sec > 0) return Math.round(sec * 1000);
+
+  const dateMs = Date.parse(raw);
+  if (!Number.isFinite(dateMs)) return null;
+  const diff = dateMs - Date.now();
+  return diff > 0 ? diff : null;
+}
+
+function formatApiError(status: number, errorText: string): string {
+  let msg = `API error: ${status}`;
+  try {
+    const errorJson = JSON.parse(errorText) as any;
+    if (typeof errorJson?.error === "string" && errorJson.error.trim()) {
+      msg = errorJson.error.trim();
+    }
+    const detailsMsg = errorJson?.details?.error?.message;
+    if (typeof detailsMsg === "string" && detailsMsg.trim()) {
+      msg = `${msg} - ${detailsMsg.trim()}`;
+    }
+    return msg;
+  } catch {
+    const trimmed = (errorText || "").trim();
+    return trimmed ? `${msg} - ${trimmed.slice(0, 600)}` : msg;
+  }
+}
+
 async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -74,9 +104,12 @@ async function fetchWithRetry(
         return response;
       }
 
-      const base = 400;
+      const retryAfterMs = parseRetryAfterMs(response);
+      const base = response.status === 429 ? 1000 : 400;
       const jitter = Math.floor(Math.random() * 200);
-      const backoffMs = base * 2 ** (attempt - 1) + jitter;
+      const backoffMs =
+        (retryAfterMs !== null ? Math.min(15000, Math.max(0, retryAfterMs)) : base * 2 ** (attempt - 1)) +
+        jitter;
       await sleep(backoffMs);
     } catch (err) {
       lastError = err;
@@ -127,17 +160,12 @@ export async function generateCompletion(
         ...(options.response_format ? { response_format: options.response_format } : {}),
       }),
     },
-    2
+    4
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
-    try {
-      const errorJson = JSON.parse(errorText);
-      throw new Error(errorJson.error || `API error: ${response.status}`);
-    } catch {
-      throw new Error(`API error: ${response.status} - ${errorText}`);
-    }
+    const errorText = await response.text().catch(() => "");
+    throw new Error(formatApiError(response.status, errorText));
   }
 
   const result: ChatCompletionResponse = await response.json();
@@ -189,17 +217,12 @@ export async function* generateCompletionStream(
         ...(options.response_format ? { response_format: options.response_format } : {}),
       }),
     },
-    2
+    4
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
-    try {
-      const errorJson = JSON.parse(errorText);
-      throw new Error(errorJson.error || `API error: ${response.status}`);
-    } catch {
-      throw new Error(`API error: ${response.status} - ${errorText}`);
-    }
+    const errorText = await response.text().catch(() => "");
+    throw new Error(formatApiError(response.status, errorText));
   }
 
   const reader = response.body?.getReader();

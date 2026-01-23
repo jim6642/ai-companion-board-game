@@ -132,8 +132,8 @@ export default function Home() {
     scrollToBottom,
     advanceSpeech,
   } = useGameLogic();
-  const { settings, setBgmVolume, setSoundEnabled, setAiVoiceEnabled, setGenshinMode } = useSettings();
-  const { bgmVolume, isSoundEnabled, isAiVoiceEnabled, isGenshinMode } = settings;
+  const { settings, setBgmVolume, setSoundEnabled, setAiVoiceEnabled, setGenshinMode, setAutoAdvanceDialogueEnabled } = useSettings();
+  const { bgmVolume, isSoundEnabled, isAiVoiceEnabled, isGenshinMode, isAutoAdvanceDialogueEnabled } = settings;
   const shouldUseAiVoice = isSoundEnabled && isAiVoiceEnabled && bgmVolume > 0;
   const {
     state: tutorialState,
@@ -683,6 +683,68 @@ export default function Home() {
     }
   }, [advanceSpeech, currentDialogue, handleNextRound, isRoleRevealOpen, waitingForNextRound]);
 
+  const autoAdvanceTimeoutRef = useRef<number | null>(null);
+  const lastAutoAdvanceSignatureRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (autoAdvanceTimeoutRef.current !== null) {
+      window.clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
+    }
+
+    if (!isAutoAdvanceDialogueEnabled) return;
+    if (isRoleRevealOpen) return;
+    if (isSettingsOpen) return;
+    if (isNotebookOpen) return;
+    const needsHumanActionNow = PHASE_CONFIGS[gameState.phase].requiresHumanInput(humanPlayer, gameState);
+    if (needsHumanActionNow) return;
+    if (isWaitingForAI) return;
+
+    if (currentDialogue) {
+      const isDialogueComplete =
+        !currentDialogue.isStreaming || displayedText === currentDialogue.text;
+      if (!isDialogueComplete) return;
+
+      const signature = `DIALOGUE::${currentDialogue.speaker}::${currentDialogue.text}`;
+      if (lastAutoAdvanceSignatureRef.current === signature) return;
+      lastAutoAdvanceSignatureRef.current = signature;
+      autoAdvanceTimeoutRef.current = window.setTimeout(() => {
+        void handleAdvanceDialogue();
+      }, 520);
+      return;
+    }
+
+    if (waitingForNextRound) {
+      const signature = `NEXT::${gameState.phase}::${gameState.day}::${String(gameState.currentSpeakerSeat ?? "")}`;
+      if (lastAutoAdvanceSignatureRef.current === signature) return;
+      lastAutoAdvanceSignatureRef.current = signature;
+      autoAdvanceTimeoutRef.current = window.setTimeout(() => {
+        void handleAdvanceDialogue();
+      }, 520);
+    }
+
+    return () => {
+      if (autoAdvanceTimeoutRef.current !== null) {
+        window.clearTimeout(autoAdvanceTimeoutRef.current);
+        autoAdvanceTimeoutRef.current = null;
+      }
+    };
+  }, [
+    currentDialogue,
+    displayedText,
+    gameState.currentSpeakerSeat,
+    gameState,
+    gameState.day,
+    gameState.phase,
+    handleAdvanceDialogue,
+    humanPlayer,
+    isAutoAdvanceDialogueEnabled,
+    isNotebookOpen,
+    isRoleRevealOpen,
+    isSettingsOpen,
+    isWaitingForAI,
+    waitingForNextRound,
+  ]);
+
   useEffect(() => {
     if (!showTable) return;
     if (!humanPlayer) return;
@@ -1014,10 +1076,11 @@ export default function Home() {
 
   const isSelectionPhase = useMemo(() => {
     const actionType = PHASE_CONFIGS[gameState.phase].actionType;
-    if (actionType === "vote" || actionType === "night_action") return needsHumanAction;
-    if (actionType === "special") return needsHumanAction && hasSelectableTargets;
+    const needsHumanActionNow = PHASE_CONFIGS[gameState.phase].requiresHumanInput(humanPlayer, gameState);
+    if (actionType === "vote" || actionType === "night_action") return needsHumanActionNow;
+    if (actionType === "special") return needsHumanActionNow && hasSelectableTargets;
     return false;
-  }, [gameState.phase, needsHumanAction, hasSelectableTargets]);
+  }, [gameState, gameState.phase, hasSelectableTargets, humanPlayer]);
 
   const renderPhaseIcon = () => {
     switch (gameState.phase) {
@@ -1498,10 +1561,12 @@ export default function Home() {
         bgmVolume={bgmVolume}
         isSoundEnabled={isSoundEnabled}
         isAiVoiceEnabled={isAiVoiceEnabled}
+        isAutoAdvanceDialogueEnabled={isAutoAdvanceDialogueEnabled}
         gameState={gameState}
         onBgmVolumeChange={setBgmVolume}
         onSoundEnabledChange={setSoundEnabled}
         onAiVoiceEnabledChange={setAiVoiceEnabled}
+        onAutoAdvanceDialogueEnabledChange={setAutoAdvanceDialogueEnabled}
       />
 
       {/* 开发者模式 - 只在游戏开始后显示 */}

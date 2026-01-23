@@ -10,9 +10,11 @@ interface SoundSettingsSectionProps {
   bgmVolume: number;
   isSoundEnabled: boolean;
   isAiVoiceEnabled: boolean;
+  isAutoAdvanceDialogueEnabled: boolean;
   onBgmVolumeChange: (value: number) => void;
   onSoundEnabledChange: (value: boolean) => void;
   onAiVoiceEnabledChange: (value: boolean) => void;
+  onAutoAdvanceDialogueEnabledChange: (value: boolean) => void;
 }
 
 interface SettingsModalProps {
@@ -21,19 +23,23 @@ interface SettingsModalProps {
   bgmVolume: number;
   isSoundEnabled: boolean;
   isAiVoiceEnabled: boolean;
+  isAutoAdvanceDialogueEnabled: boolean;
   gameState: GameState;
   onBgmVolumeChange: (value: number) => void;
   onSoundEnabledChange: (value: boolean) => void;
   onAiVoiceEnabledChange: (value: boolean) => void;
+  onAutoAdvanceDialogueEnabledChange: (value: boolean) => void;
 }
 
 export function SoundSettingsSection({
   bgmVolume,
   isSoundEnabled,
   isAiVoiceEnabled,
+  isAutoAdvanceDialogueEnabled,
   onBgmVolumeChange,
   onSoundEnabledChange,
   onAiVoiceEnabledChange,
+  onAutoAdvanceDialogueEnabledChange,
 }: SoundSettingsSectionProps) {
   const volumePercent = Math.round(bgmVolume * 100);
 
@@ -73,6 +79,17 @@ export function SoundSettingsSection({
           disabled={!isSoundEnabled}
         />
       </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <div className="text-sm font-medium text-[var(--text-primary)]">自动播放对话</div>
+          <div className="text-xs text-[var(--text-muted)]">开启后将自动推进对话，无需按回车</div>
+        </div>
+        <Switch
+          checked={isAutoAdvanceDialogueEnabled}
+          onCheckedChange={onAutoAdvanceDialogueEnabledChange}
+        />
+      </div>
     </div>
   );
 }
@@ -83,10 +100,12 @@ export function SettingsModal({
   bgmVolume,
   isSoundEnabled,
   isAiVoiceEnabled,
+  isAutoAdvanceDialogueEnabled,
   gameState,
   onBgmVolumeChange,
   onSoundEnabledChange,
   onAiVoiceEnabledChange,
+  onAutoAdvanceDialogueEnabledChange,
 }: SettingsModalProps) {
   const [view, setView] = useState<"settings" | "about">("settings");
   const [groupImgOk, setGroupImgOk] = useState<boolean | null>(null);
@@ -113,12 +132,13 @@ export function SettingsModal({
         bgmVolume,
         isSoundEnabled,
         isAiVoiceEnabled,
+        isAutoAdvanceDialogueEnabled,
       },
       gameState,
     };
 
     return JSON.stringify(payload, null, 2);
-  }, [appVersion, bgmVolume, gameState, isAiVoiceEnabled, isSoundEnabled]);
+  }, [appVersion, bgmVolume, gameState, isAiVoiceEnabled, isAutoAdvanceDialogueEnabled, isSoundEnabled]);
 
   const handleCopyLog = useCallback(async () => {
     try {
@@ -205,9 +225,11 @@ export function SettingsModal({
               bgmVolume={bgmVolume}
               isSoundEnabled={isSoundEnabled}
               isAiVoiceEnabled={isAiVoiceEnabled}
+              isAutoAdvanceDialogueEnabled={isAutoAdvanceDialogueEnabled}
               onBgmVolumeChange={onBgmVolumeChange}
               onSoundEnabledChange={onSoundEnabledChange}
               onAiVoiceEnabledChange={onAiVoiceEnabledChange}
+              onAutoAdvanceDialogueEnabledChange={onAutoAdvanceDialogueEnabledChange}
             />
 
             <div className="rounded-lg border-2 border-[var(--border-color)] bg-[var(--bg-secondary)] p-3 space-y-3">
