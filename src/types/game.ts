@@ -46,7 +46,7 @@ export type Alignment = "village" | "wolf";
  }
 
 export interface ModelRef {
-  provider: "zenmux";
+  provider: "zenmux" | "dashscope";
   model: string;
 }
 
@@ -202,15 +202,19 @@ export interface DailySummaryFact {
 }
 
 export const AVAILABLE_MODELS: ModelRef[] = [
-  { provider: "zenmux", model: "deepseek/deepseek-v3.2" },
-  {provider:"zenmux",model:"google/gemini-3-flash-preview"},
-  // { provider: "openrouter", model: "anthropic/claude-haiku-4.5" },
+  // { provider: "zenmux", model: "deepseek/deepseek-v3.2" },
+  { provider: "dashscope", model: "deepseek-v3.2" },
+  { provider: "dashscope", model: "qwen-plus-2025-12-01" },
+  { provider: "dashscope", model: "Moonshot-Kimi-K2-Instruct" },
+  { provider: "dashscope", model: "qwen3-vl-235b-a22b-instruct" },
+  
+
+  { provider: "zenmux", model: "google/gemini-3-flash-preview" },
   // { provider: "openrouter", model: "minimax/minimax-m2.1" },
-  {provider:"zenmux",model:"qwen/qwen3-235b-a22b-2507"},
-  { provider: "zenmux", model: "moonshotai/kimi-k2-0905" },
+  // { provider: "zenmux", model: "moonshotai/kimi-k2-0905" },
   // { provider: "zenmux", model: "z-ai/glm-4.7-flashx" },
   // { provider: "zenmux", model: "qwen/qwen3-max" },
-   { provider: "zenmux", model: "volcengine/doubao-seed-1.8" },
+  { provider: "zenmux", model: "volcengine/doubao-seed-1.8" },
   // { provider: "zenmux", model: "google/gemini-2.5-flash-lite-preview-09-2025" },
   // {provider:"zenmux",model:"openai/gpt-5.2-chat"},
   // {provider:"zenmux",model:"anthropic/claude-sonnet-4.5"}

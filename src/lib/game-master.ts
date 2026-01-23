@@ -186,13 +186,33 @@ export function setupPlayers(
   playerCount: number = 10,
   fixedRoles?: Role[],
   seedPlayerIds?: string[],
-  modelRefs?: ModelRef[]
+  modelRefs?: ModelRef[],
+  aiSeatOrder?: number[]
 ): Player[] {
   const totalPlayers = playerCount;
   const roles = getRoleConfiguration(totalPlayers);
   const assignedRoles = fixedRoles && fixedRoles.length === totalPlayers ? fixedRoles : shuffleArray(roles);
 
   const players: Player[] = [];
+
+  const computeCharIndexForSeat = (() => {
+    const aiSeats = Array.from({ length: totalPlayers }, (_, seat) => seat).filter(
+      (seat) => seat !== humanSeat
+    );
+
+    if (
+      Array.isArray(aiSeatOrder) &&
+      aiSeatOrder.length === aiSeats.length &&
+      new Set(aiSeatOrder).size === aiSeats.length &&
+      aiSeatOrder.every((s) => aiSeats.includes(s))
+    ) {
+      const seatToCharIndex = new Map<number, number>();
+      aiSeatOrder.forEach((seat, idx) => seatToCharIndex.set(seat, idx));
+      return (seat: number) => seatToCharIndex.get(seat) ?? -1;
+    }
+
+    return (seat: number) => (seat > humanSeat ? seat - 1 : seat);
+  })();
 
   const getPlayerIdForSeat = (seat: number) => {
     const id = Array.isArray(seedPlayerIds) ? seedPlayerIds[seat] : undefined;
@@ -214,9 +234,14 @@ export function setupPlayers(
         isHuman: true,
       });
     } else {
-      const charIndex = seat > humanSeat ? seat - 1 : seat;
-      const character = characters[charIndex];
-      const modelRef = modelRefs?.[charIndex] ?? getRandomModelRef();
+      const charIndex = computeCharIndexForSeat(seat);
+      const fallbackIndex = seat > humanSeat ? seat - 1 : seat;
+      const safeCharIndex =
+        Number.isFinite(charIndex) && charIndex >= 0 && charIndex < characters.length
+          ? charIndex
+          : Math.min(Math.max(0, fallbackIndex), Math.max(0, characters.length - 1));
+      const character = characters[safeCharIndex];
+      const modelRef = modelRefs?.[safeCharIndex] ?? getRandomModelRef();
 
       players.push({
         playerId: getPlayerIdForSeat(seat),

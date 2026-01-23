@@ -27,6 +27,34 @@ const MODEL_DISPLAY_NAME_MAP: Array<{ match: RegExp; label: string }> = [
   { match: /kimi|moonshot/i, label: "Kimi" },
 ];
 
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+export const sampleModelRefs = (count: number): ModelRef[] => {
+  const pool =
+    AVAILABLE_MODELS.length > 0
+      ? AVAILABLE_MODELS
+      : [{ provider: "zenmux" as const, model: GENERATOR_MODEL }];
+
+  if (!Number.isFinite(count) || count <= 0) return [];
+
+  if (count <= pool.length) {
+    return shuffleArray(pool).slice(0, count);
+  }
+
+  const out = shuffleArray(pool);
+  while (out.length < count) {
+    out.push(pool[Math.floor(Math.random() * pool.length)]);
+  }
+  return out;
+};
+
 const getModelDisplayName = (modelRef: ModelRef): string => {
   const raw = modelRef.model ?? "";
   const mapped = MODEL_DISPLAY_NAME_MAP.find((entry) => entry.match.test(raw))?.label;
@@ -147,8 +175,7 @@ const createGenshinPersona = (voiceId?: string): Persona => {
 };
 
 export const buildGenshinModelRefs = (count: number): ModelRef[] => {
-  const pool = AVAILABLE_MODELS.length > 0 ? AVAILABLE_MODELS : [{ provider: "zenmux" as const, model: GENERATOR_MODEL }];
-  return Array.from({ length: count }, (_, index) => pool[index % pool.length]);
+  return sampleModelRefs(count);
 };
 
 export const generateGenshinModeCharacters = async (
