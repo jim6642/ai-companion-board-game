@@ -64,7 +64,10 @@ function SponsorCard({
   };
 
   // Add ref parameter to href for tracking on sponsor's side
-  const hrefWithRef = href.includes("?") ? `${href}&ref=wolfcha` : `${href}?ref=wolfcha`;
+  // Special handling for OpenCreator: use promo parameter instead of ref
+  const hrefWithRef = sponsorId === "opencreator"
+    ? (href.includes("?") ? `${href}&promo=wolfcha` : `${href}?promo=wolfcha`)
+    : (href.includes("?") ? `${href}&ref=wolfcha` : `${href}?ref=wolfcha`);
 
   return (
     <motion.a
@@ -830,7 +833,7 @@ export function WelcomeScreen({
           {/* Mobile: inline sponsor stamps at top of paper */}
           <div className="wc-paper-sponsors sm:hidden">
             <a
-              href="https://opencreator.io/?ref=wolfcha"
+              href="https://opencreator.io?promo=wolfcha"
               target="_blank"
               rel="noopener noreferrer"
               className="wc-paper-stamp"

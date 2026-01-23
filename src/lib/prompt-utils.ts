@@ -323,7 +323,7 @@ ${playerList}`;
   }
 
   if (deadPlayers.length > 0) {
-    context += `\n\n【出局玩家】（已出局，不应再讨论或分析）\n${deadPlayers
+    context += `\n\n【出局玩家】（严禁讨论、分析或提及以下玩家！）\n${deadPlayers
       .map((p) => `${p.seat + 1}号 ${p.displayName}`)
       .join("\n")}`;
 
