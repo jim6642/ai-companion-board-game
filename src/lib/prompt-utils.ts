@@ -1,6 +1,7 @@
 import type { DifficultyLevel, GameState, Player } from "@/types/game";
 import type { SystemPromptPart } from "@/game/core/types";
 import type { LLMMessage } from "./llm";
+import { SYSTEM_MESSAGES } from "./game-texts";
 
 /**
  * Prompt helper utilities used by Phase prompts.
@@ -161,22 +162,25 @@ export const buildDailySummariesSection = (state: GameState): string => {
   return `【历史关键信息】\n${lines.join("\n")}`;
 };
 
-export const buildTodayTranscript = (state: GameState, maxChars: number): string => {
-  const dayStartIndex = (() => {
-    for (let i = state.messages.length - 1; i >= 0; i--) {
-      const m = state.messages[i];
-      if (m.isSystem && m.content === "天亮了") return i;
-    }
-    return 0;
-  })();
+export const getDayStartIndex = (state: GameState): number => {
+  for (let i = state.messages.length - 1; i >= 0; i--) {
+    const m = state.messages[i];
+    if (m.isSystem && (m.content === "天亮了" || m.content === SYSTEM_MESSAGES.dayBreak)) return i;
+  }
+  return 0;
+};
 
-  const voteStartIndex = (() => {
-    for (let i = state.messages.length - 1; i >= 0; i--) {
-      const m = state.messages[i];
-      if (m.isSystem && m.content === "进入投票环节") return i;
-    }
-    return state.messages.length;
-  })();
+export const getVoteStartIndex = (state: GameState): number => {
+  for (let i = state.messages.length - 1; i >= 0; i--) {
+    const m = state.messages[i];
+    if (m.isSystem && (m.content === "进入投票环节" || m.content === SYSTEM_MESSAGES.voteStart)) return i;
+  }
+  return state.messages.length;
+};
+
+export const buildTodayTranscript = (state: GameState, maxChars: number): string => {
+  const dayStartIndex = getDayStartIndex(state);
+  const voteStartIndex = getVoteStartIndex(state);
 
   const slice = state.messages.slice(
     dayStartIndex,
@@ -228,21 +232,8 @@ export const buildTodayTranscript = (state: GameState, maxChars: number): string
 };
 
 export const buildPlayerTodaySpeech = (state: GameState, player: Player, maxChars: number): string => {
-  const dayStartIndex = (() => {
-    for (let i = state.messages.length - 1; i >= 0; i--) {
-      const m = state.messages[i];
-      if (m.isSystem && m.content === "天亮了") return i;
-    }
-    return 0;
-  })();
-
-  const voteStartIndex = (() => {
-    for (let i = state.messages.length - 1; i >= 0; i--) {
-      const m = state.messages[i];
-      if (m.isSystem && m.content === "进入投票环节") return i;
-    }
-    return state.messages.length;
-  })();
+  const dayStartIndex = getDayStartIndex(state);
+  const voteStartIndex = getVoteStartIndex(state);
 
   const slice = state.messages.slice(
     dayStartIndex,
@@ -259,19 +250,13 @@ export const buildPlayerTodaySpeech = (state: GameState, player: Player, maxChar
 };
 
 export const buildSystemAnnouncementsSinceDawn = (state: GameState, maxLines: number): string => {
-  const dayStartIndex = (() => {
-    for (let i = state.messages.length - 1; i >= 0; i--) {
-      const m = state.messages[i];
-      if (m.isSystem && m.content === "天亮了") return i;
-    }
-    return 0;
-  })();
+  const dayStartIndex = getDayStartIndex(state);
 
   const slice = state.messages.slice(dayStartIndex);
   const systemLines = slice
     .filter((m) => m.isSystem)
     .map((m) => String(m.content || "").trim())
-    .filter((c) => c && c !== "天亮了" && c !== "进入投票环节");
+    .filter((c) => c && c !== "天亮了" && c !== SYSTEM_MESSAGES.dayBreak && c !== "进入投票环节" && c !== SYSTEM_MESSAGES.voteStart);
 
   const limit = Math.max(0, maxLines);
   if (limit === 0 || systemLines.length === 0) return "";

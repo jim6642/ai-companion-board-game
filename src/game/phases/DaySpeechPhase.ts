@@ -10,6 +10,7 @@ import {
   getRoleText,
   getWinCondition,
   buildSystemTextFromParts,
+  getDayStartIndex,
 } from "@/lib/prompt-utils";
 import type { FlowToken } from "@/lib/game-flow-controller";
 import {
@@ -76,29 +77,47 @@ export class DaySpeechPhase extends GamePhase {
     const selfSpeech = buildPlayerTodaySpeech(state, player, 1400);
 
     const todaySpeakers = new Set<string>();
-    const dayStartIndex = (() => {
-      for (let i = state.messages.length - 1; i >= 0; i--) {
-        if (state.messages[i].isSystem && state.messages[i].content === "天亮了") return i;
-      }
-      return 0;
-    })();
+    const dayStartIndex = getDayStartIndex(state);
+
     for (let i = dayStartIndex; i < state.messages.length; i++) {
       const m = state.messages[i];
       if (!m.isSystem && m.playerId && m.playerId !== player.playerId) {
         todaySpeakers.add(m.playerId);
       }
     }
-    const speakOrder = todaySpeakers.size + 1;
-    const isFirstSpeaker = speakOrder === 1;
 
-    const alivePlayers = state.players.filter((p) => p.alive);
-    const spokenPlayers = alivePlayers.filter(
+    const isLastWords = state.phase === "DAY_LAST_WORDS";
+    const isBadgeSpeech = state.phase === "DAY_BADGE_SPEECH";
+    const isPkSpeech = state.phase === "DAY_PK_SPEECH";
+    const isCampaignSpeech = isBadgeSpeech || isPkSpeech;
+
+    // Define valid speakers for this phase (campaign-only speakers)
+    const candidates =
+      isBadgeSpeech && Array.isArray(state.badge?.candidates) ? state.badge.candidates : [];
+    const pkTargets = isPkSpeech && Array.isArray(state.pkTargets) ? state.pkTargets : [];
+
+    const hasCandidateList = isBadgeSpeech && candidates.length > 0;
+
+    const validSpeakers = state.players.filter(p => {
+        if (!p.alive) return false;
+        // If candidates list is unexpectedly empty, fallback to alive players to avoid division by zero.
+        if (isBadgeSpeech) return hasCandidateList ? candidates.includes(p.seat) : true;
+        if (isPkSpeech) return pkTargets.includes(p.seat);
+        return true;
+    });
+
+    const totalSpeakers = validSpeakers.length;
+    
+    // Recalculate speak order based on valid speakers only
+    const spokenPlayers = validSpeakers.filter(
       (p) => todaySpeakers.has(p.playerId) && p.playerId !== player.playerId
     );
-    const unspokenPlayers = alivePlayers.filter(
+    const unspokenPlayers = validSpeakers.filter(
       (p) => !todaySpeakers.has(p.playerId) && p.playerId !== player.playerId
     );
-    const totalSpeakers = alivePlayers.length;
+
+    const speakOrder = spokenPlayers.length + 1;
+    const isFirstSpeaker = speakOrder === 1;
     const isLastSpeaker = speakOrder === totalSpeakers;
 
     let speakOrderHint = "";
@@ -112,14 +131,15 @@ export class DaySpeechPhase extends GamePhase {
       speakOrderHint = `你是第${speakOrder}/${totalSpeakers}个发言。已发言: ${spokenList || "无"}；未发言: ${unspokenList || "无"}。`;
     }
 
-    const isLastWords = state.phase === "DAY_LAST_WORDS";
-    const isBadgeSpeech = state.phase === "DAY_BADGE_SPEECH";
-    const isPkSpeech = state.phase === "DAY_PK_SPEECH";
-    const isCampaignSpeech = isBadgeSpeech || isPkSpeech;
-
     const campaignRequirements = isBadgeSpeech
       ? `【竞选要求】给出上警理由（信息位、带队能力、对局势判断、站边等）。
-必须给带队承诺或本轮关注点（如：今天先看谁、怎么归票、怎么处理对跳）。`
+必须给带队承诺或本轮关注点（如：今天先看谁、怎么归票、怎么处理对跳）。
+${hasCandidateList
+  ? `注意：仅有参与竞选的玩家会发言，未竞选玩家（${state.players
+      .filter((p) => p.alive && !candidates.includes(p.seat))
+      .map((p) => `${p.seat + 1}号`)
+      .join("、")}）在本环节不会发言。`
+  : "注意：候选人列表为空（异常），请只基于当前可见发言记录进行回应，不要臆测未发言者。"}`
       : isPkSpeech
         ? "【PK要求】指出对手不适合或你更合适的原因，并给出带队承诺或本轮关注点。"
         : "";
