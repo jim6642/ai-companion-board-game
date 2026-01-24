@@ -536,19 +536,9 @@ export function useGameLogic() {
     if (!isTokenValid(token)) return;
     if (isAwaitingRoleRevealRef.current) return;
 
-    // 后台生成每日总结（覆盖草稿）
-    void maybeGenerateDailySummary(state, { force: true })
-      .then((summarized) => {
-        setGameState((prev) => {
-          if (prev.gameId !== summarized.gameId) return prev;
-          return {
-            ...prev,
-            dailySummaries: summarized.dailySummaries,
-            dailySummaryFacts: summarized.dailySummaryFacts,
-          };
-        });
-      })
-      .catch(() => {});
+    // Generate daily summary and wait for it so night-phase prompts (wolf, seer, witch, guard)
+    // can include <history> with this day's summary
+    const summarized = await maybeGenerateDailySummary(state, { force: true });
 
     await delay(350);
     if (!isTokenValid(token)) return;
@@ -557,7 +547,7 @@ export function useGameLogic() {
     // Preserve seerHistory across nights
     const seerHistory = state.nightActions.seerHistory;
     let nextState = {
-      ...state,
+      ...summarized,
       day: state.day + 1,
       nightActions: {
         ...(lastGuardTarget !== undefined ? { lastGuardTarget } : {}),

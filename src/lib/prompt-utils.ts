@@ -188,75 +188,30 @@ export const buildAliveCountsSection = (state: GameState): string => {
 };
 
 export const buildDailySummariesSection = (state: GameState): string => {
-  const factEntries = Object.entries(state.dailySummaryFacts || {})
-    .map(([day, facts]) => ({ day: Number(day), facts }))
-    .filter((x) => Number.isFinite(x.day) && Array.isArray(x.facts));
-
+  // Get summaries from dailySummaries (new format: single paragraph text)
   const entries = Object.entries(state.dailySummaries || {})
     .map(([day, bullets]) => ({ day: Number(day), bullets }))
     .filter((x) => Number.isFinite(x.day) && Array.isArray(x.bullets));
 
-  const merged = new Map<number, { facts?: typeof factEntries[number]["facts"]; bullets?: string[] }>();
-  factEntries.forEach((entry) => {
-    merged.set(entry.day, { facts: entry.facts });
-  });
-  entries.forEach((entry) => {
-    const prev = merged.get(entry.day) || {};
-    merged.set(entry.day, { ...prev, bullets: entry.bullets });
-  });
-
-  if (merged.size === 0) return "";
+  if (entries.length === 0) return "";
 
   const lines: string[] = [];
-  for (const [day, entry] of Array.from(merged.entries()).sort((a, b) => a[0] - b[0])) {
-    const facts = entry.facts || [];
-    const bulletTexts = (entry.bullets || [])
+  for (const { day, bullets } of entries.sort((a, b) => a.day - b.day)) {
+    const summaryTexts = bullets
       .filter((x): x is string => typeof x === "string")
       .map((s) => s.trim())
       .filter(Boolean);
 
-    // Group facts by type for better structure
-    const deaths = facts.filter((f) => f.type === "death").map((f) => f.fact.trim()).filter(Boolean);
-    const claims = facts.filter((f) => f.type === "claim").map((f) => f.fact.trim()).filter(Boolean);
-    const votes = facts.filter((f) => f.type === "vote").map((f) => f.fact.trim()).filter(Boolean);
-    const alignments = facts.filter((f) => f.type === "alignment" || f.type === "suspicion" || f.type === "defense")
-      .map((f) => f.fact.trim()).filter(Boolean);
-    const others = facts.filter((f) => !["death", "claim", "vote", "alignment", "suspicion", "defense"].includes(f.type || ""))
-      .map((f) => f.fact.trim()).filter(Boolean);
+    if (summaryTexts.length === 0) continue;
 
-    // Build YAML-style output for this day
-    let dayContent = `day_${day}:`;
-    
-    if (deaths.length > 0) {
-      dayContent += `\n  deaths: [${deaths.slice(0, 2).join("; ")}]`;
-    }
-    if (claims.length > 0) {
-      dayContent += `\n  claims: [${claims.slice(0, 3).join("; ")}]`;
-    }
-    if (votes.length > 0) {
-      dayContent += `\n  key_votes: [${votes.slice(0, 3).join("; ")}]`;
-    }
-    if (alignments.length > 0) {
-      dayContent += `\n  alignments: [${alignments.slice(0, 3).join("; ")}]`;
-    }
-    
-    // If no structured facts, use bullet points
-    if (deaths.length === 0 && claims.length === 0 && votes.length === 0 && alignments.length === 0) {
-      const allFacts = [...others, ...bulletTexts].slice(0, 5);
-      if (allFacts.length > 0) {
-        dayContent += `\n  facts: [${allFacts.join("; ")}]`;
-      }
-    } else if (others.length > 0) {
-      dayContent += `\n  other: [${others.slice(0, 2).join("; ")}]`;
-    }
-
-    if (dayContent !== `day_${day}:`) {
-      lines.push(dayContent);
-    }
+    // New format: full paragraph summary per day
+    // Join all bullets (usually just one now) with space
+    const fullSummary = summaryTexts.join(" ");
+    lines.push(`【第${day}天】${fullSummary}`);
   }
 
   if (lines.length === 0) return "";
-  return `<history>\n${lines.join("\n")}\n</history>`;
+  return `<history>\n${lines.join("\n\n")}\n</history>`;
 };
 
 export const getDayStartIndex = (state: GameState): number => {
