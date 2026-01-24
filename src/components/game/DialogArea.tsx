@@ -255,7 +255,7 @@ export function DialogArea({
   humanPlayer,
   isNight = false,
   isSoundEnabled = true,
-  isAiVoiceEnabled = true,
+  isAiVoiceEnabled = false,
   currentDialogue,
   displayedText,
   isTyping,

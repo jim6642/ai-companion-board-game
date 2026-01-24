@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState, useMemo, useCallback, useRef, type CSSProperties } from "react";
+import { AnimatePresence, motion, type TargetAndTransition } from "framer-motion";
 import { toast } from "sonner";
 import {
   Users,
@@ -61,6 +61,9 @@ const DAY_NIGHT_BLINK = {
 const dayBgm = "/bgm/day.mp3";
 const nightBgm = "/bgm/night.mp3";
 const REFERRAL_STORAGE_KEY = "wolfcha_referral";
+
+const WC_EYE_FEATHER_VAR = "--wc-eye-feather";
+const WC_LID_VAR = "--wc-lid";
 
 const dicebearUrl = (seed: string) => buildSimpleAvatarUrl(seed);
 
@@ -132,8 +135,8 @@ export default function Home() {
     scrollToBottom,
     advanceSpeech,
   } = useGameLogic();
-  const { settings, setBgmVolume, setSoundEnabled, setAiVoiceEnabled, setGenshinMode } = useSettings();
-  const { bgmVolume, isSoundEnabled, isAiVoiceEnabled, isGenshinMode } = settings;
+  const { settings, setBgmVolume, setSoundEnabled, setAiVoiceEnabled, setGenshinMode, setAutoAdvanceDialogueEnabled } = useSettings();
+  const { bgmVolume, isSoundEnabled, isAiVoiceEnabled, isGenshinMode, isAutoAdvanceDialogueEnabled } = settings;
   const shouldUseAiVoice = isSoundEnabled && isAiVoiceEnabled && bgmVolume > 0;
   const {
     state: tutorialState,
@@ -181,6 +184,11 @@ export default function Home() {
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", visualIsNight ? "dark" : "light");
   }, [visualIsNight]);
+
+  useEffect(() => {
+    if (gameState.phase !== "GAME_END") return;
+    setAiVoiceEnabled(false);
+  }, [gameState.phase, setAiVoiceEnabled]);
 
   const clearDayNightBlinkTimers = useCallback(() => {
     dayNightBlinkTimeoutsRef.current.forEach((t) => window.clearTimeout(t));
@@ -678,6 +686,68 @@ export default function Home() {
     }
   }, [advanceSpeech, currentDialogue, handleNextRound, isRoleRevealOpen, waitingForNextRound]);
 
+  const autoAdvanceTimeoutRef = useRef<number | null>(null);
+  const lastAutoAdvanceSignatureRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (autoAdvanceTimeoutRef.current !== null) {
+      window.clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
+    }
+
+    if (!isAutoAdvanceDialogueEnabled) return;
+    if (isRoleRevealOpen) return;
+    if (isSettingsOpen) return;
+    if (isNotebookOpen) return;
+    const needsHumanActionNow = PHASE_CONFIGS[gameState.phase].requiresHumanInput(humanPlayer, gameState);
+    if (needsHumanActionNow) return;
+    if (isWaitingForAI) return;
+
+    if (currentDialogue) {
+      const isDialogueComplete =
+        !currentDialogue.isStreaming || displayedText === currentDialogue.text;
+      if (!isDialogueComplete) return;
+
+      const signature = `DIALOGUE::${currentDialogue.speaker}::${currentDialogue.text}`;
+      if (lastAutoAdvanceSignatureRef.current === signature) return;
+      lastAutoAdvanceSignatureRef.current = signature;
+      autoAdvanceTimeoutRef.current = window.setTimeout(() => {
+        void handleAdvanceDialogue();
+      }, 520);
+      return;
+    }
+
+    if (waitingForNextRound) {
+      const signature = `NEXT::${gameState.phase}::${gameState.day}::${String(gameState.currentSpeakerSeat ?? "")}`;
+      if (lastAutoAdvanceSignatureRef.current === signature) return;
+      lastAutoAdvanceSignatureRef.current = signature;
+      autoAdvanceTimeoutRef.current = window.setTimeout(() => {
+        void handleAdvanceDialogue();
+      }, 520);
+    }
+
+    return () => {
+      if (autoAdvanceTimeoutRef.current !== null) {
+        window.clearTimeout(autoAdvanceTimeoutRef.current);
+        autoAdvanceTimeoutRef.current = null;
+      }
+    };
+  }, [
+    currentDialogue,
+    displayedText,
+    gameState.currentSpeakerSeat,
+    gameState,
+    gameState.day,
+    gameState.phase,
+    handleAdvanceDialogue,
+    humanPlayer,
+    isAutoAdvanceDialogueEnabled,
+    isNotebookOpen,
+    isRoleRevealOpen,
+    isSettingsOpen,
+    isWaitingForAI,
+    waitingForNextRound,
+  ]);
+
   useEffect(() => {
     if (!showTable) return;
     if (!humanPlayer) return;
@@ -752,17 +822,23 @@ export default function Home() {
     if (!hasShownRoleReveal && gameState.phase === "NIGHT_START") return;
 
     if (!tutorialState.seenNightIntro && gameState.phase.includes("NIGHT") && visualIsNight) {
-      openTutorial({ kind: "night_intro", phase: gameState.phase });
+      queueMicrotask(() => {
+        openTutorial({ kind: "night_intro", phase: gameState.phase });
+      });
       return;
     }
 
     if (!tutorialState.seenDayIntro && gameState.phase.startsWith("DAY") && !visualIsNight) {
-      openTutorial({ kind: "day_intro", phase: gameState.phase });
+      queueMicrotask(() => {
+        openTutorial({ kind: "day_intro", phase: gameState.phase });
+      });
       return;
     }
 
     if (isRoleActionForHuman && !tutorialState.seenRoles[humanPlayer.role]) {
-      openTutorial({ kind: "role", role: humanPlayer.role, phase: gameState.phase });
+      queueMicrotask(() => {
+        openTutorial({ kind: "role", role: humanPlayer.role, phase: gameState.phase });
+      });
     }
   }, [
     gameState.phase,
@@ -823,8 +899,10 @@ export default function Home() {
 
   useEffect(() => {
     if (showTable) return;
-    setActiveTutorial(null);
-    setIsTutorialOpen(false);
+    queueMicrotask(() => {
+      setActiveTutorial(null);
+      setIsTutorialOpen(false);
+    });
   }, [showTable]);
 
   const triggerNightOverlay = useCallback((type: NightActionOverlayType, targetSeat?: number) => {
@@ -853,7 +931,9 @@ export default function Home() {
   useEffect(() => {
     if (!showTable) {
       lastNightActionRef.current = {};
-      setNightActionOverlay(null);
+      queueMicrotask(() => {
+        setNightActionOverlay(null);
+      });
       return;
     }
 
@@ -867,19 +947,27 @@ export default function Home() {
     const canSeeHunter = role === "Hunter";
 
     if (canSeeWolf && typeof wolfTarget === "number" && wolfTarget !== last.wolfTarget) {
-      triggerNightOverlay("wolf", wolfTarget);
+      queueMicrotask(() => {
+        triggerNightOverlay("wolf", wolfTarget);
+      });
     }
 
     if (canSeeWitch && witchSave && witchSave !== last.witchSave) {
-      triggerNightOverlay("witch-save", wolfTarget);
+      queueMicrotask(() => {
+        triggerNightOverlay("witch-save", wolfTarget);
+      });
     }
 
     if (canSeeWitch && typeof witchPoison === "number" && witchPoison !== last.witchPoison) {
-      triggerNightOverlay("witch-poison", witchPoison);
+      queueMicrotask(() => {
+        triggerNightOverlay("witch-poison", witchPoison);
+      });
     }
 
     if (canSeeSeer && typeof seerTarget === "number" && seerTarget !== last.seerTarget) {
-      triggerNightOverlay("seer", seerTarget);
+      queueMicrotask(() => {
+        triggerNightOverlay("seer", seerTarget);
+      });
     }
 
     const hunterShot =
@@ -889,7 +977,9 @@ export default function Home() {
       ? `${gameState.day}-${hunterShot.hunterSeat}-${hunterShot.targetSeat}`
       : null;
     if (canSeeHunter && hunterShot && hunterShotKey && hunterShotKey !== last.hunterShotKey) {
-      triggerNightOverlay("hunter", hunterShot.targetSeat);
+      queueMicrotask(() => {
+        triggerNightOverlay("hunter", hunterShot.targetSeat);
+      });
     }
 
     lastNightActionRef.current = {
@@ -1009,10 +1099,11 @@ export default function Home() {
 
   const isSelectionPhase = useMemo(() => {
     const actionType = PHASE_CONFIGS[gameState.phase].actionType;
-    if (actionType === "vote" || actionType === "night_action") return needsHumanAction;
-    if (actionType === "special") return needsHumanAction && hasSelectableTargets;
+    const needsHumanActionNow = PHASE_CONFIGS[gameState.phase].requiresHumanInput(humanPlayer, gameState);
+    if (actionType === "vote" || actionType === "night_action") return needsHumanActionNow;
+    if (actionType === "special") return needsHumanActionNow && hasSelectableTargets;
     return false;
-  }, [gameState.phase, needsHumanAction, hasSelectableTargets]);
+  }, [gameState, gameState.phase, hasSelectableTargets, humanPlayer]);
 
   const renderPhaseIcon = () => {
     switch (gameState.phase) {
@@ -1066,13 +1157,13 @@ export default function Home() {
       <motion.div
         className="wc-eyelid-overlay"
         style={{
-          ["--wc-eye-feather" as any]: 16,
-        }}
+          [WC_EYE_FEATHER_VAR]: 16,
+        } as CSSProperties}
         initial={false}
         animate={{
           opacity: dayNightBlinkPhase ? 1 : 0,
-          ["--wc-lid" as any]: dayNightBlinkPhase === "closing" ? 1 : 0,
-        }}
+          [WC_LID_VAR]: dayNightBlinkPhase === "closing" ? 1 : 0,
+        } as unknown as TargetAndTransition}
         transition={
           dayNightBlinkPhase === "closing"
             ? { duration: DAY_NIGHT_BLINK.closeMs / 1000, ease: [0.22, 0.72, 0.24, 1] }
@@ -1095,7 +1186,10 @@ export default function Home() {
             <WelcomeScreen
               humanName={humanName}
               setHumanName={setHumanName}
-              onStart={(options) => startGame({ ...(options ?? {}), isGenshinMode })}
+              onStart={(options) => {
+                setAiVoiceEnabled(false);
+                startGame({ ...(options ?? {}), isGenshinMode });
+              }}
               onAbort={restartGame}
               isLoading={isLoading}
               isGenshinMode={isGenshinMode}
@@ -1346,7 +1440,7 @@ export default function Home() {
                       displayedText={displayedText}
                       isTyping={isTyping}
                       onAdvanceDialogue={handleAdvanceDialogue}
-                      isHumanTurn={(gameState.phase === "DAY_SPEECH" || gameState.phase === "DAY_LAST_WORDS" || gameState.phase === "DAY_BADGE_SPEECH") && gameState.currentSpeakerSeat === humanPlayer?.seat && !waitingForNextRound}
+                      isHumanTurn={(gameState.phase === "DAY_SPEECH" || gameState.phase === "DAY_LAST_WORDS" || gameState.phase === "DAY_BADGE_SPEECH" || gameState.phase === "DAY_PK_SPEECH") && gameState.currentSpeakerSeat === humanPlayer?.seat && !waitingForNextRound}
                       waitingForNextRound={waitingForNextRound}
                       tutorialHelpLabel={tutorialHelpLabel}
                       showTutorialHelp={showTutorialHelp}
@@ -1490,10 +1584,12 @@ export default function Home() {
         bgmVolume={bgmVolume}
         isSoundEnabled={isSoundEnabled}
         isAiVoiceEnabled={isAiVoiceEnabled}
+        isAutoAdvanceDialogueEnabled={isAutoAdvanceDialogueEnabled}
         gameState={gameState}
         onBgmVolumeChange={setBgmVolume}
         onSoundEnabledChange={setSoundEnabled}
         onAiVoiceEnabledChange={setAiVoiceEnabled}
+        onAutoAdvanceDialogueEnabledChange={setAutoAdvanceDialogueEnabled}
       />
 
       {/* 开发者模式 - 只在游戏开始后显示 */}

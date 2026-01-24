@@ -10,6 +10,7 @@ import {
   getRoleText,
   getWinCondition,
   buildSystemTextFromParts,
+  getDayStartIndex,
 } from "@/lib/prompt-utils";
 import type { FlowToken } from "@/lib/game-flow-controller";
 import {
@@ -76,29 +77,47 @@ export class DaySpeechPhase extends GamePhase {
     const selfSpeech = buildPlayerTodaySpeech(state, player, 1400);
 
     const todaySpeakers = new Set<string>();
-    const dayStartIndex = (() => {
-      for (let i = state.messages.length - 1; i >= 0; i--) {
-        if (state.messages[i].isSystem && state.messages[i].content === "天亮了") return i;
-      }
-      return 0;
-    })();
+    const dayStartIndex = getDayStartIndex(state);
+
     for (let i = dayStartIndex; i < state.messages.length; i++) {
       const m = state.messages[i];
       if (!m.isSystem && m.playerId && m.playerId !== player.playerId) {
         todaySpeakers.add(m.playerId);
       }
     }
-    const speakOrder = todaySpeakers.size + 1;
-    const isFirstSpeaker = speakOrder === 1;
 
-    const alivePlayers = state.players.filter((p) => p.alive);
-    const spokenPlayers = alivePlayers.filter(
+    const isLastWords = state.phase === "DAY_LAST_WORDS";
+    const isBadgeSpeech = state.phase === "DAY_BADGE_SPEECH";
+    const isPkSpeech = state.phase === "DAY_PK_SPEECH";
+    const isCampaignSpeech = isBadgeSpeech || isPkSpeech;
+
+    // Define valid speakers for this phase (campaign-only speakers)
+    const candidates =
+      isBadgeSpeech && Array.isArray(state.badge?.candidates) ? state.badge.candidates : [];
+    const pkTargets = isPkSpeech && Array.isArray(state.pkTargets) ? state.pkTargets : [];
+
+    const hasCandidateList = isBadgeSpeech && candidates.length > 0;
+
+    const validSpeakers = state.players.filter(p => {
+        if (!p.alive) return false;
+        // If candidates list is unexpectedly empty, fallback to alive players to avoid division by zero.
+        if (isBadgeSpeech) return hasCandidateList ? candidates.includes(p.seat) : true;
+        if (isPkSpeech) return pkTargets.includes(p.seat);
+        return true;
+    });
+
+    const totalSpeakers = validSpeakers.length;
+    
+    // Recalculate speak order based on valid speakers only
+    const spokenPlayers = validSpeakers.filter(
       (p) => todaySpeakers.has(p.playerId) && p.playerId !== player.playerId
     );
-    const unspokenPlayers = alivePlayers.filter(
+    const unspokenPlayers = validSpeakers.filter(
       (p) => !todaySpeakers.has(p.playerId) && p.playerId !== player.playerId
     );
-    const totalSpeakers = alivePlayers.length;
+
+    const speakOrder = spokenPlayers.length + 1;
+    const isFirstSpeaker = speakOrder === 1;
     const isLastSpeaker = speakOrder === totalSpeakers;
 
     let speakOrderHint = "";
@@ -112,14 +131,15 @@ export class DaySpeechPhase extends GamePhase {
       speakOrderHint = `你是第${speakOrder}/${totalSpeakers}个发言。已发言: ${spokenList || "无"}；未发言: ${unspokenList || "无"}。`;
     }
 
-    const isLastWords = state.phase === "DAY_LAST_WORDS";
-    const isBadgeSpeech = state.phase === "DAY_BADGE_SPEECH";
-    const isPkSpeech = state.phase === "DAY_PK_SPEECH";
-    const isCampaignSpeech = isBadgeSpeech || isPkSpeech;
-
     const campaignRequirements = isBadgeSpeech
       ? `【竞选要求】给出上警理由（信息位、带队能力、对局势判断、站边等）。
-必须给带队承诺或本轮关注点（如：今天先看谁、怎么归票、怎么处理对跳）。`
+必须给带队承诺或本轮关注点（如：今天先看谁、怎么归票、怎么处理对跳）。
+${hasCandidateList
+  ? `注意：仅有参与竞选的玩家会发言，未竞选玩家（${state.players
+      .filter((p) => p.alive && !candidates.includes(p.seat))
+      .map((p) => `${p.seat + 1}号`)
+      .join("、")}）在本环节不会发言。`
+  : "注意：候选人列表为空（异常），请只基于当前可见发言记录进行回应，不要臆测未发言者。"}`
       : isPkSpeech
         ? "【PK要求】指出对手不适合或你更合适的原因，并给出带队承诺或本轮关注点。"
         : "";
@@ -151,8 +171,13 @@ ${campaignRequirements ? `\n${campaignRequirements}` : ""}`;
 1. 只基于当前局势与规则做判断，不要编造人设背景或口头禅。
 2. 发言简洁清晰，说明你这一轮的判断与行动意图。
 3. 仅允许提及有效座位号：1号-${totalSeats}号（严禁出现@12、12号等超出范围的编号）。
-4. 只讨论存活玩家，避免围绕已出局玩家展开推理或复盘。
-5. **每条消息限制在40字以内**，避免在单条消息中说太多内容。
+4. **每条消息限制在40字以内**，避免在单条消息中说太多内容。
+
+【严禁事项】
+- 严禁讨论、分析、提及任何已出局玩家（查看【出局玩家】列表）
+- 严禁回应或评价已出局玩家曾经说过的话
+- 严禁推测已出局玩家的身份或动机
+- 只能围绕当前存活玩家进行讨论
 
 【输出格式】
 返回 JSON 字符串数组，每个元素是一条消息气泡。
@@ -165,7 +190,12 @@ ${campaignRequirements ? `\n${campaignRequirements}` : ""}`;
 3. **局内优先**：发言以本局信息为主（发言、站边、投票、夜里结果），避免编剧情节或展开场外话题。
 4. **自然对话**：像真人在群聊里打字一样说话。可以是断断续续的短句，可以有感叹、犹豫或情绪化的表达。不要写成“逻辑分析报告”。
 5. **针对性互动**：仔细听前几个人的发言，对他们的观点、语气甚至态度做出反应。如果觉得某人好笑就笑，觉得某人胡扯就怼。
-6. **仅限存活玩家**：不要围绕已出局玩家展开推理或复盘，重点讨论当前存活玩家的发言和投票。
+
+【严禁事项】
+- 严禁讨论、分析、提及任何已出局玩家（查看【出局玩家】列表）
+- 严禁回应或评价已出局玩家曾经说过的话
+- 严禁推测已出局玩家的身份或动机
+- 只能围绕当前存活玩家进行讨论
 
 【说话指南】
 - 允许口语化表达（如：呃、那个、我说...），但不要过度堆砌。
