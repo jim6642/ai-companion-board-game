@@ -9,6 +9,7 @@ import {
   addSystemMessage,
   generateAIBadgeVote,
   generateBadgeTransfer,
+  BADGE_VOTE_ABSTAIN,
 } from "@/lib/game-master";
 import { SYSTEM_MESSAGES, UI_TEXT } from "@/lib/game-texts";
 import { DELAY_CONFIG, GAME_CONFIG, BADGE_SIGNUP_PROBABILITY } from "@/lib/game-constants";
@@ -424,27 +425,36 @@ export function useBadgePhase(
     }
     setGameState(currentState);
     const aiPlayers = currentState.players.filter((p) => p.alive && !p.isHuman && !candidates.includes(p.seat));
-    for (const aiPlayer of aiPlayers) {
-      setIsWaitingForAI(true);
-      let targetSeat = await generateAIBadgeVote(currentState, aiPlayer);
+    try {
+      for (const aiPlayer of aiPlayers) {
+        setIsWaitingForAI(true);
+        let targetSeat: number;
+        try {
+          targetSeat = await generateAIBadgeVote(currentState, aiPlayer);
+        } catch (e) {
+          console.warn("[wolfcha] AI badge vote threw, treating as abstain", e);
+          targetSeat = BADGE_VOTE_ABSTAIN;
+        }
 
-      // 确保投给候选人
-      if (candidates.length > 0 && !candidates.includes(targetSeat)) {
-        targetSeat = candidates[Math.floor(Math.random() * candidates.length)];
+        // Abstain (-1) is recorded as-is; only correct non-abstain to a valid candidate
+        if (targetSeat !== BADGE_VOTE_ABSTAIN && candidates.length > 0 && !candidates.includes(targetSeat)) {
+          targetSeat = candidates[Math.floor(Math.random() * candidates.length)];
+        }
+
+        // 从最新状态获取投票，避免覆盖人类玩家的投票
+        const latestState = gameStateRef.current;
+        currentState = {
+          ...currentState,
+          badge: {
+            ...currentState.badge,
+            votes: { ...latestState.badge.votes, [aiPlayer.playerId]: targetSeat },
+          },
+        };
+        setGameState(currentState);
       }
-
-      // 从最新状态获取投票，避免覆盖人类玩家的投票
-      const latestState = gameStateRef.current;
-      currentState = {
-        ...currentState,
-        badge: {
-          ...currentState.badge,
-          votes: { ...latestState.badge.votes, [aiPlayer.playerId]: targetSeat },
-        },
-      };
-      setGameState(currentState);
+    } finally {
+      setIsWaitingForAI(false);
     }
-    setIsWaitingForAI(false);
 
     // AI投票结束后统一结算一次
     await maybeResolveBadgeElection(currentState);

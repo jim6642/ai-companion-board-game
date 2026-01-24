@@ -692,7 +692,19 @@ export function DialogArea({
     }
   };
 
-  const dialogueText = (displayedText || currentSpeaker?.text || "").trim();
+  const baseDialogueText = (displayedText || currentSpeaker?.text || "").trim();
+  // When human has voted in badge election, show "你已经投票给 x 号" instead of "点击头像投票选警徽"
+  const humanBadgeVote = humanPlayer ? gameState.badge.votes[humanPlayer.playerId] : undefined;
+  const dialogueText =
+    phase === "DAY_BADGE_ELECTION" &&
+    humanPlayer &&
+    typeof humanBadgeVote === "number" &&
+    humanBadgeVote >= 0
+      ? (() => {
+          const vp = gameState.players.find((p) => p.seat === humanBadgeVote);
+          return `你已经投票给 ${humanBadgeVote + 1}号${vp ? ` ${vp.displayName}` : ""}`;
+        })()
+      : baseDialogueText;
   const shouldShowDialogue = waitingForNextRound || dialogueText.length > 0;
   const isNightActionPhase = [
     "NIGHT_GUARD_ACTION",
