@@ -204,6 +204,11 @@ import { ALL_MODELS, AVAILABLE_MODELS, GENERATOR_MODEL, SUMMARY_MODEL, type Mode
       }
     }
     const availableSet = new Set(availableModelPool.map((ref) => ref.model));
+    if (isCustomKeyEnabled && availableSet.size === 0) {
+      // Prevent saving an unusable custom-key state with no LLM keys.
+      toast("请至少配置一个 LLM Key", { description: "Zenmux 或百炼二选一即可" });
+      return;
+    }
     const nextSelectedModels = selectedModels.filter((m) => availableSet.has(m));
     const fallbackGenerator = availableSet.has(GENERATOR_MODEL)
       ? GENERATOR_MODEL

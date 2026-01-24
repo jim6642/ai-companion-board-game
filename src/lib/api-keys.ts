@@ -1,4 +1,4 @@
-import { GENERATOR_MODEL, SUMMARY_MODEL } from "@/types/game";
+import { ALL_MODELS, AVAILABLE_MODELS, GENERATOR_MODEL, SUMMARY_MODEL } from "@/types/game";
 
 const ZENMUX_API_KEY_STORAGE = "wolfcha_zenmux_api_key";
 const DASHSCOPE_API_KEY_STORAGE = "wolfcha_dashscope_api_key";
@@ -91,6 +91,47 @@ export function hasMinimaxKey(): boolean {
   return Boolean(getMinimaxApiKey()) && Boolean(getMinimaxGroupId());
 }
 
+// When custom key is disabled, enforce a model from AVAILABLE_MODELS.
+function resolveDefaultModelWhenCustomDisabled(preferred: string): string {
+  if (AVAILABLE_MODELS.some((ref) => ref.model === preferred)) return preferred;
+  return AVAILABLE_MODELS[0]?.model ?? preferred;
+}
+
+// When custom key is enabled, keep model within providers that have keys.
+function resolveModelWhenCustomEnabled(preferred: string, fallbackPreferred: string): string {
+  const allowedProviders = new Set<"zenmux" | "dashscope">();
+  if (hasZenmuxKey()) allowedProviders.add("zenmux");
+  if (hasDashscopeKey()) allowedProviders.add("dashscope");
+
+  if (allowedProviders.size === 0) return preferred;
+
+  const allowedPool = ALL_MODELS.filter((ref) => allowedProviders.has(ref.provider));
+  if (allowedPool.length === 0) return preferred;
+
+  const allowedSet = new Set(allowedPool.map((ref) => ref.model));
+  if (preferred && allowedSet.has(preferred)) return preferred;
+  if (fallbackPreferred && allowedSet.has(fallbackPreferred)) return fallbackPreferred;
+  return allowedPool[0].model;
+}
+
+function resolveModelForCurrentKeyState(
+  storedValue: string,
+  fallbackValue: string,
+  storageKey: string
+): string {
+  const base = storedValue || fallbackValue;
+
+  if (!isCustomKeyEnabled()) {
+    return resolveDefaultModelWhenCustomDisabled(base);
+  }
+
+  const resolved = resolveModelWhenCustomEnabled(base, fallbackValue);
+  if (resolved !== base) {
+    writeStorage(storageKey, resolved);
+  }
+  return resolved;
+}
+
 export function isCustomKeyEnabled(): boolean {
   if (!canUseStorage()) return false;
   return window.localStorage.getItem(CUSTOM_KEY_ENABLED_STORAGE) === "true";
@@ -129,12 +170,11 @@ const DEPRECATED_GENERATOR_MODEL = "google/gemini-2.5-flash-lite-preview-09-2025
 
 export function getGeneratorModel(): string {
   const stored = readStorage(GENERATOR_MODEL_STORAGE);
-  if (!stored) return GENERATOR_MODEL;
   if (stored === DEPRECATED_GENERATOR_MODEL) {
     writeStorage(GENERATOR_MODEL_STORAGE, GENERATOR_MODEL);
     return GENERATOR_MODEL;
   }
-  return stored;
+  return resolveModelForCurrentKeyState(stored, GENERATOR_MODEL, GENERATOR_MODEL_STORAGE);
 }
 
 export function setGeneratorModel(model: string) {
@@ -143,12 +183,11 @@ export function setGeneratorModel(model: string) {
 
 export function getSummaryModel(): string {
   const stored = readStorage(SUMMARY_MODEL_STORAGE);
-  if (!stored) return SUMMARY_MODEL;
   if (stored === DEPRECATED_GENERATOR_MODEL) {
     writeStorage(SUMMARY_MODEL_STORAGE, SUMMARY_MODEL);
     return SUMMARY_MODEL;
   }
-  return stored;
+  return resolveModelForCurrentKeyState(stored, SUMMARY_MODEL, SUMMARY_MODEL_STORAGE);
 }
 
 export function setSummaryModel(model: string) {

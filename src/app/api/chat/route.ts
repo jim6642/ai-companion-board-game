@@ -7,11 +7,11 @@ const DASHSCOPE_CHAT_COMPLETIONS_URL = `${DASHSCOPE_API_BASE_URL}/chat/completio
 
 type Provider = "zenmux" | "dashscope";
 
-function getProviderForModel(model: string): Provider {
+function getProviderForModel(model: string): Provider | null {
   const modelRef =
     ALL_MODELS.find((ref) => ref.model === model) ??
     AVAILABLE_MODELS.find((ref) => ref.model === model);
-  return modelRef?.provider ?? "zenmux";
+  return modelRef?.provider ?? null;
 }
 
 function normalizeDashscopeModelName(model: string): string {
@@ -120,8 +120,15 @@ export async function POST(request: NextRequest) {
       response_format,
       provider,
     } = body;
-    const modelProvider: Provider =
+    const modelProvider: Provider | null =
       provider === "dashscope" || provider === "zenmux" ? provider : getProviderForModel(model);
+    if (!modelProvider) {
+      // Reject unknown models early to avoid mis-routing.
+      return NextResponse.json(
+        { error: `Unknown model: ${String(model ?? "").trim() || "unknown"}` },
+        { status: 400 }
+      );
+    }
     const headerApiKey = request.headers.get("x-zenmux-api-key")?.trim();
     const headerDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim();
     const isDefaultModel = AVAILABLE_MODELS.some((ref) => ref.model === model);
