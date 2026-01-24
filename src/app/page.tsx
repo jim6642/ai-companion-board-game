@@ -1440,7 +1440,7 @@ export default function Home() {
                       displayedText={displayedText}
                       isTyping={isTyping}
                       onAdvanceDialogue={handleAdvanceDialogue}
-                      isHumanTurn={(gameState.phase === "DAY_SPEECH" || gameState.phase === "DAY_LAST_WORDS" || gameState.phase === "DAY_BADGE_SPEECH") && gameState.currentSpeakerSeat === humanPlayer?.seat && !waitingForNextRound}
+                      isHumanTurn={(gameState.phase === "DAY_SPEECH" || gameState.phase === "DAY_LAST_WORDS" || gameState.phase === "DAY_BADGE_SPEECH" || gameState.phase === "DAY_PK_SPEECH") && gameState.currentSpeakerSeat === humanPlayer?.seat && !waitingForNextRound}
                       waitingForNextRound={waitingForNextRound}
                       tutorialHelpLabel={tutorialHelpLabel}
                       showTutorialHelp={showTutorialHelp}
