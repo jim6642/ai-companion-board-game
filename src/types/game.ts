@@ -169,6 +169,7 @@ export interface GameState {
   >;
   dailySummaries: Record<number, string[]>; // day -> summary bullet list
   dailySummaryFacts: Record<number, DailySummaryFact[]>; // day -> structured facts
+  dailySummaryVoteData?: Record<number, DailySummaryVoteData>;
   nightActions: {
     guardTarget?: number;        // 守卫保护的目标
     lastGuardTarget?: number;    // 上一晚守卫保护的目标（不能连续保护同一人）
@@ -202,6 +203,12 @@ export interface DailySummaryFact {
   evidence?: string;
 }
 
+/** Structured vote data extracted from [VOTE_RESULT] to preserve "who voted for whom" for later days. */
+export interface DailySummaryVoteData {
+  sheriff_election?: { winner: number; votes: Record<string, number[]> };
+  execution_vote?: { eliminated: number; votes: Record<string, number[]> };
+}
+
 export const AVAILABLE_MODELS: ModelRef[] = [
   // { provider: "zenmux", model: "deepseek/deepseek-v3.2" },
   { provider: "dashscope", model: "deepseek-v3.2" },
@@ -221,4 +228,4 @@ export const AVAILABLE_MODELS: ModelRef[] = [
 ];
 
 export const GENERATOR_MODEL = "google/gemini-2.5-flash-lite";
-export const SUMMARY_MODEL = "google/gemini-3-flash-preview";
+export const SUMMARY_MODEL = "google/gemini-2.5-flash-lite";

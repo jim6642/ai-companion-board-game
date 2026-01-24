@@ -9,6 +9,7 @@ import {
   type ChatMessage,
   type Alignment,
   type DailySummaryFact,
+  type DailySummaryVoteData,
   GENERATOR_MODEL,
   SUMMARY_MODEL,
   AVAILABLE_MODELS,
@@ -120,6 +121,7 @@ export function createInitialGameState(): GameState {
     voteHistory: {},
     dailySummaries: {},
     dailySummaryFacts: {},
+    dailySummaryVoteData: {},
     nightActions: {},
     roleAbilities: {
       witchHealUsed: false,
@@ -421,9 +423,47 @@ export function tallyVotes(state: GameState): { seat: number; count: number } | 
   return { seat: maxSeat, count: maxVotes };
 }
 
+/** Extract structured vote_data from [VOTE_RESULT] in day messages. Preserves "who voted for whom" so it is not lost when context is trimmed. */
+function extractVoteDataFromDayMessages(
+  dayMessages: ChatMessage[],
+  state: GameState
+): DailySummaryVoteData | undefined {
+  let sheriff: { winner: number; votes: Record<string, number[]> } | undefined;
+  let execution: { eliminated: number; votes: Record<string, number[]> } | undefined;
+
+  for (const m of dayMessages) {
+    if (!m.isSystem || !m.content.startsWith("[VOTE_RESULT]")) continue;
+    try {
+      const json = m.content.slice("[VOTE_RESULT]".length);
+      const data = JSON.parse(json) as { title?: string; results?: Array<{ targetSeat: number; voterSeats?: number[] }> };
+      const results = data.results ?? [];
+      const votes: Record<string, number[]> = {};
+      for (const r of results) {
+        const k = String(r.targetSeat);
+        votes[k] = Array.isArray(r.voterSeats) ? r.voterSeats : [];
+      }
+      if (data.title === "警长竞选投票详情" && Object.keys(votes).length > 0) {
+        const winner = state.badge.holderSeat ?? -1;
+        sheriff = { winner, votes };
+      } else if (data.title === "投票详情" && Object.keys(votes).length > 0) {
+        const eliminated = state.dayHistory?.[state.day]?.executed?.seat ?? -1;
+        execution = { eliminated, votes };
+      }
+    } catch {
+      // skip malformed [VOTE_RESULT]
+    }
+  }
+
+  if (!sheriff && !execution) return undefined;
+  const out: DailySummaryVoteData = {};
+  if (sheriff != null && sheriff.winner >= 0) out.sheriff_election = sheriff;
+  if (execution != null && execution.eliminated >= 0) out.execution_vote = execution;
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 export async function generateDailySummary(
   state: GameState
-): Promise<{ bullets: string[]; facts: DailySummaryFact[] }> {
+): Promise<{ bullets: string[]; facts: DailySummaryFact[]; voteData?: DailySummaryVoteData }> {
   const startTime = Date.now();
   const summaryModel = SUMMARY_MODEL;
 
@@ -436,6 +476,7 @@ export async function generateDailySummary(
   })();
 
   const dayMessages = state.messages.slice(dayStartIndex);
+  const voteData = extractVoteDataFromDayMessages(dayMessages, state);
 
   const transcript = dayMessages
     .map((m) => {
@@ -461,10 +502,10 @@ export async function generateDailySummary(
 【必须记录的内容】
 1. 死亡信息：谁在夜晚/投票中出局
 2. 身份声明：谁跳了什么身份、报了什么验人结果、谁认下
-3. 完整票型：警长竞选和公投的详细投票（列出每个人投了谁），不只是结果
-4. 发言立场：每个玩家的核心观点/表态（用原话或简述，不加评价）
-5. 站边关系：谁表态支持谁、谁表态质疑谁（客观记录，不含判断）
-6. 遗言内容：出局玩家遗言的完整要点
+3. 发言立场：每个玩家的核心观点/表态（用原话或简述，不加评价）
+4. 站边关系：谁表态支持谁、谁表态质疑谁（客观记录，不含判断）
+5. 遗言内容：出局玩家遗言的完整要点
+（警长竞选和公投的票型由系统单独记录，叙述中简要提及结果即可，如「X号当选警长」「X号被放逐」）
 
 【格式要求】
 - 提到玩家必须包含座位号（如"2号""10号"）
@@ -522,9 +563,9 @@ export async function generateDailySummary(
     // ignore parse errors
   }
 
-  // If we got a summary, return it as a single bullet (preserving full text)
+  // If we got a summary, return it as a single bullet (preserving full text) and structured vote_data
   if (summaryText) {
-    return { bullets: [summaryText], facts: [] };
+    return { bullets: [summaryText], facts: [], voteData };
   }
 
   // Fallback: use raw content
@@ -535,7 +576,7 @@ export async function generateDailySummary(
     .trim();
 
   const fallbackBullets = fallback ? [fallback] : [result.content.trim()].filter(Boolean);
-  return { bullets: fallbackBullets, facts: [] };
+  return { bullets: fallbackBullets, facts: [], voteData };
 }
 
 export async function* generateAISpeechStream(

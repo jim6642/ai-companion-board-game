@@ -1,4 +1,4 @@
-import type { DifficultyLevel, GameState, Player } from "@/types/game";
+import type { DifficultyLevel, GameState, Player, DailySummaryVoteData } from "@/types/game";
 import type { SystemPromptPart } from "@/game/core/types";
 import type { LLMMessage } from "./llm";
 import { SYSTEM_MESSAGES } from "./game-texts";
@@ -79,6 +79,7 @@ export const getRoleKnowHow = (role: string): string => {
 - 发言策略：不要过于沉默也不要太激进，保持自然节奏
 - 投票陷阱：避免多狼抱团投票暴露狼坑，可以分散投票
 - 躲刀意识：如果你状态好，可以让队友先被关注
+- 关注死亡信息：若有玩家夜晚出局，发言时需对死因做出反应
 </role_tips>`;
     case "Seer":
       return `<role_tips>
@@ -88,6 +89,7 @@ export const getRoleKnowHow = (role: string): string => {
 - 应对对跳：要求对方先报验，观察对方查验逻辑是否合理
 - 自保意识：你是狼人首刀目标，注意暗示守卫保护
 - 遗言准备：如果感觉要死，提前想好遗言报验内容
+- 关注死亡信息：若有玩家夜晚出局，发言时需对死因做出反应
 </role_tips>`;
     case "Witch":
       return `<role_tips>
@@ -97,6 +99,7 @@ export const getRoleKnowHow = (role: string): string => {
 - 信息隐藏：不要轻易暴露你的用药情况，这是重要信息
 - 自救规则：记住你不能自救，被刀就是死
 - 站边价值：你知道谁被刀了，这是判断狼人的重要线索
+- 关注死亡信息：若有玩家夜晚出局，发言时需对死因做出反应
 </role_tips>`;
     case "Hunter":
       return `<role_tips>
@@ -106,6 +109,7 @@ export const getRoleKnowHow = (role: string): string => {
 - 遗言价值：如果被投票出局，遗言后可以开枪
 - 威慑作用：狼人知道你是猎人会有顾虑，可以利用这点
 - 保命意识：你的开枪权很有价值，尽量活到关键时刻
+- 关注死亡信息：若有玩家夜晚出局，发言时需对死因做出反应
 </role_tips>`;
     case "Guard":
       return `<role_tips>
@@ -115,6 +119,7 @@ export const getRoleKnowHow = (role: string): string => {
 - 空刀判断：如果你保护的人没死，狼人可能刀了别人
 - 信息隐藏：不要轻易暴露你保护过谁，这是重要信息
 - 配合预言家：如果预言家跳了，优先考虑保护
+- 关注死亡信息：若有玩家夜晚出局，发言时需对死因做出反应
 </role_tips>`;
     default: // Villager
       return `<role_tips>
@@ -124,6 +129,7 @@ export const getRoleKnowHow = (role: string): string => {
 - 发言价值：作为村民也要积极发言，提供你的判断
 - 投票谨慎：不要轻易投票给没有证据的人
 - 认清局势：理解当前是几狼几好人的局面
+- 关注死亡信息：若有玩家夜晚出局，发言时需对死因做出反应
 </role_tips>`;
   }
 };
@@ -187,6 +193,33 @@ export const buildAliveCountsSection = (state: GameState): string => {
 总存活: ${alive.length}`;
 };
 
+/** Format structured vote_data into readable text for <history>. Seat numbers in vote_data are 0-based. */
+function formatVoteDataForHistory(v: DailySummaryVoteData): string {
+  const parts: string[] = [];
+  const fmt = (votes: Record<string, number[]>) =>
+    Object.entries(votes)
+      .map(([target, arr]) => {
+        const voters = (arr as number[]).map((s) => `${s + 1}号`).join("、");
+        const t = Number.parseInt(target, 10);
+        return `${voters}投给${Number.isFinite(t) ? t + 1 : target}号`;
+      })
+      .filter(Boolean)
+      .join("；");
+  if (v.sheriff_election) {
+    const { winner, votes } = v.sheriff_election;
+    const base = `【警长投票】${winner + 1}号当选`;
+    const detail = fmt(votes);
+    parts.push(detail ? `${base}；${detail}` : base);
+  }
+  if (v.execution_vote) {
+    const { eliminated, votes } = v.execution_vote;
+    const base = `【公投】${eliminated + 1}号出局`;
+    const detail = fmt(votes);
+    parts.push(detail ? `${base}；${detail}` : base);
+  }
+  return parts.join(" ");
+}
+
 export const buildDailySummariesSection = (state: GameState): string => {
   // Get summaries from dailySummaries (new format: single paragraph text)
   const entries = Object.entries(state.dailySummaries || {})
@@ -204,10 +237,13 @@ export const buildDailySummariesSection = (state: GameState): string => {
 
     if (summaryTexts.length === 0) continue;
 
-    // New format: full paragraph summary per day
-    // Join all bullets (usually just one now) with space
+    // Narrative from LLM
     const fullSummary = summaryTexts.join(" ");
-    lines.push(`【第${day}天】${fullSummary}`);
+    // Append structured vote_data so "who voted for whom" is never lost
+    const voteData = state.dailySummaryVoteData?.[day];
+    const voteText = voteData ? formatVoteDataForHistory(voteData) : "";
+    const line = voteText ? `【第${day}天】${fullSummary} ${voteText}` : `【第${day}天】${fullSummary}`;
+    lines.push(line);
   }
 
   if (lines.length === 0) return "";
