@@ -201,8 +201,8 @@ export interface DailySummaryFact {
   evidence?: string;
 }
 
+// Default models used when custom key is not enabled
 export const AVAILABLE_MODELS: ModelRef[] = [
-  // { provider: "zenmux", model: "deepseek/deepseek-v3.2" },
   { provider: "dashscope", model: "deepseek-v3.2" },
   { provider: "dashscope", model: "qwen-plus-2025-12-01" },
   { provider: "dashscope", model: "Moonshot-Kimi-K2-Instruct" },
@@ -210,14 +210,31 @@ export const AVAILABLE_MODELS: ModelRef[] = [
   { provider: "dashscope", model: "qwen3-max" },
 
   { provider: "zenmux", model: "google/gemini-3-flash-preview" },
-  // { provider: "openrouter", model: "minimax/minimax-m2.1" },
-  // { provider: "zenmux", model: "moonshotai/kimi-k2-0905" },
-  // { provider: "zenmux", model: "z-ai/glm-4.7-flashx" },
-  // { provider: "zenmux", model: "qwen/qwen3-max" },
   { provider: "zenmux", model: "volcengine/doubao-seed-1.8" },
-  // { provider: "zenmux", model: "google/gemini-2.5-flash-lite-preview-09-2025" },
-  // {provider:"zenmux",model:"openai/gpt-5.2-chat"},
-  // {provider:"zenmux",model:"anthropic/claude-sonnet-4.5"}
+];
+
+// All available models for custom key users (includes commented ones from AVAILABLE_MODELS)
+export const ALL_MODELS: ModelRef[] = [
+  // Dashscope models
+  { provider: "dashscope", model: "deepseek-v3.2" },
+  { provider: "dashscope", model: "qwen-plus-2025-12-01" },
+  { provider: "dashscope", model: "Moonshot-Kimi-K2-Instruct" },
+  { provider: "dashscope", model: "qwen3-vl-235b-a22b-instruct" },
+  { provider: "dashscope", model: "qwen3-max" },
+
+  // Zenmux models
+  { provider: "zenmux", model: "deepseek/deepseek-v3.2" },
+  { provider: "zenmux", model: "google/gemini-3-flash-preview" },
+  { provider: "zenmux", model: "moonshotai/kimi-k2-0905" },
+  { provider: "zenmux", model: "qwen/qwen3-max" },
+  { provider: "zenmux", model: "volcengine/doubao-seed-1.8" },
+  { provider: "zenmux", model: "google/gemini-2.5-flash-lite" },
+  { provider: "zenmux", model: "openai/gpt-5.2-chat" },
+  { provider: "zenmux", model: "anthropic/claude-haiku-4.5" },
+  { provider: "zenmux", model: "anthropic/claude-sonnet-4.5" },
+  { provider: "zenmux", model: "anthropic/claude-opus-4.5" },
+  { provider: "zenmux", model: "x-ai/grok-4" },
+  { provider: "zenmux", model: "google/gemini-3-pro-preview" },
 ];
 
 export const GENERATOR_MODEL = "google/gemini-2.5-flash-lite";

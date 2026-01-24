@@ -9,14 +9,13 @@ import {
   type ChatMessage,
   type Alignment,
   type DailySummaryFact,
-  GENERATOR_MODEL,
-  SUMMARY_MODEL,
   AVAILABLE_MODELS,
   type ModelRef,
 } from "@/types/game";
 import { GAME_TEMPERATURE } from "./ai-config";
 import { sampleModelRefs, type GeneratedCharacter } from "./character-generator";
 import { aiLogger } from "./ai-logger";
+import { getGeneratorModel, getSummaryModel } from "@/lib/api-keys";
 import { PhaseManager } from "@/game/core/PhaseManager";
 import type { PromptResult } from "@/game/core/types";
 import { buildCachedSystemMessageFromParts } from "./prompt-utils";
@@ -35,7 +34,7 @@ function getRandomModelRef(): ModelRef {
   if (fallback) return fallback;
   if (AVAILABLE_MODELS.length === 0) {
     // Fallback to GENERATOR_MODEL if no models available
-    return { provider: "zenmux" as const, model: GENERATOR_MODEL };
+    return { provider: "zenmux" as const, model: getGeneratorModel() };
   }
   const randomIndex = Math.floor(Math.random() * AVAILABLE_MODELS.length);
   return AVAILABLE_MODELS[randomIndex];
@@ -422,7 +421,7 @@ export async function generateDailySummary(
   state: GameState
 ): Promise<{ bullets: string[]; facts: DailySummaryFact[] }> {
   const startTime = Date.now();
-  const summaryModel = SUMMARY_MODEL;
+  const summaryModel = getSummaryModel();
 
   const dayStartIndex = (() => {
     for (let i = state.messages.length - 1; i >= 0; i--) {

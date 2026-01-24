@@ -1,9 +1,15 @@
+import { GENERATOR_MODEL, SUMMARY_MODEL } from "@/types/game";
+
 const ZENMUX_API_KEY_STORAGE = "wolfcha_zenmux_api_key";
 const DASHSCOPE_API_KEY_STORAGE = "wolfcha_dashscope_api_key";
 const MINIMAX_API_KEY_STORAGE = "wolfcha_minimax_api_key";
 const MINIMAX_GROUP_ID_STORAGE = "wolfcha_minimax_group_id";
 const CUSTOM_KEY_ENABLED_STORAGE = "wolfcha_custom_key_enabled";
 const SELECTED_MODELS_STORAGE = "wolfcha_selected_models";
+const GENERATOR_MODEL_STORAGE = "wolfcha_generator_model";
+const SUMMARY_MODEL_STORAGE = "wolfcha_summary_model";
+const VALIDATED_ZENMUX_KEY_STORAGE = "wolfcha_validated_zenmux_key";
+const VALIDATED_DASHSCOPE_KEY_STORAGE = "wolfcha_validated_dashscope_key";
 
 function canUseStorage(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -61,6 +67,22 @@ export function hasZenmuxKey(): boolean {
   return Boolean(getZenmuxApiKey());
 }
 
+export function getValidatedZenmuxKey(): string {
+  return readStorage(VALIDATED_ZENMUX_KEY_STORAGE);
+}
+
+export function setValidatedZenmuxKey(key: string) {
+  writeStorage(VALIDATED_ZENMUX_KEY_STORAGE, key);
+}
+
+export function getValidatedDashscopeKey(): string {
+  return readStorage(VALIDATED_DASHSCOPE_KEY_STORAGE);
+}
+
+export function setValidatedDashscopeKey(key: string) {
+  writeStorage(VALIDATED_DASHSCOPE_KEY_STORAGE, key);
+}
+
 export function hasDashscopeKey(): boolean {
   return Boolean(getDashscopeApiKey());
 }
@@ -102,6 +124,37 @@ export function setSelectedModels(models: string[]) {
   window.localStorage.setItem(SELECTED_MODELS_STORAGE, JSON.stringify(normalized));
 }
 
+// Deprecated Zenmux model ID that no longer exists; migrate to valid one
+const DEPRECATED_GENERATOR_MODEL = "google/gemini-2.5-flash-lite-preview-09-2025";
+
+export function getGeneratorModel(): string {
+  const stored = readStorage(GENERATOR_MODEL_STORAGE);
+  if (!stored) return GENERATOR_MODEL;
+  if (stored === DEPRECATED_GENERATOR_MODEL) {
+    writeStorage(GENERATOR_MODEL_STORAGE, GENERATOR_MODEL);
+    return GENERATOR_MODEL;
+  }
+  return stored;
+}
+
+export function setGeneratorModel(model: string) {
+  writeStorage(GENERATOR_MODEL_STORAGE, model);
+}
+
+export function getSummaryModel(): string {
+  const stored = readStorage(SUMMARY_MODEL_STORAGE);
+  if (!stored) return SUMMARY_MODEL;
+  if (stored === DEPRECATED_GENERATOR_MODEL) {
+    writeStorage(SUMMARY_MODEL_STORAGE, SUMMARY_MODEL);
+    return SUMMARY_MODEL;
+  }
+  return stored;
+}
+
+export function setSummaryModel(model: string) {
+  writeStorage(SUMMARY_MODEL_STORAGE, model);
+}
+
 export function clearApiKeys() {
   if (!canUseStorage()) return;
   window.localStorage.removeItem(ZENMUX_API_KEY_STORAGE);
@@ -110,4 +163,8 @@ export function clearApiKeys() {
   window.localStorage.removeItem(MINIMAX_GROUP_ID_STORAGE);
   window.localStorage.removeItem(CUSTOM_KEY_ENABLED_STORAGE);
   window.localStorage.removeItem(SELECTED_MODELS_STORAGE);
+  window.localStorage.removeItem(GENERATOR_MODEL_STORAGE);
+  window.localStorage.removeItem(SUMMARY_MODEL_STORAGE);
+  window.localStorage.removeItem(VALIDATED_ZENMUX_KEY_STORAGE);
+  window.localStorage.removeItem(VALIDATED_DASHSCOPE_KEY_STORAGE);
 }

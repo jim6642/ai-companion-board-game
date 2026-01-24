@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AVAILABLE_MODELS } from "@/types/game";
+import { ALL_MODELS, AVAILABLE_MODELS } from "@/types/game";
 
 const ZENMUX_API_URL = "https://zenmux.ai/api/v1/chat/completions";
 const DASHSCOPE_API_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
@@ -8,7 +8,9 @@ const DASHSCOPE_CHAT_COMPLETIONS_URL = `${DASHSCOPE_API_BASE_URL}/chat/completio
 type Provider = "zenmux" | "dashscope";
 
 function getProviderForModel(model: string): Provider {
-  const modelRef = AVAILABLE_MODELS.find((ref) => ref.model === model);
+  const modelRef =
+    ALL_MODELS.find((ref) => ref.model === model) ??
+    AVAILABLE_MODELS.find((ref) => ref.model === model);
   return modelRef?.provider ?? "zenmux";
 }
 
@@ -120,12 +122,20 @@ export async function POST(request: NextRequest) {
     } = body;
     const modelProvider: Provider =
       provider === "dashscope" || provider === "zenmux" ? provider : getProviderForModel(model);
+    const headerApiKey = request.headers.get("x-zenmux-api-key")?.trim();
+    const headerDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim();
+    const isDefaultModel = AVAILABLE_MODELS.some((ref) => ref.model === model);
 
     const normalizedTemperature =
       typeof temperature === "number" && Number.isFinite(temperature) ? temperature : 0.7;
+    // ZenMux requires temperature in 0..1; Moonshot/Kimi also
     const cappedTemperature = (() => {
       const lower = typeof model === "string" ? model.toLowerCase() : "";
-      if (lower.startsWith("moonshotai/") || lower.includes("kimi")) {
+      const needZeroOne =
+        modelProvider === "zenmux" ||
+        lower.startsWith("moonshotai/") ||
+        lower.includes("kimi");
+      if (needZeroOne) {
         return Math.min(Math.max(0, normalizedTemperature), 1);
       }
       return Math.max(0, normalizedTemperature);
@@ -145,8 +155,22 @@ export async function POST(request: NextRequest) {
       processedMessages = stripCacheControl(processedMessages);
     }
 
+    if (!isDefaultModel) {
+      if (modelProvider === "zenmux" && !headerApiKey) {
+        return NextResponse.json(
+          { error: "此模型需要您提供 Zenmux API Key" },
+          { status: 401 }
+        );
+      }
+      if (modelProvider === "dashscope" && !headerDashscopeKey) {
+        return NextResponse.json(
+          { error: "此模型需要您提供百炼 API Key" },
+          { status: 401 }
+        );
+      }
+    }
+
     if (modelProvider === "dashscope") {
-      const headerDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim();
       const dashscopeApiKey = headerDashscopeKey || process.env.DASHSCOPE_API_KEY;
       if (!dashscopeApiKey) {
         return NextResponse.json(
@@ -216,7 +240,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     }
 
-    const headerApiKey = request.headers.get("x-zenmux-api-key")?.trim();
     const apiKey = headerApiKey || process.env.ZENMUX_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
