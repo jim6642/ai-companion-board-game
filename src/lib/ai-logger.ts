@@ -3,7 +3,8 @@
  * 记录所有 AI 调用用于复盘
  */
 
-import type { LLMMessage } from "./llm";
+import type { ApiKeySource, LLMMessage } from "./llm";
+import { resolveApiKeySource } from "./llm";
 import { generateUUID } from "./utils";
 
 export interface AILogEntry {
@@ -13,6 +14,7 @@ export interface AILogEntry {
   request: {
     model: string;
     messages: LLMMessage[];
+    apiKeySource?: ApiKeySource;
     temperature?: number;
     player?: {
       playerId: string;
@@ -40,6 +42,14 @@ class AILogger {
   async log(entry: Omit<AILogEntry, "id" | "timestamp">) {
     const fullEntry: AILogEntry = {
       ...entry,
+      request: {
+        ...entry.request,
+        apiKeySource:
+          entry.request.apiKeySource ??
+          (typeof entry.request.model === "string" && entry.request.model.trim()
+            ? resolveApiKeySource(entry.request.model)
+            : undefined),
+      },
       id: generateUUID(),
       timestamp: Date.now(),
     };
@@ -92,6 +102,7 @@ class AILogger {
     );
     
     console.log("Model:", entry.request.model);
+    console.log("API Key Source:", entry.request.apiKeySource);
     console.log("Messages:", entry.request.messages);
     console.log("Response:", entry.response.content);
     if (entry.response.raw && entry.response.raw !== entry.response.content) {
