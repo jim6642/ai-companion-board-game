@@ -410,23 +410,8 @@ export function useGameLogic() {
   // ============================================
   const enterVotePhase = useCallback(
     async (state: GameState, token: ReturnType<typeof getToken>, options?: { isRevote?: boolean }) => {
-      // 后台生成摘要，不阻塞投票阶段（覆盖草稿）
-      if (state.messages?.length) {
-        void maybeGenerateDailySummary(state, { force: true })
-          .then((summarized) => {
-            setGameState((prev) => {
-              if (prev.gameId !== summarized.gameId || prev.day !== summarized.day) return prev;
-              return {
-                ...prev,
-                dailySummaries: summarized.dailySummaries,
-                dailySummaryFacts: summarized.dailySummaryFacts,
-              };
-            });
-          })
-          .catch(() => {
-            // ignore summary errors
-          });
-      }
+      // 投票阶段不再触发总结 - 避免重复调用
+      // 总结将在进入夜晚时统一生成，此时信息最完整（包含投票结果和遗言）
       
       queuePhaseExtras("DAY_VOTE", buildVotePhaseExtras(token, options));
       const clearedState: GameState = {
@@ -438,7 +423,7 @@ export function useGameLogic() {
       const nextState = transitionPhase(clearedState, "DAY_VOTE");
       setGameState(nextState);
     },
-    [buildVotePhaseExtras, maybeGenerateDailySummary, queuePhaseExtras, setGameState, transitionPhase]
+    [buildVotePhaseExtras, queuePhaseExtras, setGameState, transitionPhase]
   );
 
   const resolveVotePhase = useCallback(
