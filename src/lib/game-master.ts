@@ -884,6 +884,9 @@ export async function generateAIVote(
   }
 }
 
+/** Sentinel for abstain when AI fails to vote or parse. Counting logic skips -1 via aliveBySeat.has(seat). */
+export const BADGE_VOTE_ABSTAIN = -1;
+
 export async function generateAIBadgeVote(
   state: GameState,
   player: Player
@@ -893,40 +896,57 @@ export async function generateAIBadgeVote(
   const startTime = Date.now();
   const { messages } = buildMessagesForPrompt(prompt);
 
-  const result = await generateCompletion({
-    model: player.agentProfile!.modelRef.model,
-    messages,
-    temperature: GAME_TEMPERATURE.ACTION,
-  });
-
-  const cleanedBadgeVote = stripMarkdownCodeFences(result.content);
-
-  await aiLogger.log({
-    type: "badge_vote",
-    request: {
+  try {
+    const result = await generateCompletion({
       model: player.agentProfile!.modelRef.model,
       messages,
-      player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
-    },
-    response: {
-      content: cleanedBadgeVote,
-      raw: result.content,
-      rawResponse: JSON.stringify(result.raw, null, 2),
-      finishReason: result.raw.choices?.[0]?.finish_reason,
-      duration: Date.now() - startTime,
-    },
-  });
+      temperature: GAME_TEMPERATURE.ACTION,
+    });
 
-  const match = cleanedBadgeVote.match(/\d+/);
-  if (match) {
-    const seat = parseInt(match[0]) - 1;
-    const validSeats = alivePlayers.map((p) => p.seat);
-    if (validSeats.includes(seat)) {
-      return seat;
+    const cleanedBadgeVote = stripMarkdownCodeFences(result.content);
+
+    await aiLogger.log({
+      type: "badge_vote",
+      request: {
+        model: player.agentProfile!.modelRef.model,
+        messages,
+        player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
+      },
+      response: {
+        content: cleanedBadgeVote,
+        raw: result.content,
+        rawResponse: JSON.stringify(result.raw, null, 2),
+        finishReason: result.raw.choices?.[0]?.finish_reason,
+        duration: Date.now() - startTime,
+      },
+    });
+
+    const match = cleanedBadgeVote.match(/\d+/);
+    if (match) {
+      const seat = parseInt(match[0]) - 1;
+      const validSeats = alivePlayers.map((p) => p.seat);
+      if (validSeats.includes(seat)) {
+        return seat;
+      }
     }
-  }
 
-  return alivePlayers[Math.floor(Math.random() * alivePlayers.length)].seat;
+    // Parse failed or invalid seat: treat as abstain instead of random to avoid stuck flow
+    return BADGE_VOTE_ABSTAIN;
+  } catch (error) {
+    // Network/API error: treat as abstain so the phase does not get stuck
+    console.warn("[wolfcha] generateAIBadgeVote failed, treating as abstain:", error);
+    await aiLogger.log({
+      type: "badge_vote",
+      request: {
+        model: player.agentProfile!.modelRef.model,
+        messages: [],
+        player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
+      },
+      response: { content: "", duration: Date.now() - startTime },
+      error: String(error),
+    });
+    return BADGE_VOTE_ABSTAIN;
+  }
 }
 
 export async function generateBadgeTransfer(
