@@ -19,13 +19,16 @@ import { useAtom } from "jotai";
 import { useLocalStorageState } from "ahooks";
 import { toast } from "sonner";
 
-import { GENERATOR_MODEL, AVAILABLE_MODELS, type GameState, type Player, type Phase, type Role, type DevPreset, type ModelRef, type StartGameOptions } from "@/types/game";
+import { AVAILABLE_MODELS, type GameState, type Player, type Phase, type Role, type DevPreset, type ModelRef, type StartGameOptions } from "@/types/game";
 import { gameStateAtom, isValidTransition } from "@/store/game-machine";
+import { getGeneratorModel } from "@/lib/api-keys";
 
 function getRandomModelRef(): ModelRef {
+  const fallback = sampleModelRefs(1)[0];
+  if (fallback) return fallback;
   if (AVAILABLE_MODELS.length === 0) {
     // Fallback to GENERATOR_MODEL if no models available
-    return { provider: "zenmux" as const, model: GENERATOR_MODEL };
+    return { provider: "zenmux" as const, model: getGeneratorModel() };
   }
   const randomIndex = Math.floor(Math.random() * AVAILABLE_MODELS.length);
   return AVAILABLE_MODELS[randomIndex];
@@ -667,10 +670,7 @@ export function useGameLogic() {
   // ============================================
   const isResolvingVotesRef = useRef(false);
   useEffect(() => {
-    if (gameState.phase !== "DAY_VOTE") {
-      isResolvingVotesRef.current = false;
-      return;
-    }
+    if (gameState.phase !== "DAY_VOTE") return;
     if (isResolvingVotesRef.current) return;
     if (isWaitingForAI) return;
 

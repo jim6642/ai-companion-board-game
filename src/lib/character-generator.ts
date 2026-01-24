@@ -1,5 +1,6 @@
 import { generateJSON } from "./llm";
-import { AVAILABLE_MODELS, GENERATOR_MODEL, type GameScenario, type ModelRef, type Persona } from "@/types/game";
+import { AVAILABLE_MODELS, ALL_MODELS, GENERATOR_MODEL, type GameScenario, type ModelRef, type Persona } from "@/types/game";
+import { getGeneratorModel, getSelectedModels, hasDashscopeKey, hasZenmuxKey, isCustomKeyEnabled } from "@/lib/api-keys";
 import { aiLogger } from "./ai-logger";
 import { AI_TEMPERATURE, GAME_TEMPERATURE } from "./ai-config";
 import { getRandomScenario } from "./scenarios";
@@ -37,10 +38,33 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 export const sampleModelRefs = (count: number): ModelRef[] => {
-  const pool =
+  // Default pool when custom key is not enabled
+  const defaultPool =
     AVAILABLE_MODELS.length > 0
       ? AVAILABLE_MODELS
       : [{ provider: "zenmux" as const, model: GENERATOR_MODEL }];
+
+  const pool = (() => {
+    if (!isCustomKeyEnabled()) return defaultPool;
+
+    // When custom key is enabled, use ALL_MODELS as the full available pool
+    const fullPool = ALL_MODELS.length > 0 ? ALL_MODELS : defaultPool;
+
+    const allowedProviders = new Set<ModelRef["provider"]>();
+    if (hasZenmuxKey()) allowedProviders.add("zenmux");
+    if (hasDashscopeKey()) allowedProviders.add("dashscope");
+    if (allowedProviders.size === 0) return defaultPool;
+
+    // Filter by allowed providers
+    const allowedPool = fullPool.filter((ref) => allowedProviders.has(ref.provider));
+    if (allowedPool.length === 0) return defaultPool;
+
+    // Filter by user's selected models
+    const selectedModels = getSelectedModels();
+    if (selectedModels.length === 0) return allowedPool;
+    const selectedPool = allowedPool.filter((ref) => selectedModels.includes(ref.model));
+    return selectedPool.length > 0 ? selectedPool : allowedPool;
+  })();
 
   if (!Number.isFinite(count) || count <= 0) return [];
 
@@ -124,7 +148,7 @@ const resolveNicknameMap = async (requirements: Array<{ model: string; count: nu
     try {
       const prompt = buildNicknamePrompt(missing);
       const raw = await generateJSON<unknown>({
-        model: GENERATOR_MODEL,
+        model: getGeneratorModel(),
         messages: [{ role: "user", content: prompt }],
         temperature: AI_TEMPERATURE.BALANCED,
       });
@@ -513,7 +537,7 @@ export async function generateCharacters(
     const basePrompt = buildBaseProfilesPrompt(count, usedScenario);
 
     const baseResult = await generateJSON<unknown>({
-      model: GENERATOR_MODEL,
+      model: getGeneratorModel(),
       messages: [{ role: "user", content: basePrompt }],
       temperature: GAME_TEMPERATURE.CHARACTER_GENERATION,
       max_tokens: 1200,
@@ -525,7 +549,7 @@ export async function generateCharacters(
     if (!isValidBaseProfiles(baseProfiles, count)) {
       const baseRepairPrompt = buildRepairBaseProfilesPrompt(count, usedScenario, normalizedBase.raw);
       const baseRepaired = await generateJSON<unknown>({
-        model: GENERATOR_MODEL,
+        model: getGeneratorModel(),
         messages: [{ role: "user", content: baseRepairPrompt }],
         temperature: GAME_TEMPERATURE.CHARACTER_REPAIR,
         max_tokens: 1200,
@@ -543,7 +567,7 @@ export async function generateCharacters(
 
     const fullPrompt = buildFullPersonasPrompt(usedScenario, baseProfiles);
     const fullResult = await generateJSON<unknown>({
-      model: GENERATOR_MODEL,
+      model: getGeneratorModel(),
       messages: [{ role: "user", content: fullPrompt }],
       temperature: GAME_TEMPERATURE.CHARACTER_GENERATION,
       max_tokens: 6000,
@@ -555,7 +579,7 @@ export async function generateCharacters(
     if (!alignedCharacters) {
       const repairPrompt = buildRepairFullPersonasPrompt(usedScenario, baseProfiles, normalized.raw);
       const repaired = await generateJSON<unknown>({
-        model: GENERATOR_MODEL,
+        model: getGeneratorModel(),
         messages: [{ role: "user", content: repairPrompt }],
         temperature: GAME_TEMPERATURE.CHARACTER_REPAIR,
         max_tokens: 6000,
@@ -595,7 +619,7 @@ export async function generateCharacters(
     await aiLogger.log({
       type: "character_generation",
       request: { 
-        model: GENERATOR_MODEL,
+        model: getGeneratorModel(),
         messages: [{ role: "user", content: fullPrompt }],
       },
       response: { 

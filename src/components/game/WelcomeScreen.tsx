@@ -16,6 +16,7 @@ import { AccountModal } from "@/components/game/AccountModal";
 import { ResetPasswordModal } from "@/components/game/ResetPasswordModal";
 import { UserProfileModal } from "@/components/game/UserProfileModal";
 import { useCredits } from "@/hooks/useCredits";
+import { hasDashscopeKey, hasZenmuxKey, isCustomKeyEnabled } from "@/lib/api-keys";
 
 type SponsorCardProps = {
   sponsorId: string;
@@ -240,6 +241,18 @@ export function WelcomeScreen({
   const [playerCount, setPlayerCount] = useState(10);
   const [githubStars, setGithubStars] = useState<number | null>(null);
 
+  const [customKeyEnabled, setCustomKeyEnabled] = useState(() => isCustomKeyEnabled());
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== "wolfcha_custom_key_enabled") return;
+      setCustomKeyEnabled(isCustomKeyEnabled());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   // 调试面板状态
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -426,7 +439,8 @@ export function WelcomeScreen({
       return;
     }
 
-    if (credits !== null && credits <= 0) {
+    const hasUserKey = customKeyEnabled && (hasZenmuxKey() || hasDashscopeKey());
+    if (!hasUserKey && credits !== null && credits <= 0) {
       setIsShareOpen(true);
       toast("额度不足", { description: "分享邀请可获得更多额度。" });
       return;
@@ -445,6 +459,11 @@ export function WelcomeScreen({
       const preset = devTab === "preset" && devPreset ? (devPreset as DevPreset) : undefined;
       void onStart({ fixedRoles: roles, devPreset: preset, difficulty, playerCount });
     }, 800);
+
+    if (hasUserKey) {
+      isStartingRef.current = false;
+      return;
+    }
 
     void consumeCredit()
       .then((consumed) => {
@@ -501,6 +520,7 @@ export function WelcomeScreen({
         onChangePassword={() => setIsAccountOpen(true)}
         onShareInvite={() => setIsShareOpen(true)}
         onSignOut={signOut}
+        onCustomKeyEnabledChange={setCustomKeyEnabled}
       />
       <ResetPasswordModal 
         open={isPasswordRecovery} 
@@ -758,7 +778,9 @@ export function WelcomeScreen({
             >
               <UserCircle size={16} />
               <span className="truncate max-w-[160px]">{user.email ?? "已登录"}</span>
-              <span className="opacity-70">剩余 {creditsLoading ? "..." : (credits ?? 0)} 局</span>
+              {!customKeyEnabled && (
+                <span className="opacity-70">剩余 {creditsLoading ? "..." : (credits ?? 0)} 局</span>
+              )}
             </button>
           ) : (
             <Button

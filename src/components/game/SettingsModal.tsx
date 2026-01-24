@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { GameState } from "@/types/game";
+import { aiLogger } from "@/lib/ai-logger";
 
 interface SoundSettingsSectionProps {
   bgmVolume: number;
@@ -111,8 +112,27 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const [view, setView] = useState<"settings" | "about">("settings");
   const [groupImgOk, setGroupImgOk] = useState<boolean | null>(null);
+  const [aiLogs, setAiLogs] = useState<unknown[]>([]);
 
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const logs = await aiLogger.getLogs();
+        if (!cancelled) setAiLogs(logs as unknown[]);
+      } catch {
+        if (!cancelled) setAiLogs([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const logJsonText = useMemo(() => {
     const exportedAt = new Date().toISOString();
@@ -136,11 +156,12 @@ export function SettingsModal({
         isAiVoiceEnabled,
         isAutoAdvanceDialogueEnabled,
       },
+      aiLogs,
       gameState,
     };
 
     return JSON.stringify(payload, null, 2);
-  }, [appVersion, bgmVolume, gameState, isAiVoiceEnabled, isAutoAdvanceDialogueEnabled, isSoundEnabled]);
+  }, [aiLogs, appVersion, bgmVolume, gameState, isAiVoiceEnabled, isAutoAdvanceDialogueEnabled, isSoundEnabled]);
 
   const handleCopyLog = useCallback(async () => {
     try {

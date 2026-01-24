@@ -1,13 +1,38 @@
+import { getDashscopeApiKey, getZenmuxApiKey, isCustomKeyEnabled } from "@/lib/api-keys";
+import { ALL_MODELS, AVAILABLE_MODELS } from "@/types/game";
+
 export type LLMContentPart =
   | { type: "text"; text: string; cache_control?: { type: "ephemeral"; ttl?: "1h" } }
   | { type: "image_url"; image_url: { url: string; detail?: string } }
   | { type: "input_audio"; input_audio: { data: string; format: "mp3" | "wav" } };
+
+export type ApiKeySource = "user" | "project";
 
 export interface LLMMessage {
   role: "system" | "user" | "assistant";
   content: string | LLMContentPart[];
   reasoning_details?: unknown;
 }
+
+type Provider = "zenmux" | "dashscope";
+
+function getProviderForModel(model: string): Provider {
+   const modelRef =
+     ALL_MODELS.find((ref) => ref.model === model) ??
+     AVAILABLE_MODELS.find((ref) => ref.model === model);
+   return modelRef?.provider ?? "zenmux";
+ }
+
+export function resolveApiKeySource(model: string): ApiKeySource {
+   const customEnabled = isCustomKeyEnabled();
+   if (!customEnabled) return "project";
+
+   const provider = getProviderForModel(model);
+   if (provider === "dashscope") {
+     return getDashscopeApiKey() ? "user" : "project";
+   }
+   return getZenmuxApiKey() ? "user" : "project";
+ }
 
 export interface ChatCompletionResponse {
   id: string;
@@ -144,12 +169,25 @@ export async function generateCompletion(
       ? Math.max(16, Math.floor(options.max_tokens))
       : undefined;
 
+  const customEnabled = isCustomKeyEnabled();
+  const headerApiKey = customEnabled ? getZenmuxApiKey() : "";
+  const dashscopeApiKey = customEnabled ? getDashscopeApiKey() : "";
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (headerApiKey) {
+    headers["X-Zenmux-Api-Key"] = headerApiKey;
+  }
+  if (dashscopeApiKey) {
+    headers["X-Dashscope-Api-Key"] = dashscopeApiKey;
+  }
+
   const response = await fetchWithRetry(
     "/api/chat",
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        ...headers,
       },
       body: JSON.stringify({
         model: options.model,
@@ -200,12 +238,25 @@ export async function* generateCompletionStream(
       ? Math.max(16, Math.floor(options.max_tokens))
       : undefined;
 
+  const customEnabled = isCustomKeyEnabled();
+  const headerApiKey = customEnabled ? getZenmuxApiKey() : "";
+  const dashscopeApiKey = customEnabled ? getDashscopeApiKey() : "";
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (headerApiKey) {
+    headers["X-Zenmux-Api-Key"] = headerApiKey;
+  }
+  if (dashscopeApiKey) {
+    headers["X-Dashscope-Api-Key"] = dashscopeApiKey;
+  }
+
   const response = await fetchWithRetry(
     "/api/chat",
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        ...headers,
       },
       body: JSON.stringify({
         model: options.model,

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { getDashscopeApiKey, getZenmuxApiKey, isCustomKeyEnabled } from "@/lib/api-keys";
 
 const REFERRAL_STORAGE_KEY = "wolfcha_referral";
 
@@ -42,10 +43,15 @@ export function useCredits() {
   const consumeCredit = useCallback(async (): Promise<boolean> => {
     if (!session) return false;
 
+    const customEnabled = isCustomKeyEnabled();
+    const headerApiKey = customEnabled ? getZenmuxApiKey() : "";
+    const dashscopeApiKey = customEnabled ? getDashscopeApiKey() : "";
     const res = await fetch("/api/credits/consume", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${session.access_token}`,
+        ...(headerApiKey ? { "X-Zenmux-Api-Key": headerApiKey } : {}),
+        ...(dashscopeApiKey ? { "X-Dashscope-Api-Key": dashscopeApiKey } : {}),
       },
     });
 
