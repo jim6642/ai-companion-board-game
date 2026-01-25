@@ -152,6 +152,7 @@ interface DialogAreaProps {
   isTyping: boolean;
   showFullHistory?: boolean;
   onAdvanceDialogue?: () => void;
+  onAtBottomChange?: (isAtBottom: boolean) => void;
   isHumanTurn?: boolean; // 是否轮到人类发言
   waitingForNextRound?: boolean; // 是否等待下一轮
   tutorialHelpLabel?: string;
@@ -260,6 +261,7 @@ export function DialogArea({
   displayedText,
   isTyping,
   onAdvanceDialogue,
+  onAtBottomChange,
   isHumanTurn = false,
   waitingForNextRound = false,
   tutorialHelpLabel,
@@ -511,24 +513,32 @@ export function DialogArea({
 
   // 智能滚动逻辑
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const prevMessageCountRef = useRef(visibleMessages.length);
-  const scrollThreshold = 100; // 距离底部多少像素算"在底部"
+  const scrollThreshold = 24; // 距离底部多少像素算"在底部"
   const isAutoScrollingRef = useRef(false);
   const userScrollTimeoutRef = useRef<number | null>(null);
   const isUserScrollingRef = useRef(false);
 
   // 检测用户是否在底部
-  const checkIfAtBottom = useCallback(() => {
+  const checkIfAtBottom = useCallback((): boolean => {
     if (historyRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = historyRef.current;
       const nearBottom = scrollHeight - scrollTop - clientHeight < scrollThreshold;
       setIsAtBottom(nearBottom);
       if (nearBottom) {
         setUnreadCount(0);
+        setIsFollowing(true);
       }
+      return nearBottom;
     }
+    return true;
   }, []);
+
+  useEffect(() => {
+    onAtBottomChange?.(isAtBottom);
+  }, [isAtBottom, onAtBottomChange]);
 
   // 滚动到底部
   const scrollToBottom = useCallback(() => {
@@ -536,6 +546,7 @@ export function DialogArea({
       const container = historyRef.current;
       
       isAutoScrollingRef.current = true;
+      setIsFollowing(true);
       // 先立即滚动到底部
       container.scrollTo({
         top: container.scrollHeight,
@@ -573,7 +584,10 @@ export function DialogArea({
       userScrollTimeoutRef.current = window.setTimeout(() => {
         isUserScrollingRef.current = false;
       }, 140);
-      checkIfAtBottom();
+      const nearBottom = checkIfAtBottom();
+      if (!nearBottom) {
+        setIsFollowing(false);
+      }
     };
 
     container.addEventListener("scroll", handleScroll, { passive: true });
@@ -588,7 +602,7 @@ export function DialogArea({
     if (newCount > prevCount) {
       const addedCount = newCount - prevCount;
       
-      if (isAtBottom && !isUserScrollingRef.current) {
+      if (isFollowing && !isUserScrollingRef.current) {
         // 用户在底部，自动滚动
         requestAnimationFrame(() => {
           if (historyRef.current) {
@@ -606,18 +620,18 @@ export function DialogArea({
     }
     
     prevMessageCountRef.current = newCount;
-  }, [visibleMessages.length, isAtBottom]);
+  }, [visibleMessages.length, isFollowing]);
 
   // 对话内容更新时也检查是否需要滚动
   useEffect(() => {
-    if (isAtBottom && historyRef.current && !isUserScrollingRef.current) {
+    if (isFollowing && historyRef.current && !isUserScrollingRef.current) {
       isAutoScrollingRef.current = true;
       historyRef.current.scrollTop = historyRef.current.scrollHeight;
       window.setTimeout(() => {
         isAutoScrollingRef.current = false;
       }, 120);
     }
-  }, [displayedText, isAtBottom]);
+  }, [displayedText, isFollowing]);
 
   // 空状态
   if (gameState.messages.length === 0 && !currentDialogue) {
@@ -784,7 +798,11 @@ export function DialogArea({
           <div className="wc-dialog-history flex-1 min-w-0 min-h-0 relative">
             <div 
               ref={historyRef}
-              className="absolute inset-0 overflow-y-auto pb-4"
+              className="absolute inset-0 overflow-y-scroll pb-4"
+              style={{
+                scrollbarGutter: "stable",
+                overflowAnchor: "none",
+              }}
             >
               {visibleMessages.map((msg, index) => {
                 const prevMsg = visibleMessages[index - 1];
@@ -871,7 +889,8 @@ export function DialogArea({
         {/* 对话气泡 - 简化结构，移除嵌套 */}
         <div
           className={cn(
-            "wc-panel wc-panel--strong rounded-xl p-5 relative min-h-[160px] transition-opacity",
+            "wc-panel wc-panel--strong rounded-xl p-5 relative transition-opacity",
+            showDialogueBlock ? "h-[160px] overflow-hidden" : "min-h-[160px]",
             shouldShowDialogPanel
               ? "opacity-100"
               : "opacity-0 pointer-events-none bg-transparent border-transparent shadow-none"
@@ -1289,7 +1308,7 @@ export function DialogArea({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="cursor-pointer"
+                  className="cursor-pointer flex flex-col min-h-0 h-full"
                   onClick={handleAdvance}
                 >
                     {currentSpeaker?.player && (
@@ -1299,7 +1318,7 @@ export function DialogArea({
                     )}
                     
                     {/* 对话内容 - 带玩家标签，逐字输入效果，文字调大 */}
-                    <div className="text-xl leading-relaxed text-[var(--text-primary)]">
+                    <div className="text-xl leading-relaxed text-[var(--text-primary)] flex-1 min-h-0 overflow-y-auto overscroll-contain pr-1">
                       {renderPlayerMentions(
                         waitingForNextRound ? "轻触继续，轮到下一位" : dialogueText,
                         gameState.players,
