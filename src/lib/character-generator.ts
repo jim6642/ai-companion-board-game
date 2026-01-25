@@ -3,7 +3,7 @@ import { AVAILABLE_MODELS, GENERATOR_MODEL, type GameScenario, type ModelRef, ty
 import { aiLogger } from "./ai-logger";
 import { AI_TEMPERATURE, GAME_TEMPERATURE } from "./ai-config";
 import { getRandomScenario } from "./scenarios";
-import { resolveVoiceId, VOICE_PRESETS } from "./voice-constants";
+import { resolveVoiceId, VOICE_PRESETS, type AppLocale } from "./voice-constants";
 import { getI18n } from "@/i18n/translator";
 
 export interface GeneratedCharacter {
@@ -453,10 +453,13 @@ export async function generateCharacters(
     const finalizedCharacters = alignedCharacters.map((c, index) => {
       const profile = baseProfiles[index];
       // 分配 Voice ID：按性别 + 年龄选择（缺失/非法时兜底到默认音色）
+      // Note: We always store Chinese voice ID at generation time.
+      // Runtime resolution (useDayPhase) will switch to English based on current locale.
       const voiceId = resolveVoiceId(
         c.persona.voiceId,
         c.persona.gender,
-        c.persona.age
+        c.persona.age,
+        "zh" as AppLocale
       );
 
       const character: GeneratedCharacter = {

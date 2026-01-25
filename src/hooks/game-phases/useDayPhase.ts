@@ -15,7 +15,8 @@ import {
 import { PHASE_CATEGORIES } from "@/lib/game-constants";
 import { type FlowToken } from "@/lib/game-flow-controller";
 import { audioManager, makeAudioTaskId } from "@/lib/audio-manager";
-import { resolveVoiceId } from "@/lib/voice-constants";
+import { resolveVoiceId, type AppLocale } from "@/lib/voice-constants";
+import { getLocale } from "@/i18n/locale-store";
 
 export interface DayPhaseCallbacks {
   setDialogue: (speaker: string, text: string, isStreaming?: boolean) => void;
@@ -109,10 +110,13 @@ export function useDayPhase(
       const normalizedSegments = segments.map((segment) => segment.trim()).filter((segment) => segment.length > 0);
 
       try {
+        // Get current locale for voice resolution
+        const locale = getLocale() as AppLocale;
         const voiceId = resolveVoiceId(
           player.agentProfile?.persona?.voiceId,
           player.agentProfile?.persona?.gender,
-          player.agentProfile?.persona?.age
+          player.agentProfile?.persona?.age,
+          locale
         );
         const tasks = normalizedSegments
           .map((text) => ({

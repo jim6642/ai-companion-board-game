@@ -50,7 +50,8 @@ import { SettingsModal } from "@/components/game/SettingsModal";
 
 import { buildSimpleAvatarUrl } from "@/lib/avatar-config";
 import { audioManager, makeAudioTaskId } from "@/lib/audio-manager";
-import { resolveVoiceId } from "@/lib/voice-constants";
+import { resolveVoiceId, type AppLocale } from "@/lib/voice-constants";
+import { getLocale } from "@/i18n/locale-store";
 import { useSettings } from "@/hooks/useSettings";
 import { useTutorial } from "@/hooks/useTutorial";
 
@@ -609,10 +610,12 @@ export default function Home() {
     if (text.includes(t("dayPhase.organizing")) || text.includes(t("ui.generatingVoice"))) return 25;
 
     const player = gameState.players.find((p) => p.displayName === currentDialogue.speaker);
+    const locale = getLocale() as AppLocale;
     const voiceId = resolveVoiceId(
       player?.agentProfile?.persona?.voiceId,
       player?.agentProfile?.persona?.gender,
-      player?.agentProfile?.persona?.age
+      player?.agentProfile?.persona?.age,
+      locale
     );
     const taskId = makeAudioTaskId(voiceId, text);
     const durationMs = audioManager.getCachedDurationMs(taskId);

@@ -16,7 +16,8 @@ import {
   type SmartJumpResult,
 } from "@/lib/SmartJumpManager";
 import { PhaseManager } from "@/game/core/PhaseManager";
-import { DEFAULT_VOICE_ID, resolveVoiceId, VOICE_PRESETS } from "@/lib/voice-constants";
+import { DEFAULT_VOICE_ID, resolveVoiceId, VOICE_PRESETS, ENGLISH_VOICE_PRESETS, type AppLocale } from "@/lib/voice-constants";
+import { getLocale } from "@/i18n/locale-store";
 
 type AILogEntry = {
   id: string;
@@ -1518,12 +1519,15 @@ function PlayersTab({
                   <span className="text-xs text-gray-400">MiniMax 音色: </span>
                   <span className="text-xs text-yellow-400 font-mono">
                     {(() => {
+                      const locale = getLocale() as AppLocale;
                       const voiceId = resolveVoiceId(
                         selectedPlayer.agentProfile?.persona?.voiceId,
                         selectedPlayer.agentProfile?.persona?.gender,
-                        selectedPlayer.agentProfile?.persona?.age
+                        selectedPlayer.agentProfile?.persona?.age,
+                        locale
                       );
-                      const preset = VOICE_PRESETS.find((p) => p.id === voiceId);
+                      const presets = locale === "en" ? ENGLISH_VOICE_PRESETS : VOICE_PRESETS;
+                      const preset = presets.find((p) => p.id === voiceId);
                       return preset ? `${preset.name} (${preset.id})` : voiceId;
                     })()}
                   </span>

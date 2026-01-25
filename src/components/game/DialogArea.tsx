@@ -17,7 +17,8 @@ import LoadingMiniGame from "./MiniGame/LoadingMiniGame";
 import type { GameState, Player, ChatMessage, Phase } from "@/types/game";
 import { cn } from "@/lib/utils";
 import { audioManager, makeAudioTaskId } from "@/lib/audio-manager";
-import { resolveVoiceId } from "@/lib/voice-constants";
+import { resolveVoiceId, type AppLocale } from "@/lib/voice-constants";
+import { getLocale } from "@/i18n/locale-store";
 
 type WitchActionType = "save" | "poison" | "pass";
 import type { DialogueState } from "@/store/game-machine";
@@ -312,10 +313,12 @@ export function DialogArea({
     // “思考中”阶段不播
     if (text.includes("正在组织语言") || text.includes("生成语音")) return;
 
+    const locale = getLocale() as AppLocale;
     const voiceId = resolveVoiceId(
       player.agentProfile?.persona?.voiceId,
       player.agentProfile?.persona?.gender,
-      player.agentProfile?.persona?.age
+      player.agentProfile?.persona?.age,
+      locale
     );
 
     audioManager.addToQueue({
