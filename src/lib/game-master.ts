@@ -22,6 +22,7 @@ import { getGeneratorModel, getSummaryModel } from "@/lib/api-keys";
 import { PhaseManager } from "@/game/core/PhaseManager";
 import type { PromptResult } from "@/game/core/types";
 import { buildCachedSystemMessageFromParts } from "./prompt-utils";
+import { getI18n } from "@/i18n/translator";
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -52,7 +53,7 @@ function sanitizeSeatMentions(text: string, totalSeats: number): string {
   const replaceIfInvalid = (raw: string, numStr: string) => {
     const n = Number.parseInt(numStr, 10);
     if (!Number.isFinite(n)) return raw;
-    if (n < 1 || n > totalSeats) return "（无效座位）";
+    if (n < 1 || n > totalSeats) return "(invalid seat)";
     return raw;
   };
 
@@ -274,10 +275,11 @@ export function addSystemMessage(
   state: GameState,
   content: string
 ): GameState {
+  const { t } = getI18n();
   const message: ChatMessage = {
     id: uuidv4(),
     playerId: "system",
-    playerName: "主持人",
+    playerName: t("speakers.host"),
     content,
     timestamp: Date.now(),
     day: state.day,

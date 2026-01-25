@@ -95,36 +95,26 @@ export class BadgePhase extends GamePhase {
     const persona = buildPersonaSection(player, isGenshinMode);
     const todayTranscript = buildTodayTranscript(state, 6000);
 
-    const cacheableContent = `【身份】
-你是 ${player.seat + 1}号「${player.displayName}」
-身份: ${getRoleText(player.role)}
-
-${getWinCondition(player.role)}
-
-${persona}
-
-${difficultyHint}`;
-    const dynamicContent = `【任务】
-现在是警徽竞选报名环节。请根据当前局势决定是否报名竞选警长。
-好人阵营：报名的收益是带队与控票，但也可能暴露目标。
-狼人阵营：报名可以带节奏，但也更容易被针对。
-
-【报名原则】如果没有重要信息可分享，或无法说服他人、难以带队，优先选择不报名（0）。
-
-【输出格式】
-只输出单个数字：1 表示报名，0 表示不报名
-不要解释，不要输出多余文字，不要代码块`;
+    const { t } = getI18n();
+    const cacheableContent = t("prompts.badge.signup.base", {
+      seat: player.seat + 1,
+      name: player.displayName,
+      role: getRoleText(player.role),
+      winCondition: getWinCondition(player.role),
+      persona,
+      difficultyHint,
+    });
+    const dynamicContent = t("prompts.badge.signup.task");
     const systemParts: SystemPromptPart[] = [
       { text: cacheableContent, cacheable: true, ttl: "1h" },
       { text: dynamicContent },
     ];
     const system = buildSystemTextFromParts(systemParts);
 
-    const user = `${context}
-
-${todayTranscript ? `【本日讨论记录】\n${todayTranscript}` : "【本日讨论记录】\n（无）"}
-
-是否报名竞选警长？`;
+    const user = t("prompts.badge.signup.user", {
+      context,
+      todayTranscript: todayTranscript || t("prompts.badge.signup.noTranscript"),
+    });
 
     return { system, user, systemParts };
   }

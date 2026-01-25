@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { useAtom } from "jotai";
 import { motion, AnimatePresence } from "framer-motion";
 import { gameStateAtom } from "@/store/game-machine";
@@ -64,7 +65,55 @@ const ALL_PHASES: Phase[] = [
 // 所有可用的角色
 const ALL_ROLES: Role[] = ["Villager", "Werewolf", "Seer", "Witch", "Hunter", "Guard"];
 
-// 阶段中文名
+// Helper to get phase name with i18n
+const usePhaseNames = () => {
+  const t = useTranslations();
+  return useMemo(() => ({
+    LOBBY: t("devConsole.phases.LOBBY"),
+    SETUP: t("devConsole.phases.SETUP"),
+    NIGHT_START: t("devConsole.phases.NIGHT_START"),
+    NIGHT_GUARD_ACTION: t("devConsole.phases.NIGHT_GUARD_ACTION"),
+    NIGHT_WOLF_ACTION: t("devConsole.phases.NIGHT_WOLF_ACTION"),
+    NIGHT_WITCH_ACTION: t("devConsole.phases.NIGHT_WITCH_ACTION"),
+    NIGHT_SEER_ACTION: t("devConsole.phases.NIGHT_SEER_ACTION"),
+    NIGHT_RESOLVE: t("devConsole.phases.NIGHT_RESOLVE"),
+    DAY_START: t("devConsole.phases.DAY_START"),
+    DAY_BADGE_SIGNUP: t("devConsole.phases.DAY_BADGE_SIGNUP"),
+    DAY_BADGE_SPEECH: t("devConsole.phases.DAY_BADGE_SPEECH"),
+    DAY_BADGE_ELECTION: t("devConsole.phases.DAY_BADGE_ELECTION"),
+    DAY_SPEECH: t("devConsole.phases.DAY_SPEECH"),
+    DAY_PK_SPEECH: t("devConsole.phases.DAY_PK_SPEECH"),
+    DAY_LAST_WORDS: t("devConsole.phases.DAY_LAST_WORDS"),
+    DAY_VOTE: t("devConsole.phases.DAY_VOTE"),
+    DAY_RESOLVE: t("devConsole.phases.DAY_RESOLVE"),
+    BADGE_TRANSFER: t("devConsole.phases.BADGE_TRANSFER"),
+    HUNTER_SHOOT: t("devConsole.phases.HUNTER_SHOOT"),
+    GAME_END: t("devConsole.phases.GAME_END"),
+  } as Record<Phase, string>), [t]);
+};
+
+// Helper to get role name with i18n
+const useRoleNames = () => {
+  const t = useTranslations();
+  return useMemo(() => ({
+    Villager: t("devConsole.roles.Villager"),
+    Werewolf: t("devConsole.roles.Werewolf"),
+    Seer: t("devConsole.roles.Seer"),
+    Witch: t("devConsole.roles.Witch"),
+    Hunter: t("devConsole.roles.Hunter"),
+    Guard: t("devConsole.roles.Guard"),
+  } as Record<Role, string>), [t]);
+};
+
+// Helper to format player label with i18n
+const useFormatPlayerLabel = () => {
+  const t = useTranslations();
+  return useCallback((p: Player) => 
+    t("devConsole.playerLabel", { seat: p.seat + 1, name: p.displayName }) + (p.alive ? "" : t("devConsole.playerDead"))
+  , [t]);
+};
+
+// Legacy constants for backward compatibility (will be replaced by hooks usage)
 const PHASE_NAMES: Record<Phase, string> = {
   LOBBY: "大厅",
   SETUP: "设置中",
@@ -88,7 +137,6 @@ const PHASE_NAMES: Record<Phase, string> = {
   GAME_END: "游戏结束",
 };
 
-// 角色中文名
 const ROLE_NAMES: Record<Role, string> = {
   Villager: "村民",
   Werewolf: "狼人",

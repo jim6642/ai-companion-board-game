@@ -39,16 +39,7 @@ const getRoleIcon = (role: string, size: number = 20) => {
   }
 };
 
-const getRoleName = (role: string) => {
-  switch (role) {
-    case "Werewolf": return "狼人";
-    case "Seer": return "预言家";
-    case "Witch": return "女巫";
-    case "Hunter": return "猎人";
-    case "Guard": return "守卫";
-    default: return "村民";
-  }
-};
+// getRoleName is defined inside the component to use i18n translations
 
 export function PlayerDetailModal({ player, isOpen, onClose, humanPlayer, isGenshinMode = false }: PlayerDetailModalProps) {
   const t = useTranslations();
