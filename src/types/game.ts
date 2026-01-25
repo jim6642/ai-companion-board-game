@@ -46,18 +46,16 @@ export type Alignment = "village" | "wolf";
  }
 
 export interface ModelRef {
-  provider: "zenmux";
+  provider: "zenmux" | "dashscope";
   model: string;
 }
 
 export interface Persona {
   styleLabel: string;
   voiceRules: string[];
-  riskBias: "safe" | "balanced" | "aggressive";
   mbti: string;
   gender: "male" | "female" | "nonbinary";
   age: number;
-  backgroundStory: string;
   voiceId?: string;
   relationships?: string[];
   logicStyle?: string;
@@ -112,6 +110,7 @@ export interface ChatMessage {
   phase?: Phase;
   isSystem?: boolean;
   isStreaming?: boolean;
+  isLastWords?: boolean;  // Flag for last words (遗言) messages
 }
 
 export interface GameState {
@@ -168,6 +167,7 @@ export interface GameState {
   >;
   dailySummaries: Record<number, string[]>; // day -> summary bullet list
   dailySummaryFacts: Record<number, DailySummaryFact[]>; // day -> structured facts
+  dailySummaryVoteData?: Record<number, DailySummaryVoteData>;
   nightActions: {
     guardTarget?: number;        // 守卫保护的目标
     lastGuardTarget?: number;    // 上一晚守卫保护的目标（不能连续保护同一人）
@@ -201,20 +201,45 @@ export interface DailySummaryFact {
   evidence?: string;
 }
 
+/** Structured vote data extracted from [VOTE_RESULT] to preserve "who voted for whom" for later days. */
+export interface DailySummaryVoteData {
+  sheriff_election?: { winner: number; votes: Record<string, number[]> };
+  execution_vote?: { eliminated: number; votes: Record<string, number[]> };
+}
+
+// Default models used when custom key is not enabled
 export const AVAILABLE_MODELS: ModelRef[] = [
+  { provider: "dashscope", model: "deepseek-v3.2" },
+  { provider: "dashscope", model: "qwen-plus-2025-12-01" },
+  { provider: "dashscope", model: "Moonshot-Kimi-K2-Instruct" },
+  { provider: "dashscope", model: "qwen3-max" },
+
+  { provider: "zenmux", model: "google/gemini-3-flash-preview" },
+];
+
+// All available models for custom key users (includes commented ones from AVAILABLE_MODELS)
+export const ALL_MODELS: ModelRef[] = [
+  // Dashscope models
+  { provider: "dashscope", model: "deepseek-v3.2" },
+  { provider: "dashscope", model: "qwen-plus-2025-12-01" },
+  { provider: "dashscope", model: "Moonshot-Kimi-K2-Instruct" },
+  { provider: "dashscope", model: "qwen3-vl-235b-a22b-instruct" },
+  { provider: "dashscope", model: "qwen3-max" },
+
+  // Zenmux models
   { provider: "zenmux", model: "deepseek/deepseek-v3.2" },
-  {provider:"zenmux",model:"google/gemini-3-flash-preview"},
-  // { provider: "openrouter", model: "anthropic/claude-haiku-4.5" },
-  // { provider: "openrouter", model: "minimax/minimax-m2.1" },
-  {provider:"zenmux",model:"qwen/qwen3-235b-a22b-2507"},
+  { provider: "zenmux", model: "google/gemini-3-flash-preview" },
   { provider: "zenmux", model: "moonshotai/kimi-k2-0905" },
-  // { provider: "zenmux", model: "z-ai/glm-4.7-flashx" },
-  // { provider: "zenmux", model: "qwen/qwen3-max" },
-   { provider: "zenmux", model: "volcengine/doubao-seed-1.8" },
-  // { provider: "zenmux", model: "google/gemini-2.5-flash-lite-preview-09-2025" },
-  // {provider:"zenmux",model:"openai/gpt-5.2-chat"},
-  // {provider:"zenmux",model:"anthropic/claude-sonnet-4.5"}
+  { provider: "zenmux", model: "qwen/qwen3-max" },
+  { provider: "zenmux", model: "volcengine/doubao-seed-1.8" },
+  { provider: "zenmux", model: "google/gemini-2.5-flash-lite" },
+  { provider: "zenmux", model: "openai/gpt-5.2-chat" },
+  { provider: "zenmux", model: "anthropic/claude-haiku-4.5" },
+  { provider: "zenmux", model: "anthropic/claude-sonnet-4.5" },
+  { provider: "zenmux", model: "anthropic/claude-opus-4.5" },
+  { provider: "zenmux", model: "x-ai/grok-4" },
+  { provider: "zenmux", model: "google/gemini-3-pro-preview" },
 ];
 
 export const GENERATOR_MODEL = "google/gemini-2.5-flash-lite";
-export const SUMMARY_MODEL = "google/gemini-3-flash-preview";
+export const SUMMARY_MODEL = "google/gemini-2.5-flash-lite";

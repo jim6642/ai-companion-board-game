@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { generateCompletion, generateCompletionStream, stripMarkdownCodeFences, type LLMMessage } from "./llm";
+import { generateCompletion, generateCompletionBatch, generateCompletionStream, stripMarkdownCodeFences, type LLMMessage } from "./llm";
 import type { ChatCompletionResponse } from "./llm";
 import {
   type GameState,
@@ -9,17 +9,20 @@ import {
   type ChatMessage,
   type Alignment,
   type DailySummaryFact,
+  type DailySummaryVoteData,
   GENERATOR_MODEL,
   SUMMARY_MODEL,
   AVAILABLE_MODELS,
   type ModelRef,
 } from "@/types/game";
 import { GAME_TEMPERATURE } from "./ai-config";
-import { type GeneratedCharacter } from "./character-generator";
+import { sampleModelRefs, type GeneratedCharacter } from "./character-generator";
 import { aiLogger } from "./ai-logger";
+import { getGeneratorModel, getSummaryModel } from "@/lib/api-keys";
 import { PhaseManager } from "@/game/core/PhaseManager";
 import type { PromptResult } from "@/game/core/types";
 import { buildCachedSystemMessageFromParts } from "./prompt-utils";
+import { getI18n } from "@/i18n/translator";
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -31,9 +34,11 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 function getRandomModelRef(): ModelRef {
+  const fallback = sampleModelRefs(1)[0];
+  if (fallback) return fallback;
   if (AVAILABLE_MODELS.length === 0) {
     // Fallback to GENERATOR_MODEL if no models available
-    return { provider: "zenmux" as const, model: GENERATOR_MODEL };
+    return { provider: "zenmux" as const, model: getGeneratorModel() };
   }
   const randomIndex = Math.floor(Math.random() * AVAILABLE_MODELS.length);
   return AVAILABLE_MODELS[randomIndex];
@@ -48,7 +53,7 @@ function sanitizeSeatMentions(text: string, totalSeats: number): string {
   const replaceIfInvalid = (raw: string, numStr: string) => {
     const n = Number.parseInt(numStr, 10);
     if (!Number.isFinite(n)) return raw;
-    if (n < 1 || n > totalSeats) return "（无效座位）";
+    if (n < 1 || n > totalSeats) return "(invalid seat)";
     return raw;
   };
 
@@ -65,7 +70,10 @@ function resolvePhasePrompt(
   player: Player,
   extras?: Record<string, unknown>
 ) {
-  const prompt = phaseManager.getPrompt(phase, { state, extras }, player);
+  // Override state.phase to ensure correct prompt is returned
+  // This is needed when calling prompts for a phase different from state.phase
+  const overriddenState = state.phase === phase ? state : { ...state, phase };
+  const prompt = phaseManager.getPrompt(phase, { state: overriddenState, extras }, player);
   if (!prompt) {
     throw new Error(`[wolfcha] Missing phase prompt for ${phase}`);
   }
@@ -120,6 +128,7 @@ export function createInitialGameState(): GameState {
     voteHistory: {},
     dailySummaries: {},
     dailySummaryFacts: {},
+    dailySummaryVoteData: {},
     nightActions: {},
     roleAbilities: {
       witchHealUsed: false,
@@ -186,13 +195,33 @@ export function setupPlayers(
   playerCount: number = 10,
   fixedRoles?: Role[],
   seedPlayerIds?: string[],
-  modelRefs?: ModelRef[]
+  modelRefs?: ModelRef[],
+  aiSeatOrder?: number[]
 ): Player[] {
   const totalPlayers = playerCount;
   const roles = getRoleConfiguration(totalPlayers);
   const assignedRoles = fixedRoles && fixedRoles.length === totalPlayers ? fixedRoles : shuffleArray(roles);
 
   const players: Player[] = [];
+
+  const computeCharIndexForSeat = (() => {
+    const aiSeats = Array.from({ length: totalPlayers }, (_, seat) => seat).filter(
+      (seat) => seat !== humanSeat
+    );
+
+    if (
+      Array.isArray(aiSeatOrder) &&
+      aiSeatOrder.length === aiSeats.length &&
+      new Set(aiSeatOrder).size === aiSeats.length &&
+      aiSeatOrder.every((s) => aiSeats.includes(s))
+    ) {
+      const seatToCharIndex = new Map<number, number>();
+      aiSeatOrder.forEach((seat, idx) => seatToCharIndex.set(seat, idx));
+      return (seat: number) => seatToCharIndex.get(seat) ?? -1;
+    }
+
+    return (seat: number) => (seat > humanSeat ? seat - 1 : seat);
+  })();
 
   const getPlayerIdForSeat = (seat: number) => {
     const id = Array.isArray(seedPlayerIds) ? seedPlayerIds[seat] : undefined;
@@ -214,9 +243,14 @@ export function setupPlayers(
         isHuman: true,
       });
     } else {
-      const charIndex = seat > humanSeat ? seat - 1 : seat;
-      const character = characters[charIndex];
-      const modelRef = modelRefs?.[charIndex] ?? getRandomModelRef();
+      const charIndex = computeCharIndexForSeat(seat);
+      const fallbackIndex = seat > humanSeat ? seat - 1 : seat;
+      const safeCharIndex =
+        Number.isFinite(charIndex) && charIndex >= 0 && charIndex < characters.length
+          ? charIndex
+          : Math.min(Math.max(0, fallbackIndex), Math.max(0, characters.length - 1));
+      const character = characters[safeCharIndex];
+      const modelRef = modelRefs?.[safeCharIndex] ?? getRandomModelRef();
 
       players.push({
         playerId: getPlayerIdForSeat(seat),
@@ -241,10 +275,11 @@ export function addSystemMessage(
   state: GameState,
   content: string
 ): GameState {
+  const { t } = getI18n();
   const message: ChatMessage = {
     id: uuidv4(),
     playerId: "system",
-    playerName: "主持人",
+    playerName: t("speakers.host"),
     content,
     timestamp: Date.now(),
     day: state.day,
@@ -261,12 +296,16 @@ export function addSystemMessage(
 export function addPlayerMessage(
   state: GameState,
   playerId: string,
-  content: string
+  content: string,
+  options?: { isLastWords?: boolean }
 ): GameState {
   const player = state.players.find((p) => p.playerId === playerId);
   if (!player) return state;
 
   if (content.trim().length === 0) return state;
+
+  // Auto-detect last words phase or use explicit flag
+  const isLastWords = options?.isLastWords ?? state.phase === "DAY_LAST_WORDS";
 
   const message: ChatMessage = {
     id: uuidv4(),
@@ -276,6 +315,7 @@ export function addPlayerMessage(
     timestamp: Date.now(),
     day: state.day,
     phase: state.phase,
+    ...(isLastWords && { isLastWords: true }),
   };
 
   return {
@@ -391,11 +431,50 @@ export function tallyVotes(state: GameState): { seat: number; count: number } | 
   return { seat: maxSeat, count: maxVotes };
 }
 
+/** Extract structured vote_data from [VOTE_RESULT] in day messages. Preserves "who voted for whom" so it is not lost when context is trimmed. */
+function extractVoteDataFromDayMessages(
+  dayMessages: ChatMessage[],
+  state: GameState
+): DailySummaryVoteData | undefined {
+  let sheriff: { winner: number; votes: Record<string, number[]> } | undefined;
+  let execution: { eliminated: number; votes: Record<string, number[]> } | undefined;
+
+  for (const m of dayMessages) {
+    if (!m.isSystem || !m.content.startsWith("[VOTE_RESULT]")) continue;
+    try {
+      const json = m.content.slice("[VOTE_RESULT]".length);
+      const data = JSON.parse(json) as { title?: string; results?: Array<{ targetSeat: number; voterSeats?: number[] }> };
+      const results = data.results ?? [];
+      const votes: Record<string, number[]> = {};
+      for (const r of results) {
+        const k = String(r.targetSeat);
+        votes[k] = Array.isArray(r.voterSeats) ? r.voterSeats : [];
+      }
+      if (data.title === "警长竞选投票详情" && Object.keys(votes).length > 0) {
+        const winner = state.badge.holderSeat ?? -1;
+        sheriff = { winner, votes };
+      } else if (data.title === "投票详情" && Object.keys(votes).length > 0) {
+        const eliminated = state.dayHistory?.[state.day]?.executed?.seat ?? -1;
+        execution = { eliminated, votes };
+      }
+    } catch {
+      // skip malformed [VOTE_RESULT]
+    }
+  }
+
+  if (!sheriff && !execution) return undefined;
+  const out: DailySummaryVoteData = {};
+  if (sheriff != null && sheriff.winner >= 0) out.sheriff_election = sheriff;
+  if (execution != null && execution.eliminated >= 0) out.execution_vote = execution;
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 export async function generateDailySummary(
   state: GameState
-): Promise<{ bullets: string[]; facts: DailySummaryFact[] }> {
+): Promise<{ bullets: string[]; facts: DailySummaryFact[]; voteData?: DailySummaryVoteData }> {
+  const { t } = getI18n();
   const startTime = Date.now();
-  const summaryModel = SUMMARY_MODEL;
+  const summaryModel = getSummaryModel();
 
   const dayStartIndex = (() => {
     for (let i = state.messages.length - 1; i >= 0; i--) {
@@ -406,6 +485,7 @@ export async function generateDailySummary(
   })();
 
   const dayMessages = state.messages.slice(dayStartIndex);
+  const voteData = extractVoteDataFromDayMessages(dayMessages, state);
 
   const transcript = dayMessages
     .map((m) => {
@@ -419,7 +499,31 @@ export async function generateDailySummary(
     .join("\n")
     .slice(0, 15000);
 
-  const system = `你是狼人杀的记录员。\n\n把给定的记录压缩为几条【关键事实】，作为后续玩家长期记忆。\n\n要求：\n- 只总结给定记录中出现过的信息，不要猜测/补全\n- 每条 15-50 字，尽量详细但保持简洁\n- 必须包含“投票逻辑/理由线索”（谁投谁 + 简短理由/依据）\n- 优先保留：公投出局/遗言、关键站边/指控、明确归票/改票、夜晚死亡信息（如果在记录里）\n- 记录重要发言要点（如跳身份、关键推理、指控对象）\n- 若出现自相矛盾或与发言相反的投票，必须记录\n- 保留玩家之间的互动关系（如谁支持谁、谁质疑谁）\n- 提到玩家时必须包含座位号（如“2号”“10号”）\n- 若为系统事件，可将 speakerSeat 留空\n\n输出格式：返回 JSON 对象，例如：\n{\n  "facts": [\n    {\n      "fact": "第1天: 2号被放逐，遗言踩10号",\n      "type": "death",\n      "speakerSeat": 2,\n      "targetSeat": 10\n    },\n    {\n      "fact": "9号投1号，理由是对跳预言家",\n      "type": "vote",\n      "speakerSeat": 9,\n      "targetSeat": 1\n    }\n  ]\n}`;
+  const system = `你是狼人杀的客观记录员。
+
+任务：把给定的记录压缩为一段连贯的【事实摘要】，作为后续玩家长期记忆。
+
+【核心原则】
+- 客观记录"谁说了什么、谁做了什么"，禁止对发言做评价或判断
+- 不要使用"逻辑缺失""带节奏""可疑""不合理"等评价性词汇
+- 保留原始发言的要点和立场，而非你对发言的看法
+
+【必须记录的内容】
+1. 死亡信息：谁在夜晚/投票中出局
+2. 身份声明：谁跳了什么身份、报了什么验人结果、谁认下
+3. 发言立场：每个玩家的核心观点/表态（用原话或简述，不加评价）
+4. 站边关系：谁表态支持谁、谁表态质疑谁（客观记录，不含判断）
+（警长竞选和公投的票型由系统单独记录，叙述中简要提及结果即可，如「X号当选警长」「X号被放逐」）
+
+【格式要求】
+- 提到玩家必须包含座位号（如"2号""10号"）
+- 使用连贯段落叙述，可分多段
+- 尽量保留细节，不要过度压缩
+- 字数不限，信息完整优先
+
+输出格式：返回 JSON 对象：
+{ "summary": "第X天摘要的连贯文本..." }`;
+
 
   const user = `【第${state.day}天 白天记录】\n${transcript}\n\n请返回 JSON 对象：`;
 
@@ -452,89 +556,35 @@ export async function generateDailySummary(
     },
   });
 
-  const facts: DailySummaryFact[] = [];
-  const bullets: string[] = [];
-
+  // Parse the new { "summary": "..." } format
+  let summaryText = "";
+  
   try {
     const objectMatch = cleanedDaily.match(/\{[\s\S]*\}/);
     if (objectMatch) {
-      const obj = JSON.parse(objectMatch[0]) as { facts?: DailySummaryFact[] };
-      if (Array.isArray(obj.facts)) {
-        obj.facts.forEach((item) => {
-          if (!item || typeof item !== "object") return;
-          const factText =
-            typeof (item as DailySummaryFact).fact === "string"
-              ? (item as DailySummaryFact).fact.trim()
-              : "";
-          if (!factText) return;
-          facts.push({
-            fact: factText,
-            day: state.day,
-            speakerSeat:
-              typeof (item as DailySummaryFact).speakerSeat === "number"
-                ? (item as DailySummaryFact).speakerSeat
-                : (item as DailySummaryFact).speakerSeat ?? null,
-            speakerName:
-              typeof (item as DailySummaryFact).speakerName === "string"
-                ? (item as DailySummaryFact).speakerName
-                : undefined,
-            targetSeat:
-              typeof (item as DailySummaryFact).targetSeat === "number"
-                ? (item as DailySummaryFact).targetSeat
-                : (item as DailySummaryFact).targetSeat ?? null,
-            targetName:
-              typeof (item as DailySummaryFact).targetName === "string"
-                ? (item as DailySummaryFact).targetName
-                : undefined,
-            type:
-              typeof (item as DailySummaryFact).type === "string"
-                ? (item as DailySummaryFact).type
-                : undefined,
-            evidence:
-              typeof (item as DailySummaryFact).evidence === "string"
-                ? (item as DailySummaryFact).evidence
-                : undefined,
-          });
-        });
+      const obj = JSON.parse(objectMatch[0]) as { summary?: string };
+      if (typeof obj.summary === "string" && obj.summary.trim()) {
+        summaryText = obj.summary.trim();
       }
     }
   } catch {
     // ignore parse errors
   }
 
-  if (facts.length > 0) {
-    const cleanedFacts = facts
-      .map((f) => f.fact.trim())
-      .filter(Boolean)
-      .slice(0, 10);
-    return { bullets: cleanedFacts, facts: facts.slice(0, 12) };
+  // If we got a summary, return it as a single bullet (preserving full text) and structured vote_data
+  if (summaryText) {
+    return { bullets: [summaryText], facts: [], voteData };
   }
 
-  try {
-    const jsonMatch = cleanedDaily.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      const arr = JSON.parse(jsonMatch[0]) as unknown;
-      if (Array.isArray(arr)) {
-        const cleaned = arr
-          .filter((x): x is string => typeof x === "string")
-          .map((s) => s.trim())
-          .filter(Boolean)
-          .slice(0, 10);
-        if (cleaned.length > 0) return { bullets: cleaned, facts: [] };
-      }
-    }
-  } catch {
-    // ignore
-  }
-
+  // Fallback: use raw content
   const fallback = result.content
-    .split(/\n+/)
-    .map((s) => s.replace(/^[-*\d.\s]+/, "").trim())
-    .filter(Boolean)
-    .slice(0, 6);
+    .replace(/```json\s*|\s*```/g, "")
+    .replace(/^\s*\{[\s\S]*?"summary"\s*:\s*"/, "")
+    .replace(/"\s*\}\s*$/, "")
+    .trim();
 
-  const fallbackBullets = fallback.length > 0 ? fallback : [result.content.trim()].filter(Boolean);
-  return { bullets: fallbackBullets, facts: [] };
+  const fallbackBullets = fallback ? [fallback] : [result.content.trim()].filter(Boolean);
+  return { bullets: fallbackBullets, facts: [], voteData };
 }
 
 export async function* generateAISpeechStream(
@@ -583,6 +633,15 @@ export async function* generateAISpeechStream(
       response: { content: sanitizedSpeech, duration: Date.now() - startTime },
       error: String(error),
     });
+
+    const raw = String(error);
+    if (raw.includes("429") || raw.includes("limit_requests")) {
+      if (!fullResponse.trim()) {
+        yield "（请求过于频繁，稍后再试）";
+      }
+      return;
+    }
+
     throw error;
   }
 }
@@ -736,6 +795,12 @@ export async function generateAISpeechSegments(
       response: { content: "", duration: Date.now() - startTime },
       error: String(error),
     });
+
+    const raw = String(error);
+    if (raw.includes("429") || raw.includes("limit_requests")) {
+      return ["（请求过于频繁，稍后再试）"];
+    }
+
     throw error;
   }
 }
@@ -844,6 +909,81 @@ export async function generateAIVote(
   }
 }
 
+/** Sentinel for abstain when AI fails to vote or parse. Counting logic skips -1 via aliveBySeat.has(seat). */
+export const BADGE_VOTE_ABSTAIN = -1;
+
+export async function generateAIBadgeSignupBatch(
+  state: GameState,
+  players: Player[]
+): Promise<Record<string, boolean>> {
+  if (!players || players.length === 0) return {};
+
+  const startTime = Date.now();
+  const prompts = players.map((player) => resolvePhasePrompt("DAY_BADGE_SIGNUP", state, player));
+  const messageBundles = prompts.map((prompt) => buildMessagesForPrompt(prompt));
+  const requests = players.map((player, idx) => ({
+    model: player.agentProfile!.modelRef.model,
+    messages: messageBundles[idx].messages,
+    temperature: GAME_TEMPERATURE.ACTION,
+  }));
+
+  const results = await generateCompletionBatch(requests);
+  const parsedByPlayer: Record<string, boolean> = {};
+  const duration = Date.now() - startTime;
+
+  // Process results and collect log entries
+  const logEntries: Parameters<typeof aiLogger.log>[0][] = [];
+
+  for (let idx = 0; idx < players.length; idx++) {
+    const player = players[idx];
+    const result = results[idx];
+    let cleaned = "";
+    let parsed: boolean | null = null;
+    let error: string | undefined;
+
+    if (result?.ok) {
+      cleaned = stripMarkdownCodeFences(result.content).trim();
+      if (/^[01]$/.test(cleaned)) {
+        parsed = cleaned === "1";
+      } else {
+        const lower = cleaned.toLowerCase();
+        if (/(yes|true|报名|上警|参加|竞选)/i.test(lower)) parsed = true;
+        if (/(no|false|不报名|不上警|放弃)/i.test(lower)) parsed = false;
+      }
+    } else {
+      error = result?.error || "Unknown error";
+    }
+
+    if (parsed === null) parsed = false;
+    parsedByPlayer[player.playerId] = parsed;
+
+    logEntries.push({
+      type: "badge_signup",
+      request: {
+        model: player.agentProfile!.modelRef.model,
+        messages: messageBundles[idx].messages,
+        player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
+      },
+      response: {
+        content: cleaned,
+        raw: result?.ok ? result.content : "",
+        rawResponse: result?.ok ? JSON.stringify(result.raw, null, 2) : undefined,
+        finishReason: result?.ok ? result.raw?.choices?.[0]?.finish_reason : undefined,
+        parsed,
+        duration,
+      },
+      ...(error ? { error } : {}),
+    });
+  }
+
+  // Log all entries sequentially to avoid concurrent file writes
+  for (const entry of logEntries) {
+    await aiLogger.log(entry);
+  }
+
+  return parsedByPlayer;
+}
+
 export async function generateAIBadgeVote(
   state: GameState,
   player: Player
@@ -853,40 +993,57 @@ export async function generateAIBadgeVote(
   const startTime = Date.now();
   const { messages } = buildMessagesForPrompt(prompt);
 
-  const result = await generateCompletion({
-    model: player.agentProfile!.modelRef.model,
-    messages,
-    temperature: GAME_TEMPERATURE.ACTION,
-  });
-
-  const cleanedBadgeVote = stripMarkdownCodeFences(result.content);
-
-  await aiLogger.log({
-    type: "badge_vote",
-    request: {
+  try {
+    const result = await generateCompletion({
       model: player.agentProfile!.modelRef.model,
       messages,
-      player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
-    },
-    response: {
-      content: cleanedBadgeVote,
-      raw: result.content,
-      rawResponse: JSON.stringify(result.raw, null, 2),
-      finishReason: result.raw.choices?.[0]?.finish_reason,
-      duration: Date.now() - startTime,
-    },
-  });
+      temperature: GAME_TEMPERATURE.ACTION,
+    });
 
-  const match = cleanedBadgeVote.match(/\d+/);
-  if (match) {
-    const seat = parseInt(match[0]) - 1;
-    const validSeats = alivePlayers.map((p) => p.seat);
-    if (validSeats.includes(seat)) {
-      return seat;
+    const cleanedBadgeVote = stripMarkdownCodeFences(result.content);
+
+    await aiLogger.log({
+      type: "badge_vote",
+      request: {
+        model: player.agentProfile!.modelRef.model,
+        messages,
+        player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
+      },
+      response: {
+        content: cleanedBadgeVote,
+        raw: result.content,
+        rawResponse: JSON.stringify(result.raw, null, 2),
+        finishReason: result.raw.choices?.[0]?.finish_reason,
+        duration: Date.now() - startTime,
+      },
+    });
+
+    const match = cleanedBadgeVote.match(/\d+/);
+    if (match) {
+      const seat = parseInt(match[0]) - 1;
+      const validSeats = alivePlayers.map((p) => p.seat);
+      if (validSeats.includes(seat)) {
+        return seat;
+      }
     }
-  }
 
-  return alivePlayers[Math.floor(Math.random() * alivePlayers.length)].seat;
+    // Parse failed or invalid seat: treat as abstain instead of random to avoid stuck flow
+    return BADGE_VOTE_ABSTAIN;
+  } catch (error) {
+    // Network/API error: treat as abstain so the phase does not get stuck
+    console.warn("[wolfcha] generateAIBadgeVote failed, treating as abstain:", error);
+    await aiLogger.log({
+      type: "badge_vote",
+      request: {
+        model: player.agentProfile!.modelRef.model,
+        messages: [],
+        player: { playerId: player.playerId, displayName: player.displayName, seat: player.seat, role: player.role },
+      },
+      response: { content: "", duration: Date.now() - startTime },
+      error: String(error),
+    });
+    return BADGE_VOTE_ABSTAIN;
+  }
 }
 
 export async function generateBadgeTransfer(

@@ -9,7 +9,9 @@ import {
   buildTodayTranscript,
   getRoleText,
   getWinCondition,
+  getRoleKnowHow,
   buildSystemTextFromParts,
+  getDayStartIndex,
 } from "@/lib/prompt-utils";
 import type { FlowToken } from "@/lib/game-flow-controller";
 import {
@@ -78,29 +80,47 @@ export class DaySpeechPhase extends GamePhase {
     const selfSpeech = buildPlayerTodaySpeech(state, player, 1400);
 
     const todaySpeakers = new Set<string>();
-    const dayStartIndex = (() => {
-      for (let i = state.messages.length - 1; i >= 0; i--) {
-        if (state.messages[i].isSystem && state.messages[i].content === t("system.dayBreakShort")) return i;
-      }
-      return 0;
-    })();
+    const dayStartIndex = getDayStartIndex(state);
+
     for (let i = dayStartIndex; i < state.messages.length; i++) {
       const m = state.messages[i];
       if (!m.isSystem && m.playerId && m.playerId !== player.playerId) {
         todaySpeakers.add(m.playerId);
       }
     }
-    const speakOrder = todaySpeakers.size + 1;
-    const isFirstSpeaker = speakOrder === 1;
 
-    const alivePlayers = state.players.filter((p) => p.alive);
-    const spokenPlayers = alivePlayers.filter(
+    const isLastWords = state.phase === "DAY_LAST_WORDS";
+    const isBadgeSpeech = state.phase === "DAY_BADGE_SPEECH";
+    const isPkSpeech = state.phase === "DAY_PK_SPEECH";
+    const isCampaignSpeech = isBadgeSpeech || isPkSpeech;
+
+    // Define valid speakers for this phase (campaign-only speakers)
+    const candidates =
+      isBadgeSpeech && Array.isArray(state.badge?.candidates) ? state.badge.candidates : [];
+    const pkTargets = isPkSpeech && Array.isArray(state.pkTargets) ? state.pkTargets : [];
+
+    const hasCandidateList = isBadgeSpeech && candidates.length > 0;
+
+    const validSpeakers = state.players.filter(p => {
+        if (!p.alive) return false;
+        // If candidates list is unexpectedly empty, fallback to alive players to avoid division by zero.
+        if (isBadgeSpeech) return hasCandidateList ? candidates.includes(p.seat) : true;
+        if (isPkSpeech) return pkTargets.includes(p.seat);
+        return true;
+    });
+
+    const totalSpeakers = validSpeakers.length;
+    
+    // Recalculate speak order based on valid speakers only
+    const spokenPlayers = validSpeakers.filter(
       (p) => todaySpeakers.has(p.playerId) && p.playerId !== player.playerId
     );
-    const unspokenPlayers = alivePlayers.filter(
+    const unspokenPlayers = validSpeakers.filter(
       (p) => !todaySpeakers.has(p.playerId) && p.playerId !== player.playerId
     );
-    const totalSpeakers = alivePlayers.length;
+
+    const speakOrder = spokenPlayers.length + 1;
+    const isFirstSpeaker = speakOrder === 1;
     const isLastSpeaker = speakOrder === totalSpeakers;
 
     let speakOrderHint = "";
@@ -109,37 +129,25 @@ export class DaySpeechPhase extends GamePhase {
     } else if (isLastSpeaker) {
       speakOrderHint = t("prompts.daySpeech.speakOrder.last", { speakOrder, totalSpeakers });
     } else {
-      const spokenList = spokenPlayers
-        .map((p) => t("promptUtils.gameContext.seatLabel", { seat: p.seat + 1 }))
-        .join(t("promptUtils.gameContext.listSeparator"));
-      const unspokenList = unspokenPlayers
-        .map((p) => t("promptUtils.gameContext.seatLabel", { seat: p.seat + 1 }))
-        .join(t("promptUtils.gameContext.listSeparator"));
-      speakOrderHint = t("prompts.daySpeech.speakOrder.middle", {
-        speakOrder,
-        totalSpeakers,
-        spokenList: spokenList || t("common.none"),
-        unspokenList: unspokenList || t("common.none"),
-      });
+      const spokenList = spokenPlayers.map((p) => t("ui.seatNumber", { seat: p.seat + 1 })).join(t("common.listSeparator"));
+      const unspokenList = unspokenPlayers.map((p) => t("ui.seatNumber", { seat: p.seat + 1 })).join(t("common.listSeparator"));
+      speakOrderHint = t("prompts.daySpeech.speakOrder.middle", { speakOrder, totalSpeakers, spokenList: spokenList || t("common.none"), unspokenList: unspokenList || t("common.none") });
     }
 
-    const isLastWords = state.phase === "DAY_LAST_WORDS";
-    const isBadgeSpeech = state.phase === "DAY_BADGE_SPEECH";
-    const isPkSpeech = state.phase === "DAY_PK_SPEECH";
-    const isCampaignSpeech = isBadgeSpeech || isPkSpeech;
-
+    const nonCandidateList = state.players
+      .filter((p) => p.alive && !candidates.includes(p.seat))
+      .map((p) => t("ui.seatNumber", { seat: p.seat + 1 }))
+      .join(t("common.listSeparator"));
     const campaignRequirements = isBadgeSpeech
-      ? t("prompts.daySpeech.campaign.badge")
+      ? t("prompts.daySpeech.campaign.badge") + "\n" + (hasCandidateList
+        ? t("prompts.daySpeech.campaign.candidateNote", { list: nonCandidateList })
+        : t("prompts.daySpeech.campaign.emptyCandidateNote"))
       : isPkSpeech
         ? t("prompts.daySpeech.campaign.pk")
         : "";
 
-    const roleHints =
-      player.role === "Werewolf"
-        ? t("prompts.daySpeech.roleHints.werewolf")
-        : player.role === "Seer"
-          ? t("prompts.daySpeech.roleHints.seer")
-          : "";
+    // Get role-specific strategy tips
+    const roleKnowHow = getRoleKnowHow(player.role);
 
     const baseCacheable = t("prompts.daySpeech.base", {
       seat: player.seat + 1,
@@ -149,24 +157,16 @@ export class DaySpeechPhase extends GamePhase {
       persona,
       difficultyHint,
     });
-    const taskLine = isLastWords
-      ? t("prompts.daySpeech.task.lastWords")
-      : isCampaignSpeech
-        ? t("prompts.daySpeech.task.campaign")
+    const taskLine = isLastWords 
+      ? t("prompts.daySpeech.task.lastWords") 
+      : isCampaignSpeech 
+        ? t("prompts.daySpeech.task.campaign") 
         : t("prompts.daySpeech.task.dayDiscussion");
-    const taskSection = t("prompts.daySpeech.task.section", {
-      taskLine,
-      campaignRequirements: campaignRequirements ? `\n${campaignRequirements}` : "",
-    });
+    const taskSection = t("prompts.daySpeech.task.section", { taskLine, campaignRequirements: campaignRequirements ? "\n" + campaignRequirements : "" });
+    const roleHintLine = player.role === "Werewolf" ? t("prompts.daySpeech.roleHints.werewolf") : player.role === "Seer" ? t("prompts.daySpeech.roleHints.seer") : "";
     const guidelinesSection = isGenshinMode
-      ? t("prompts.daySpeech.guidelines.genshin", {
-        totalSeats,
-      })
-      : t("prompts.daySpeech.guidelines.default", {
-        playerName: player.displayName,
-        totalSeats,
-        roleHintLine: roleHints ? `- ${roleHints}` : "",
-      });
+      ? t("prompts.daySpeech.guidelines.genshin", { totalSeats })
+      : t("prompts.daySpeech.guidelines.default", { playerName: player.displayName, totalSeats, roleHintLine });
     const systemParts: SystemPromptPart[] = [
       { text: baseCacheable, cacheable: true, ttl: "1h" },
       { text: taskSection },

@@ -1,13 +1,49 @@
+import { getDashscopeApiKey, getZenmuxApiKey, isCustomKeyEnabled } from "@/lib/api-keys";
+import { ALL_MODELS, AVAILABLE_MODELS } from "@/types/game";
+
 export type LLMContentPart =
   | { type: "text"; text: string; cache_control?: { type: "ephemeral"; ttl?: "1h" } }
   | { type: "image_url"; image_url: { url: string; detail?: string } }
   | { type: "input_audio"; input_audio: { data: string; format: "mp3" | "wav" } };
+
+export type ApiKeySource = "user" | "project";
 
 export interface LLMMessage {
   role: "system" | "user" | "assistant";
   content: string | LLMContentPart[];
   reasoning_details?: unknown;
 }
+
+type Provider = "zenmux" | "dashscope";
+
+function getProviderForModel(model: string): Provider {
+   const modelRef =
+     ALL_MODELS.find((ref) => ref.model === model) ??
+     AVAILABLE_MODELS.find((ref) => ref.model === model);
+   return modelRef?.provider ?? "zenmux";
+ }
+
+// When using built-in keys (custom disabled), only models in AVAILABLE_MODELS
+// are allowed; the server rejects non-AVAILABLE models without x-zenmux-api-key.
+// Game state may contain modelRef from ALL_MODELS (e.g. from a game started with
+// custom key on). Map to an AVAILABLE model to avoid "此模型需要您提供 Zenmux API Key".
+function resolveModelForBuiltin(model: string): string {
+  if (AVAILABLE_MODELS.some((r) => r.model === model)) return model;
+  const m =
+    AVAILABLE_MODELS.find((r) => r.provider === "zenmux") ?? AVAILABLE_MODELS[0];
+  return m?.model ?? model;
+}
+
+export function resolveApiKeySource(model: string): ApiKeySource {
+   const customEnabled = isCustomKeyEnabled();
+   if (!customEnabled) return "project";
+
+   const provider = getProviderForModel(model);
+   if (provider === "dashscope") {
+     return getDashscopeApiKey() ? "user" : "project";
+   }
+   return getZenmuxApiKey() ? "user" : "project";
+ }
 
 export interface ChatCompletionResponse {
   id: string;
@@ -31,6 +67,7 @@ export type ResponseFormat =
   | { type: "json_object" }
   | {
       type: "json_schema";
+      strict?: boolean;
       json_schema: {
         name: string;
         description?: string;
@@ -48,7 +85,41 @@ export interface GenerateOptions {
   response_format?: ResponseFormat;
 }
 
+export type BatchCompletionResult =
+  | { ok: true; content: string; reasoning_details?: unknown; raw: ChatCompletionResponse }
+  | { ok: false; error: string; status?: number };
+
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+
+function parseRetryAfterMs(response: Response): number | null {
+  const raw = response.headers.get("retry-after");
+  if (!raw) return null;
+  const sec = Number(raw);
+  if (Number.isFinite(sec) && sec > 0) return Math.round(sec * 1000);
+
+  const dateMs = Date.parse(raw);
+  if (!Number.isFinite(dateMs)) return null;
+  const diff = dateMs - Date.now();
+  return diff > 0 ? diff : null;
+}
+
+function formatApiError(status: number, errorText: string): string {
+  let msg = `API error: ${status}`;
+  try {
+    const errorJson = JSON.parse(errorText) as any;
+    if (typeof errorJson?.error === "string" && errorJson.error.trim()) {
+      msg = errorJson.error.trim();
+    }
+    const detailsMsg = errorJson?.details?.error?.message;
+    if (typeof detailsMsg === "string" && detailsMsg.trim()) {
+      msg = `${msg} - ${detailsMsg.trim()}`;
+    }
+    return msg;
+  } catch {
+    const trimmed = (errorText || "").trim();
+    return trimmed ? `${msg} - ${trimmed.slice(0, 600)}` : msg;
+  }
+}
 
 async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
@@ -73,9 +144,12 @@ async function fetchWithRetry(
         return response;
       }
 
-      const base = 400;
+      const retryAfterMs = parseRetryAfterMs(response);
+      const base = response.status === 429 ? 1000 : 400;
       const jitter = Math.floor(Math.random() * 200);
-      const backoffMs = base * 2 ** (attempt - 1) + jitter;
+      const backoffMs =
+        (retryAfterMs !== null ? Math.min(15000, Math.max(0, retryAfterMs)) : base * 2 ** (attempt - 1)) +
+        jitter;
       await sleep(backoffMs);
     } catch (err) {
       lastError = err;
@@ -110,15 +184,31 @@ export async function generateCompletion(
       ? Math.max(16, Math.floor(options.max_tokens))
       : undefined;
 
+  const customEnabled = isCustomKeyEnabled();
+  const headerApiKey = customEnabled ? getZenmuxApiKey() : "";
+  const dashscopeApiKey = customEnabled ? getDashscopeApiKey() : "";
+  const modelToUse = customEnabled
+    ? options.model
+    : resolveModelForBuiltin(options.model);
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (headerApiKey) {
+    headers["X-Zenmux-Api-Key"] = headerApiKey;
+  }
+  if (dashscopeApiKey) {
+    headers["X-Dashscope-Api-Key"] = dashscopeApiKey;
+  }
+
   const response = await fetchWithRetry(
     "/api/chat",
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        ...headers,
       },
       body: JSON.stringify({
-        model: options.model,
+        model: modelToUse,
         messages: options.messages,
         temperature: options.temperature ?? 0.7,
         max_tokens: maxTokens,
@@ -126,17 +216,12 @@ export async function generateCompletion(
         ...(options.response_format ? { response_format: options.response_format } : {}),
       }),
     },
-    2
+    4
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
-    try {
-      const errorJson = JSON.parse(errorText);
-      throw new Error(errorJson.error || `API error: ${response.status}`);
-    } catch {
-      throw new Error(`API error: ${response.status} - ${errorText}`);
-    }
+    const errorText = await response.text().catch(() => "");
+    throw new Error(formatApiError(response.status, errorText));
   }
 
   const result: ChatCompletionResponse = await response.json();
@@ -163,6 +248,68 @@ export async function generateCompletion(
   };
 }
 
+export async function generateCompletionBatch(
+  requests: GenerateOptions[]
+): Promise<BatchCompletionResult[]> {
+  if (!Array.isArray(requests) || requests.length === 0) return [];
+
+  const customEnabled = isCustomKeyEnabled();
+  const headerApiKey = customEnabled ? getZenmuxApiKey() : "";
+  const dashscopeApiKey = customEnabled ? getDashscopeApiKey() : "";
+  const resolvedRequests = customEnabled
+    ? requests
+    : requests.map((r) => ({ ...r, model: resolveModelForBuiltin(r.model) }));
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (headerApiKey) {
+    headers["X-Zenmux-Api-Key"] = headerApiKey;
+  }
+  if (dashscopeApiKey) {
+    headers["X-Dashscope-Api-Key"] = dashscopeApiKey;
+  }
+
+  const response = await fetchWithRetry(
+    "/api/chat",
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ requests: resolvedRequests }),
+    },
+    3
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    throw new Error(formatApiError(response.status, errorText));
+  }
+
+  const data = await response.json();
+  const results = Array.isArray(data?.results) ? data.results : [];
+
+  return results.map((item: any) => {
+    if (!item || item.ok !== true) {
+      return {
+        ok: false,
+        error: String(item?.error || "Unknown error"),
+        status: typeof item?.status === "number" ? item.status : undefined,
+      };
+    }
+    const raw = item.data as ChatCompletionResponse;
+    const choice = raw?.choices?.[0];
+    const assistantMessage = choice?.message;
+    if (!assistantMessage) {
+      return { ok: false, error: "No response from model" };
+    }
+    return {
+      ok: true,
+      content: assistantMessage.content,
+      reasoning_details: assistantMessage.reasoning_details,
+      raw,
+    };
+  });
+}
+
 export async function* generateCompletionStream(
   options: GenerateOptions
 ): AsyncGenerator<string, void, unknown> {
@@ -171,15 +318,31 @@ export async function* generateCompletionStream(
       ? Math.max(16, Math.floor(options.max_tokens))
       : undefined;
 
+  const customEnabled = isCustomKeyEnabled();
+  const headerApiKey = customEnabled ? getZenmuxApiKey() : "";
+  const dashscopeApiKey = customEnabled ? getDashscopeApiKey() : "";
+  const modelToUse = customEnabled
+    ? options.model
+    : resolveModelForBuiltin(options.model);
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (headerApiKey) {
+    headers["X-Zenmux-Api-Key"] = headerApiKey;
+  }
+  if (dashscopeApiKey) {
+    headers["X-Dashscope-Api-Key"] = dashscopeApiKey;
+  }
+
   const response = await fetchWithRetry(
     "/api/chat",
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        ...headers,
       },
       body: JSON.stringify({
-        model: options.model,
+        model: modelToUse,
         messages: options.messages,
         temperature: options.temperature ?? 0.7,
         max_tokens: maxTokens,
@@ -188,17 +351,12 @@ export async function* generateCompletionStream(
         ...(options.response_format ? { response_format: options.response_format } : {}),
       }),
     },
-    2
+    4
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
-    try {
-      const errorJson = JSON.parse(errorText);
-      throw new Error(errorJson.error || `API error: ${response.status}`);
-    } catch {
-      throw new Error(`API error: ${response.status} - ${errorText}`);
-    }
+    const errorText = await response.text().catch(() => "");
+    throw new Error(formatApiError(response.status, errorText));
   }
 
   const reader = response.body?.getReader();

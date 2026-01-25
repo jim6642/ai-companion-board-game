@@ -4,6 +4,7 @@ import type { GameAction, GameContext, PromptResult, SystemPromptPart } from "..
 import {
   buildDifficultyDecisionHint,
   buildGameContext,
+  buildPersonaSection,
   buildTodayTranscript,
   getRoleText,
   getWinCondition,
@@ -18,6 +19,9 @@ export class BadgePhase extends GamePhase {
 
   getPrompt(context: GameContext, player: Player): PromptResult {
     const state = context.state;
+    if (state.phase === "DAY_BADGE_SIGNUP") {
+      return this.buildBadgeSignupPrompt(state, player);
+    }
     if (state.phase === "DAY_BADGE_ELECTION") {
       return this.buildBadgeElectionPrompt(state, player);
     }
@@ -80,6 +84,37 @@ export class BadgePhase extends GamePhase {
     ].filter(Boolean);
 
     const user = t("prompts.badge.election.user", { context: liteContextLines.join("\n\n") });
+
+    return { system, user, systemParts };
+  }
+
+  private buildBadgeSignupPrompt(state: GameContext["state"], player: Player): PromptResult {
+    const context = buildGameContext(state, player);
+    const difficultyHint = buildDifficultyDecisionHint(state.difficulty, player.role);
+    const isGenshinMode = !!state.isGenshinMode;
+    const persona = buildPersonaSection(player, isGenshinMode);
+    const todayTranscript = buildTodayTranscript(state, 6000);
+
+    const { t } = getI18n();
+    const cacheableContent = t("prompts.badge.signup.base", {
+      seat: player.seat + 1,
+      name: player.displayName,
+      role: getRoleText(player.role),
+      winCondition: getWinCondition(player.role),
+      persona,
+      difficultyHint,
+    });
+    const dynamicContent = t("prompts.badge.signup.task");
+    const systemParts: SystemPromptPart[] = [
+      { text: cacheableContent, cacheable: true, ttl: "1h" },
+      { text: dynamicContent },
+    ];
+    const system = buildSystemTextFromParts(systemParts);
+
+    const user = t("prompts.badge.signup.user", {
+      context,
+      todayTranscript: todayTranscript || t("prompts.badge.signup.noTranscript"),
+    });
 
     return { system, user, systemParts };
   }
