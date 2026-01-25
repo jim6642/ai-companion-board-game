@@ -134,7 +134,12 @@ function resolveModelForCurrentKeyState(
 
 export function isCustomKeyEnabled(): boolean {
   if (!canUseStorage()) return false;
-  return window.localStorage.getItem(CUSTOM_KEY_ENABLED_STORAGE) === "true";
+  const flagEnabled = window.localStorage.getItem(CUSTOM_KEY_ENABLED_STORAGE) === "true";
+  if (!flagEnabled) return false;
+  // 额外安全检查：即使标志位为 true，如果没有任何有效的 LLM API key，也返回 false
+  // 这可以防止用户开启了开关但没有正确配置 key 的情况
+  const hasAnyLLMKey = hasZenmuxKey() || hasDashscopeKey();
+  return hasAnyLLMKey;
 }
 
 export function setCustomKeyEnabled(value: boolean) {
