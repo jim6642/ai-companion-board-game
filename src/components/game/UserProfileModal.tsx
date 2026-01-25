@@ -397,6 +397,7 @@ import { ALL_MODELS, AVAILABLE_MODELS, GENERATOR_MODEL, SUMMARY_MODEL, type Mode
                         )}
                       </div>
                     </div>
+                    <p className="text-xs text-[var(--text-muted)] pt-0.5">每天上线可领 2 局，记得常来呀～</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">

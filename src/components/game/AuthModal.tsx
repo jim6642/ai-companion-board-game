@@ -251,7 +251,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>登录或注册</DialogTitle>
-          <DialogDescription>登录后可获得额度并使用分享奖励。</DialogDescription>
+          <DialogDescription>登录后可获得额度并使用分享奖励；每天上线可领 2 局哦～</DialogDescription>
         </DialogHeader>
 
         <div className="pt-4">
