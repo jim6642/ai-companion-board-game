@@ -41,6 +41,8 @@ export const getSystemMessages = (locale?: AppLocale) => {
   };
 };
 
+export const SYSTEM_MESSAGES = getSystemMessages();
+
 export const getUiText = (locale?: AppLocale) => {
   const { t } = getI18n(locale);
   return {
@@ -70,6 +72,8 @@ export const getUiText = (locale?: AppLocale) => {
     speechOrder: t("ui.speechOrder"),
   };
 };
+
+export const UI_TEXT = getUiText();
 
 export const getSystemPatterns = (locale?: AppLocale) => {
   const { t } = getI18n(locale);
