@@ -15,12 +15,14 @@ import { SYSTEM_MESSAGES } from "@/lib/game-texts";
 import { DELAY_CONFIG, getRoleName } from "@/lib/game-constants";
 import { delay, type FlowToken } from "@/lib/game-flow-controller";
 import { playNarrator } from "@/lib/narrator-audio-player";
+import { gameStatsTracker } from "@/hooks/useGameStats";
 
 export interface SpecialEventsCallbacks {
   setDialogue: (speaker: string, text: string, isStreaming?: boolean) => void;
   setIsWaitingForAI: (waiting: boolean) => void;
   waitForUnpause: () => Promise<void>;
   isTokenValid: (token: FlowToken) => boolean;
+  getAccessToken: () => string | null;
 }
 
 export interface SpecialEventsActions {
@@ -39,7 +41,7 @@ export function useSpecialEvents(
 ): SpecialEventsActions {
   const [, setGameState] = useAtom(gameStateAtom);
 
-  const { setDialogue, setIsWaitingForAI, waitForUnpause, isTokenValid } = callbacks;
+  const { setDialogue, setIsWaitingForAI, waitForUnpause, isTokenValid, getAccessToken } = callbacks;
 
   /** 处理猎人死亡开枪 */
   const handleHunterDeath = useCallback(async (
@@ -136,9 +138,33 @@ export function useSpecialEvents(
 
     setGameState(currentState);
     
+    // 更新游戏会话数据
+    const accessToken = getAccessToken();
+    const sessionId = gameStatsTracker.getSessionId();
+    if (accessToken && sessionId) {
+      const winnerType = winner === "village" ? "villager" : "wolf";
+      const summary = gameStatsTracker.getSummary(winnerType, true);
+      if (summary) {
+        fetch("/api/game-sessions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            action: "update",
+            sessionId,
+            ...summary,
+          }),
+        }).catch((err) => {
+          console.error("[game-sessions] Failed to update:", err);
+        });
+      }
+    }
+    
     // 播放游戏结束语音
     await playNarrator(winner === "village" ? "villageWin" : "wolfWin");
-  }, [setGameState, setDialogue]);
+  }, [setGameState, setDialogue, getAccessToken]);
 
   /** 结算夜晚 */
   const resolveNight = useCallback(async (

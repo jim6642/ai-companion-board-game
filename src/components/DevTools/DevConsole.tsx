@@ -17,6 +17,7 @@ import {
 } from "@/lib/SmartJumpManager";
 import { PhaseManager } from "@/game/core/PhaseManager";
 import { DEFAULT_VOICE_ID, resolveVoiceId, VOICE_PRESETS } from "@/lib/voice-constants";
+import { aiLogger } from "@/lib/ai-logger";
 
 type AILogEntry = {
   id: string;
@@ -1325,10 +1326,9 @@ function PlayersTab({
     setLogsError(null);
     (async () => {
       try {
-        const res = await fetch("/api/ai-log");
-        const data = await res.json();
+        const logs = await aiLogger.getLogs();
         if (cancelled) return;
-        setAiLogs(Array.isArray(data?.logs) ? (data.logs as AILogEntry[]) : []);
+        setAiLogs(Array.isArray(logs) ? (logs as AILogEntry[]) : []);
       } catch (e) {
         if (cancelled) return;
         setLogsError(String(e));
