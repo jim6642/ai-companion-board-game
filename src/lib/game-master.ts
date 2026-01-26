@@ -12,7 +12,7 @@ import {
   type DailySummaryVoteData,
   GENERATOR_MODEL,
   SUMMARY_MODEL,
-  AVAILABLE_MODELS,
+  PLAYER_MODELS,
   type ModelRef,
 } from "@/types/game";
 import { GAME_TEMPERATURE } from "./ai-config";
@@ -36,12 +36,12 @@ function shuffleArray<T>(array: T[]): T[] {
 function getRandomModelRef(): ModelRef {
   const fallback = sampleModelRefs(1)[0];
   if (fallback) return fallback;
-  if (AVAILABLE_MODELS.length === 0) {
+  if (PLAYER_MODELS.length === 0) {
     // Fallback to GENERATOR_MODEL if no models available
     return { provider: "zenmux" as const, model: getGeneratorModel() };
   }
-  const randomIndex = Math.floor(Math.random() * AVAILABLE_MODELS.length);
-  return AVAILABLE_MODELS[randomIndex];
+  const randomIndex = Math.floor(Math.random() * PLAYER_MODELS.length);
+  return PLAYER_MODELS[randomIndex];
 }
 
 const phaseManager = new PhaseManager();

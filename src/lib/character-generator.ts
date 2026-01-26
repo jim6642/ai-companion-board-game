@@ -1,5 +1,13 @@
 import { generateJSON } from "./llm";
-import { AVAILABLE_MODELS, ALL_MODELS, GENERATOR_MODEL, type GameScenario, type ModelRef, type Persona } from "@/types/game";
+import {
+  ALL_MODELS,
+  GENERATOR_MODEL,
+  PLAYER_MODELS,
+  filterPlayerModels,
+  type GameScenario,
+  type ModelRef,
+  type Persona,
+} from "@/types/game";
 import { getGeneratorModel, getSelectedModels, hasDashscopeKey, hasZenmuxKey, isCustomKeyEnabled } from "@/lib/api-keys";
 import { aiLogger } from "./ai-logger";
 import { AI_TEMPERATURE, GAME_TEMPERATURE } from "./ai-config";
@@ -41,8 +49,8 @@ function shuffleArray<T>(array: T[]): T[] {
 export const sampleModelRefs = (count: number): ModelRef[] => {
   // Default pool when custom key is not enabled
   const defaultPool =
-    AVAILABLE_MODELS.length > 0
-      ? AVAILABLE_MODELS
+    PLAYER_MODELS.length > 0
+      ? PLAYER_MODELS
       : [{ provider: "zenmux" as const, model: GENERATOR_MODEL }];
 
   const pool = (() => {
@@ -56,8 +64,10 @@ export const sampleModelRefs = (count: number): ModelRef[] => {
     if (hasDashscopeKey()) allowedProviders.add("dashscope");
     if (allowedProviders.size === 0) return defaultPool;
 
-    // Filter by allowed providers
-    const allowedPool = fullPool.filter((ref) => allowedProviders.has(ref.provider));
+    // Filter by allowed providers, then exclude non-player models
+    const allowedPool = filterPlayerModels(
+      fullPool.filter((ref) => allowedProviders.has(ref.provider))
+    );
     if (allowedPool.length === 0) return defaultPool;
 
     // Filter by user's selected models

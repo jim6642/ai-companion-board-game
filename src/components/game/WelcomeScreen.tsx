@@ -19,6 +19,7 @@ import { UserProfileModal } from "@/components/game/UserProfileModal";
 import { LocaleSwitcher } from "@/components/game/LocaleSwitcher";
 import { useCredits } from "@/hooks/useCredits";
 import { hasDashscopeKey, hasZenmuxKey, isCustomKeyEnabled } from "@/lib/api-keys";
+import { useAppLocale } from "@/i18n/useAppLocale";
 
 type SponsorCardProps = {
   sponsorId: string;
@@ -212,6 +213,7 @@ export function WelcomeScreen({
   onAiVoiceEnabledChange,
 }: WelcomeScreenProps) {
   const t = useTranslations();
+  const { locale } = useAppLocale();
   const sponsorEmail = "zhihuang.oiloil@gmail.com";
   const sponsorMailto = useMemo(() => {
     const subject = t("welcome.sponsor.mailSubject");
@@ -792,7 +794,9 @@ export function WelcomeScreen({
             >
               <UserCircle size={16} />
               <span className="truncate max-w-[160px]">{user.email ?? t("userProfile.loggedIn")}</span>
-              {!customKeyEnabled && (
+              {customKeyEnabled ? (
+                <span className="opacity-70">{t("customKey.title")}</span>
+              ) : (
                 <span className="opacity-70">{t("welcome.account.remaining", { count: creditsLoading ? "..." : (credits ?? 0) })}</span>
               )}
             </button>
@@ -871,6 +875,23 @@ export function WelcomeScreen({
       >
         <div ref={paperRef} className="wc-contract-paper">
           <div className="wc-contract-borders" aria-hidden="true" />
+
+          {locale === "zh" && (
+            <a
+              href="https://my.feishu.cn/share/base/form/shrcnqLuGo3qyh64vFp2JhCN9CF"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="wc-promo-tag-container"
+              aria-label="赠送次数"
+            >
+              <span className="wc-paper-clip" aria-hidden="true" />
+              <span className="wc-promo-ticket">
+                <span className="wc-shine-effect" aria-hidden="true" />
+                <span className="wc-promo-title">赠送次数</span>
+                <span className="wc-promo-subtitle">Free Rounds</span>
+              </span>
+            </a>
+          )}
 
           {/* Mobile: inline sponsor stamps at top of paper */}
           <div className="wc-paper-sponsors sm:hidden">

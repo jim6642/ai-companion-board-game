@@ -92,8 +92,7 @@ export function hasMinimaxKey(): boolean {
 }
 
 // When custom key is disabled, use a model from AVAILABLE_MODELS so the server
-// can use its built-in API keys (no user x-zenmux-api-key header). GENERATOR_MODEL
-// and SUMMARY_MODEL may be in ALL_MODELS only; they are not in AVAILABLE_MODELS.
+// can use its built-in API keys (no user x-zenmux-api-key header).
 function resolveDefaultModelWhenCustomDisabled(fallbackDefault: string): string {
   const builtin =
     AVAILABLE_MODELS.find((r) => r.provider === "zenmux") ?? AVAILABLE_MODELS[0];
