@@ -842,7 +842,7 @@
         "rules": "{winCondition}\n\n{difficultyHint}",
         "teammateVotes": "【Teammate intent】\n{lines}\nHint: focus fire with teammates!",
         "voteLine": "- Seat {seat} ({name}) wants to kill: Seat {targetSeat}{targetName}",
-        "task": "【Task】\nNight kill phase: choose a good player to kill.\nOnly output the seat number. No analysis or roleplay.\n{teammateVotesSection}\n\nOptions: {options}\n",
+        "task": "【Task】\nNight kill phase: choose a player to kill (teammates or yourself allowed).\nOnly output the seat number. No analysis or roleplay.\nNote: a teammate may choose to self-kill; keep this in mind.\n{teammateVotesSection}\n\nOptions: {options}\n",
         "user": "{context}\n\nWhich seat do you want to kill?\n\n【Format】\nReply with a seat number only, e.g., 2\nNo explanations, no extra text, no code blocks"
       },
       "guard": {
@@ -1418,6 +1418,7 @@
       "eliminated": " (eliminated)",
       "lastWordsLabel": "【Last words】",
       "bannedDiscussion": "Do not discuss eliminated players",
+      "wolfFriendlyFireNote": "Rule note: werewolf kills may target teammates or self (self-kill allowed); keep this in mind.",
       "deathCauseWolf": "wolf kill",
       "deathCausePoison": "poisoned",
       "deathCauseVote": "voted out",

@@ -842,7 +842,7 @@
         "rules": "{winCondition}\n\n{difficultyHint}",
         "teammateVotes": "【队友意向】\n{lines}\n提示：建议跟随队友集火同一目标！",
         "voteLine": "- {seat}号({name}) 想杀: {targetSeat}号{targetName}",
-        "task": "【任务】\n夜晚击杀阶段，选择一名好人击杀。\n本环节只需要给出座位数字，不要分析，不要角色扮演。\n{teammateVotesSection}\n\n可选: {options}\n",
+        "task": "【任务】\n夜晚击杀阶段，选择一名玩家击杀（可选择队友或自己）。\n本环节只需要给出座位数字，不要分析，不要角色扮演。\n注意：队友可能会选择自刀，请考虑这一点。\n{teammateVotesSection}\n\n可选: {options}\n",
         "user": "{context}\n\n你们要杀几号？\n\n【格式】\n只回复座位数字，如: 2\n不要解释，不要输出多余文字，不要代码块"
       },
       "guard": {
@@ -1206,13 +1206,6 @@
       "seerResult": "{seat}号 {name} 是{result}"
     }
   },
-  "gameMaster": {
-    "invalidSeat": "（无效座位）",
-    "summary": {
-      "system": "你是狼人杀的记录员。\n\n把给定的记录压缩为 3-6 条【关键事实】，作为后续玩家长期记忆。\n\n要求：\n- 只总结给定记录中出现过的信息，不要猜测/补全\n- 每条 10-35 字\n- 优先保留：公投出局/遗言、关键站边/指控、明显的归票/改票、夜晚死亡信息（如果在记录里）\n\n输出格式：返回 JSON 数组，例如：[\"第1天: 2号被放逐，遗言踩10号\", \"9号曾投给1号\"]",
-      "user": "【第{day}天 白天记录】\n{transcript}\n\n请返回 JSON 数组："
-    }
-  },
   "characterGenerator": {
     "rosterLine": "{index}. {name} ({gender}, {age}岁) - {basicInfo}",
     "rosterLineSimple": "{index}. {name} ({gender}) - {basicInfo}",
@@ -1418,6 +1411,7 @@
       "eliminated": "（已出局）",
       "lastWordsLabel": "【遗言】",
       "bannedDiscussion": "严禁讨论已出局玩家",
+      "wolfFriendlyFireNote": "规则提示：狼人出刀可选择队友或自己（允许自刀），后续判断请考虑此可能。",
       "deathCauseWolf": "狼杀",
       "deathCausePoison": "毒杀",
       "deathCauseVote": "投票",

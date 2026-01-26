@@ -124,8 +124,8 @@ export const PHASE_CONFIGS: Record<Phase, PhaseConfig> = {
     },
     requiresHumanInput: (hp) => hp?.alive && hp?.role === "Werewolf" || false,
     canSelectPlayer: (hp, target) => {
-      if (!hp || hp.role !== "Werewolf" || !target.alive || target.isHuman) return false;
-      // 狼人可以刀任何存活玩家（包括狼人队友）
+      if (!hp || hp.role !== "Werewolf" || !target.alive) return false;
+      // 狼人可以刀任何存活玩家（包括队友和自己）
       return true;
     },
     actionType: "night_action",
