@@ -1140,9 +1140,7 @@ export async function generateWolfAction(
   existingVotes: Record<string, number> = {}
 ): Promise<number> {
   const prompt = resolvePhasePrompt("NIGHT_WOLF_ACTION", state, player, { existingVotes });
-  const alivePlayers = state.players.filter(
-    (p) => p.alive && p.alignment === "village"
-  );
+  const alivePlayers = state.players.filter((p) => p.alive);
   const startTime = Date.now();
   const { messages } = buildMessagesForPrompt(prompt);
 

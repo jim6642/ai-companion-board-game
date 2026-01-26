@@ -491,8 +491,8 @@ export class NightPhase extends GamePhase {
     const { t } = getI18n();
     const context = buildGameContext(state, player);
     const difficultyHint = buildDifficultyDecisionHint(state.difficulty, player.role);
-    // 狼人可以刀任何存活玩家（包括狼人队友），但通常刀好人
-    const alivePlayers = state.players.filter((p) => p.alive && p.playerId !== player.playerId);
+    // 狼人可以刀任何存活玩家（包括队友和自己），但通常刀好人
+    const alivePlayers = state.players.filter((p) => p.alive);
     const teammates = state.players.filter(
       (p) => p.role === "Werewolf" && p.playerId !== player.playerId && p.alive
     );

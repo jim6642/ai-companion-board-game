@@ -405,6 +405,11 @@ alive_count: ${alivePlayers.length}
     .join("\n");
   context += `\n\n<alive_players>\n${playerList}\n</alive_players>`;
 
+  const wolfFriendlyFireNote = t("promptUtils.gameContext.wolfFriendlyFireNote");
+  if (wolfFriendlyFireNote) {
+    context += `\n\n<rules>\n${wolfFriendlyFireNote}\n</rules>`;
+  }
+
   const summarySection = buildDailySummariesSection(state);
   if (summarySection) {
     context += `\n\n${summarySection}`;
