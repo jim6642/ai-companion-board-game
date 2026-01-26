@@ -57,6 +57,12 @@ export const setLocale = (locale: AppLocale): void => {
     } catch {
       // Ignore storage errors
     }
+    // Set cookie for middleware to read on next request
+    try {
+      document.cookie = `${STORAGE_KEY}=${locale};path=/;max-age=31536000;SameSite=Lax`;
+    } catch {
+      // Ignore cookie errors
+    }
   }
 };
 
