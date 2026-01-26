@@ -792,7 +792,9 @@ export function WelcomeScreen({
             >
               <UserCircle size={16} />
               <span className="truncate max-w-[160px]">{user.email ?? t("userProfile.loggedIn")}</span>
-              {!customKeyEnabled && (
+              {customKeyEnabled ? (
+                <span className="opacity-70">{t("customKey.title")}</span>
+              ) : (
                 <span className="opacity-70">{t("welcome.account.remaining", { count: creditsLoading ? "..." : (credits ?? 0) })}</span>
               )}
             </button>
