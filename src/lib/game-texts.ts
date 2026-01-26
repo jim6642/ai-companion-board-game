@@ -1,40 +1,6 @@
 import { getI18n } from "@/i18n/translator";
 import type { AppLocale } from "@/i18n/config";
 
-export const SYSTEM_MESSAGES_ZH_FALLBACK = {
-  gameStart: "人到齐了，开始吧。",
-  nightFall: (day: number) => `第 ${day} 夜，天黑请闭眼`,
-  summarizingDay: "整理今日要点…",
-  dayBreak: "天亮了，请睁眼",
-  guardActionStart: "守卫请睁眼",
-  wolfActionStart: "狼人请睁眼",
-  witchActionStart: "女巫请睁眼",
-  seerActionStart: "预言家请睁眼",
-  peacefulNight: "昨晚平安无事",
-  playerKilled: (seat: number, name: string) => `${seat}号 ${name} 昨晚出局`,
-  playerMilkKilled: (seat: number, name: string) => `${seat}号 ${name} 昨晚被毒奶带走`,
-  playerPoisoned: (seat: number, name: string) => `${seat}号 ${name} 昨晚中毒出局`,
-  badgeSpeechStart: "警徽竞选开始，请候选人依次发言",
-  badgeElectionStart: "开始警徽评选",
-  badgeRevote: "警徽平票，重新投票",
-  badgeElected: (seat: number, name: string, votes: number) => `警徽授予 ${seat}号 ${name}（${votes}票）`,
-  dayDiscussion: "开始自由发言",
-  voteStart: "发言结束，开始投票。",
-  playerExecuted: (seat: number, name: string, votes: number) => `${seat}号 ${name} 以 ${votes} 票出局`,
-  voteTie: "票数相同，今天无人出局",
-  villageWin: "好人获胜。",
-  wolfWin: "狼人获胜。",
-  seerResult: (seat: number, isWolf: boolean) => `查验结果：${seat}号是${isWolf ? "狼人" : "好人"}`,
-  wolfAttack: (seat: number, name: string) => `你们决定击杀：${seat}号 ${name}`,
-  witchSave: "你使用了解药",
-  witchPoison: (seat: number, name: string) => `你对 ${seat}号 ${name} 使用了毒药`,
-  guardProtect: (seat: number, name: string) => `你守护了 ${seat}号 ${name}`,
-  hunterShoot: (hunterSeat: number, targetSeat: number, targetName: string) => `${hunterSeat}号猎人开枪带走了 ${targetSeat}号 ${targetName}`,
-  badgeTransferStart: (seat: number, name: string) => `${seat}号 ${name} 是警长，请选择移交警徽的对象或撕毁警徽`,
-  badgeTransferred: (fromSeat: number, toSeat: number, toName: string) => `警徽移交给 ${toSeat}号 ${toName}`,
-  badgeTorn: (seat: number, name: string) => `${seat}号 ${name} 选择撕毁警徽`,
-};
-
 export const getSystemMessages = (locale?: AppLocale) => {
   const { t } = getI18n(locale);
   return {
@@ -72,6 +38,7 @@ export const getSystemMessages = (locale?: AppLocale) => {
   };
 };
 
+export const SYSTEM_MESSAGES_ZH_FALLBACK = getSystemMessages("zh");
 export const SYSTEM_MESSAGES = getSystemMessages();
 
 export const getUiText = (locale?: AppLocale) => {

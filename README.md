@@ -25,7 +25,7 @@ Current sponsors:
 
 ---
 
-> **Note**: This project was born at the **"Guancha + ModelScope Global Hackathon"** as an AI-native game.
+> **Note**: This project was born at the **"Watcha + ModelScope Global Hackathon"** as an AI-native game.
 > 
 > "Wolfcha" combines Wolf (Werewolf) + Cha (猹, a character from Chinese literature). It's a nod to the hackathon host while also capturing the fun of watching AI characters interact — like spectating a show.
 

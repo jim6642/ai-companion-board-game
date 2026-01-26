@@ -1434,6 +1434,7 @@
     }
   },
   "devConsole": {
+    "title": "Developer Console",
     "phases": {
       "LOBBY": "Lobby",
       "SETUP": "Setup",
@@ -1468,6 +1469,7 @@
       "global": "Global",
       "players": "Players",
       "actions": "Actions",
+      "tts": "TTS",
       "inspector": "State"
     },
     "ttsTest": {
@@ -1500,19 +1502,43 @@
       "confirmJump": "Confirm jump",
       "fillError": "Please complete all fill items before confirming jump"
     },
+    "labels": {
+      "phase": "Phase:",
+      "day": "Day:",
+      "alive": "Alive:",
+      "speaker": "Speaker:"
+    },
+    "dayLabel": "Day {day}",
+    "dayPhaseLabel": "Day {day} · {phase}",
     "playerLabel": "Seat {seat} {name}",
     "playerDead": " (dead)",
+    "seatOnly": "Seat {seat}",
     "none": "None",
+    "yes": "Yes",
+    "no": "No",
     "human": "Human",
     "kill": "Kill",
     "revive": "Revive",
     "wolf": "Wolf",
     "good": "Good",
+    "roleLabel": "Role:",
     "viewPrompt": "View prompt",
     "promptTab": "Prompt",
     "speechTab": "Speech",
+    "promptNotFound": "No prompt found for this phase.",
+    "speechPhase": {
+      "unknown": "Unknown phase",
+      "lastWords": "Last words",
+      "night": "Night",
+      "day": "Day"
+    },
     "humanPlayer": "Human player",
     "unknown": "Unknown",
+    "modelLabel": "Model: ",
+    "voicePresetLabel": "MiniMax voice: ",
+    "loadingLogs": "Loading logs…",
+    "loadFailed": "Load failed: {error}",
+    "noSpeechLogs": "No speech logs for this player",
     "currentState": "Current state",
     "gameControl": "Game control",
     "resume": "Resume game",
@@ -1521,14 +1547,47 @@
     "phaseJump": "Phase jump",
     "dayModify": "Day modify",
     "actionRecords": "Full action records",
+    "actionRecordsEmpty": "No records yet (need at least one night resolve or vote)",
+    "actionRecordDetails": {
+      "guardProtect": "Guard protect:",
+      "wolfTarget": "Wolf target:",
+      "witchSave": "Witch save:",
+      "witchPoison": "Witch poison:",
+      "seerCheck": "Seer check:",
+      "seerResult": "(Result: {alignment})",
+      "nightDeaths": "Night deaths:",
+      "hunterShotNight": "Hunter shot (night):",
+      "dayExecution": "Day execution",
+      "voteTieNoElim": "Tie, no one eliminated",
+      "hunterShotDay": "Hunter shot (day):",
+      "voteInfo": "Vote info"
+    },
+    "deathReason": {
+      "wolf": "wolf kill",
+      "poison": "witch poison",
+      "milk": "milk poison"
+    },
     "nightActions": "Night actions",
     "speechControl": "Speech control",
     "badgeControl": "Sheriff control",
+    "actions": {
+      "guardTarget": "Guard target:",
+      "wolfTarget": "Wolf target:",
+      "witchSave": "Witch save:",
+      "witchPoison": "Witch poison:",
+      "seerCheck": "Seer check:",
+      "nextSpeaker": "Next speaker:",
+      "currentBadge": "Current sheriff:",
+      "setBadge": "Set sheriff:",
+      "clearBadgeOption": "None (remove sheriff)"
+    },
     "removeBadge": "Remove sheriff",
     "voteControl": "Vote control",
     "selectVoter": "Select voter",
     "vote": "Vote",
     "clearVotes": "Clear all votes",
+    "currentVotes": "Current votes:",
+    "voteCountSuffix": " votes",
     "copyState": "Copy full state to clipboard",
     "devMode": "Developer mode"
   },
