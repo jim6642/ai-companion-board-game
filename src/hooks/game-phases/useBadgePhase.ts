@@ -452,6 +452,7 @@ export function useBadgePhase(
 
     const candidates = currentState.badge.candidates || [];
     if (candidates.length === 1) {
+      // 只有一人竞选，直接当选，不展示投票环节
       const winnerSeat = candidates[0];
       const winner = currentState.players.find((p) => p.seat === winnerSeat);
       let nextState: GameState = {
@@ -462,9 +463,11 @@ export function useBadgePhase(
           history: { ...currentState.badge.history, [currentState.day]: {} },
         },
       };
-      nextState = addSystemMessage(nextState, systemMessages.badgeElected(winnerSeat + 1, winner?.displayName || "", 1));
+      // 使用特殊消息，不显示票数
+      const autoElectMsg = t("badgePhase.autoElected", { seat: winnerSeat + 1, name: winner?.displayName || "" });
+      nextState = addSystemMessage(nextState, autoElectMsg);
       setGameState(nextState);
-      setDialogue(speakerHost, systemMessages.badgeElected(winnerSeat + 1, winner?.displayName || "", 1), false);
+      setDialogue(speakerHost, autoElectMsg, false);
       await delay(DELAY_CONFIG.DIALOGUE);
       await onBadgeElectionComplete(nextState);
       return;

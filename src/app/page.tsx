@@ -1451,6 +1451,7 @@ export default function Home() {
                             showRoleBadge={canShowRole}
                             showModel={gameState.phase === "GAME_END"}
                             selectionTone={selectionTone}
+                            isInSelectionPhase={isSelectionPhase}
                           />
                         );
                       })}
@@ -1518,6 +1519,7 @@ export default function Home() {
                               variant="mobile"
                               showRoleBadge={canShowRole}
                               selectionTone={selectionTone}
+                              isInSelectionPhase={isSelectionPhase}
                             />
                           );
                         })}
@@ -1556,6 +1558,7 @@ export default function Home() {
                             showRoleBadge={canShowRole}
                             showModel={gameState.phase === "GAME_END"}
                             selectionTone={selectionTone}
+                            isInSelectionPhase={isSelectionPhase}
                           />
                         );
                       })}

@@ -89,7 +89,8 @@ export class BadgePhase extends GamePhase {
   }
 
   private buildBadgeSignupPrompt(state: GameContext["state"], player: Player): PromptResult {
-    const context = buildGameContext(state, player);
+    // excludePendingDeaths: true - 警长竞选时夜间死亡还未公布，AI不应知道是否平安夜
+    const context = buildGameContext(state, player, { excludePendingDeaths: true });
     const difficultyHint = buildDifficultyDecisionHint(state.difficulty, player.role);
     const isGenshinMode = !!state.isGenshinMode;
     const persona = buildPersonaSection(player, isGenshinMode);

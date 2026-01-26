@@ -902,7 +902,8 @@
     "tiePk": "警徽平票，进入PK发言",
     "signupStart": "进入警徽竞选报名环节",
     "noSignup": "无人报名竞选警长，跳过警徽竞选",
-    "transferPrompt": "点击玩家卡片选择移交警徽的对象"
+    "transferPrompt": "点击玩家卡片选择移交警徽的对象",
+    "autoElected": "{seat}号 {name} 作为唯一候选人直接当选警长"
   },
   "votePhase": {
     "voteDetailTitle": "投票详情",
@@ -929,7 +930,7 @@
     "daySpeech": { "description": "发言阶段" },
     "speechYourTurn": "轮到你发言",
     "lastWords": { "description": "遗言阶段" },
-    "dayVote": { "description": "投票阶段", "human": "点击玩家卡片投票" },
+    "dayVote": { "description": "投票阶段", "human": "点击玩家卡片投票", "noVotePk": "你是PK参与者，无需投票" },
     "dayResolve": { "description": "处决结算" },
     "badgeTransfer": { "description": "警长移交警徽", "human": "点击玩家卡片选择移交对象" },
     "hunterShoot": { "description": "猎人开枪", "human": "点击玩家卡片选择开枪目标" },

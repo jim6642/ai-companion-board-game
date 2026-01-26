@@ -361,7 +361,8 @@ export const buildSystemAnnouncementsSinceDawn = (state: GameState, maxLines: nu
 
 export const buildGameContext = (
   state: GameState,
-  player: Player
+  player: Player,
+  options?: { excludePendingDeaths?: boolean }
 ): string => {
   const { t } = getI18n();
   const alivePlayers = state.players.filter((p) => p.alive);
@@ -415,43 +416,45 @@ alive_count: ${alivePlayers.length}
   }
 
   if (deadPlayers.length > 0) {
-    // Build today's deaths info
-    const currentDayDeaths: string[] = [];
-    const nightHistory = state.nightHistory?.[state.day];
-    if (nightHistory?.wolfTarget !== undefined) {
-      const p = state.players.find(p => p.seat === nightHistory.wolfTarget);
-      if (p && !p.alive) {
-        currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${t("promptUtils.gameContext.deathCauseWolf")}}`);
-      }
-    }
-    if (nightHistory?.witchPoison !== undefined) {
-      const p = state.players.find(p => p.seat === nightHistory.witchPoison);
-      if (p && !p.alive) {
-        currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${t("promptUtils.gameContext.deathCausePoison")}}`);
-      }
-    }
-    if (nightHistory?.deaths && Array.isArray(nightHistory.deaths)) {
-      nightHistory.deaths.forEach(death => {
-        if (death && typeof death.seat === 'number') {
-          const p = state.players.find(p => p.seat === death.seat);
-          if (p && !p.alive) {
-            const cause = death.reason === 'wolf' ? t("promptUtils.gameContext.deathCauseWolf") : death.reason === 'poison' ? t("promptUtils.gameContext.deathCausePoison") : t("promptUtils.gameContext.deathCauseDeath");
-            currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${cause}}`);
-          }
+    // Build today's deaths info (skip if excludePendingDeaths is true - deaths not announced yet)
+    if (!options?.excludePendingDeaths) {
+      const currentDayDeaths: string[] = [];
+      const nightHistory = state.nightHistory?.[state.day];
+      if (nightHistory?.wolfTarget !== undefined) {
+        const p = state.players.find(p => p.seat === nightHistory.wolfTarget);
+        if (p && !p.alive) {
+          currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${t("promptUtils.gameContext.deathCauseWolf")}}`);
         }
-      });
-    }
-    const dayHistory = state.dayHistory?.[state.day];
-    if (dayHistory?.executed && typeof dayHistory.executed.seat === 'number') {
-      const executedSeat = dayHistory.executed.seat;
-      const p = state.players.find(p => p.seat === executedSeat);
-      if (p) {
-        currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${t("promptUtils.gameContext.deathCauseVote")}}`);
       }
-    }
+      if (nightHistory?.witchPoison !== undefined) {
+        const p = state.players.find(p => p.seat === nightHistory.witchPoison);
+        if (p && !p.alive) {
+          currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${t("promptUtils.gameContext.deathCausePoison")}}`);
+        }
+      }
+      if (nightHistory?.deaths && Array.isArray(nightHistory.deaths)) {
+        nightHistory.deaths.forEach(death => {
+          if (death && typeof death.seat === 'number') {
+            const p = state.players.find(p => p.seat === death.seat);
+            if (p && !p.alive) {
+              const cause = death.reason === 'wolf' ? t("promptUtils.gameContext.deathCauseWolf") : death.reason === 'poison' ? t("promptUtils.gameContext.deathCausePoison") : t("promptUtils.gameContext.deathCauseDeath");
+              currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${cause}}`);
+            }
+          }
+        });
+      }
+      const dayHistory = state.dayHistory?.[state.day];
+      if (dayHistory?.executed && typeof dayHistory.executed.seat === 'number') {
+        const executedSeat = dayHistory.executed.seat;
+        const p = state.players.find(p => p.seat === executedSeat);
+        if (p) {
+          currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${t("promptUtils.gameContext.deathCauseVote")}}`);
+        }
+      }
 
-    if (currentDayDeaths.length > 0) {
-      context += `\n\n<today_deaths>\n${currentDayDeaths.join("\n")}\n</today_deaths>`;
+      if (currentDayDeaths.length > 0) {
+        context += `\n\n<today_deaths>\n${currentDayDeaths.join("\n")}\n</today_deaths>`;
+      }
     }
 
     // Dead players warning

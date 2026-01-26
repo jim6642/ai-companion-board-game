@@ -143,6 +143,82 @@ function renderPlayerMentions(
   return parts.length > 0 ? parts : text;
 }
 
+function renderMentionsInMarkdownChildren(
+  children: React.ReactNode,
+  players: Player[],
+  isNight: boolean,
+  isGenshinMode: boolean
+) {
+  return React.Children.map(children, (child) => {
+    if (typeof child === "string") {
+      return renderPlayerMentions(child, players, isNight, isGenshinMode);
+    }
+    return child;
+  });
+}
+
+function MentionsMarkdown({
+  content,
+  players,
+  isNight,
+  isGenshinMode,
+  className,
+}: {
+  content: string;
+  players: Player[];
+  isNight: boolean;
+  isGenshinMode: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={cn("whitespace-pre-wrap break-words", className)}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          p: ({ children }) => (
+            <p className="m-0">
+              {renderMentionsInMarkdownChildren(children, players, isNight, isGenshinMode)}
+            </p>
+          ),
+          em: ({ children }) => (
+            <em>
+              {renderMentionsInMarkdownChildren(children, players, isNight, isGenshinMode)}
+            </em>
+          ),
+          strong: ({ children }) => (
+            <strong className="font-semibold">
+              {renderMentionsInMarkdownChildren(children, players, isNight, isGenshinMode)}
+            </strong>
+          ),
+          li: ({ children }) => (
+            <li>
+              {renderMentionsInMarkdownChildren(children, players, isNight, isGenshinMode)}
+            </li>
+          ),
+          a: ({ children, href }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              className={cn(
+                "underline underline-offset-2",
+                isNight ? "text-[var(--color-accent-light)]" : "text-[var(--color-accent)]"
+              )}
+            >
+              {renderMentionsInMarkdownChildren(children, players, isNight, isGenshinMode)}
+            </a>
+          ),
+          // Do not inject mentions into code blocks.
+          code: ({ children }) => <code className="font-mono">{children}</code>,
+          pre: ({ children }) => <pre className="overflow-x-auto">{children}</pre>,
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
 interface DialogAreaProps {
   gameState: GameState;
   humanPlayer: Player | null;
@@ -1335,11 +1411,20 @@ export function DialogArea({
                     
                     {/* 对话内容 - 带玩家标签，逐字输入效果，文字调大 */}
                     <div className="text-xl leading-relaxed text-[var(--text-primary)] flex-1 pr-1 whitespace-pre-wrap break-words">
-                      {renderPlayerMentions(
-                        waitingForNextRound ? t("dialog.nextRoundHint") : dialogueText,
-                        gameState.players,
-                        isNight,
-                        isGenshinMode
+                      {isTyping ? (
+                        renderPlayerMentions(
+                          waitingForNextRound ? t("dialog.nextRoundHint") : dialogueText,
+                          gameState.players,
+                          isNight,
+                          isGenshinMode
+                        )
+                      ) : (
+                        <MentionsMarkdown
+                          content={waitingForNextRound ? t("dialog.nextRoundHint") : dialogueText}
+                          players={gameState.players}
+                          isNight={isNight}
+                          isGenshinMode={isGenshinMode}
+                        />
                       )}
                       {isTyping && <span className="wc-typing-cursor"></span>}
                     </div>
@@ -1452,7 +1537,13 @@ function ChatMessageItem({
     return (
       <div className="flex justify-center my-3">
         <div className="text-xs text-center py-2 px-4 rounded-lg border text-[var(--text-secondary)] bg-[var(--glass-bg-weak)] border-[var(--glass-border)]">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+          <MentionsMarkdown
+            content={msg.content}
+            players={players}
+            isNight={isNight}
+            isGenshinMode={isGenshinMode}
+            className="text-center"
+          />
         </div>
       </div>
     );
@@ -1500,8 +1591,13 @@ function ChatMessageItem({
             <span className="font-serif font-bold text-[var(--text-primary)]">{msg.playerName}</span>
           </div>
           
-          <div className="text-base leading-relaxed text-[var(--text-primary)] break-words text-left">
-            {renderPlayerMentions(msg.content, players, isNight, isGenshinMode)}
+          <div className="text-base leading-relaxed text-[var(--text-primary)] text-left">
+            <MentionsMarkdown
+              content={msg.content}
+              players={players}
+              isNight={isNight}
+              isGenshinMode={isGenshinMode}
+            />
           </div>
         </div>
       </div>

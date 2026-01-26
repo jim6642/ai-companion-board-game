@@ -75,7 +75,9 @@ export class VotePhase extends GamePhase {
       setDialogue(speakerHint, uiText.clickToVote, false);
     }
 
-    const aiPlayers = currentState.players.filter((p) => p.alive && !p.isHuman);
+    // PK投票时，参与PK的人不能投票
+    const pkTargets = currentState.pkSource === "vote" && Array.isArray(currentState.pkTargets) ? currentState.pkTargets : [];
+    const aiPlayers = currentState.players.filter((p) => p.alive && !p.isHuman && !pkTargets.includes(p.seat));
     let tokenInvalidated = false;
     setIsWaitingForAI(true);
     try {

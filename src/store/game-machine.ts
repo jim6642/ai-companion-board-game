@@ -125,8 +125,8 @@ export const PHASE_CONFIGS: Record<Phase, PhaseConfig> = {
     requiresHumanInput: (hp) => hp?.alive && hp?.role === "Werewolf" || false,
     canSelectPlayer: (hp, target) => {
       if (!hp || hp.role !== "Werewolf" || !target.alive || target.isHuman) return false;
-      // 狼人只能击杀好人阵营
-      return target.alignment === "village";
+      // 狼人可以刀任何存活玩家（包括狼人队友）
+      return true;
     },
     actionType: "night_action",
   },
@@ -272,19 +272,34 @@ export const PHASE_CONFIGS: Record<Phase, PhaseConfig> = {
     description: "phase.dayVote.description",
     humanDescription: (hp, gs) => {
       const { t } = getI18n();
+      // PK投票时，参与PK的人不能投票
+      if (gs.pkSource === "vote" && Array.isArray(gs.pkTargets) && gs.pkTargets.length > 0) {
+        if (hp && gs.pkTargets.includes(hp.seat)) {
+          return t("phase.dayVote.noVotePk");
+        }
+      }
       return hp?.alive && typeof gs.votes[hp?.playerId || ""] !== "number"
         ? t("phase.dayVote.human")
         : t("phase.dayVote.description");
     },
-    requiresHumanInput: (hp, gs) => hp?.alive && typeof gs.votes[hp?.playerId || ""] !== "number" || false,
+    requiresHumanInput: (hp, gs) => {
+      if (!hp?.alive) return false;
+      // PK投票时，参与PK的人不需要投票
+      if (gs.pkSource === "vote" && Array.isArray(gs.pkTargets) && gs.pkTargets.length > 0) {
+        if (gs.pkTargets.includes(hp.seat)) return false;
+      }
+      return typeof gs.votes[hp?.playerId || ""] !== "number";
+    },
     canSelectPlayer: (hp, target, gs) => {
       if (!hp?.alive || target.isHuman || !target.alive) return false;
       if (typeof gs.votes[hp.playerId] === "number") return false;
+      // PK投票时，参与PK的人不能投票
+      if (gs.pkSource === "vote" && Array.isArray(gs.pkTargets) && gs.pkTargets.length > 0) {
+        if (gs.pkTargets.includes(hp.seat)) return false;
+        return gs.pkTargets.includes(target.seat);
+      }
       if (gs.pkSource === "vote" && Array.isArray(gs.pkTargets) && gs.pkTargets.length === 0) {
         return false;
-      }
-      if (gs.pkSource === "vote" && Array.isArray(gs.pkTargets) && gs.pkTargets.length > 0) {
-        return gs.pkTargets.includes(target.seat);
       }
       return true;
     },

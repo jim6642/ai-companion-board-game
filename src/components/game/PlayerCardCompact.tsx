@@ -27,6 +27,7 @@ interface PlayerCardCompactProps {
   isBadgeHolder?: boolean;
   isBadgeCandidate?: boolean;
   variant?: "default" | "mobile";
+  isInSelectionPhase?: boolean;
 }
 
 const revealedAvatarIds = new Set<string>();
@@ -50,11 +51,13 @@ export function PlayerCardCompact({
   isBadgeHolder = false,
   isBadgeCandidate = false,
   variant = "default",
+  isInSelectionPhase = false,
 }: PlayerCardCompactProps) {
   const t = useTranslations();
   const isDead = !player.alive;
   const isMe = player.isHuman;
   const isReady = isMe ? !!player.displayName?.trim() : !!player.agentProfile?.persona;
+  const isDisabledInSelection = isInSelectionPhase && !canClick && isReady && !isDead;
   const hasRevealedAvatar = revealedAvatarIds.has(player.playerId);
 
   const prevAliveRef = useRef<boolean>(player.alive);
@@ -168,6 +171,7 @@ export function PlayerCardCompact({
         isSpeaking && "wc-player-card--speaking ring-1 ring-[var(--color-gold)] shadow-[0_0_15px_rgba(184,134,11,0.15)]",
         isMe && "wc-player-card--me",
         isWolfTeammate && "border-[var(--color-blood)]/70 bg-[var(--color-wolf-bg)]",
+        isDisabledInSelection && "wc-player-card--disabled opacity-50 grayscale-[0.3] pointer-events-none",
         canClick && isReady && "wc-player-card--selectable border-[var(--color-gold)]/50 hover:border-[var(--color-gold)] cursor-pointer",
         isSelected && "scale-[1.02]",
         isSelected && selectionClass
