@@ -207,7 +207,12 @@ export interface DailySummaryVoteData {
   execution_vote?: { eliminated: number; votes: Record<string, number[]> };
 }
 
+// Models for summary & character generation
+export const GENERATOR_MODEL = "google/gemini-2.5-flash-lite";
+export const SUMMARY_MODEL = "google/gemini-2.5-flash-lite";
+
 // Default models used when custom key is not enabled
+// Note: SUMMARY_MODEL and GENERATOR_MODEL are included here for server-side validation.
 export const AVAILABLE_MODELS: ModelRef[] = [
   { provider: "dashscope", model: "deepseek-v3.2" },
   { provider: "dashscope", model: "qwen-plus" },
@@ -215,8 +220,19 @@ export const AVAILABLE_MODELS: ModelRef[] = [
   { provider: "dashscope", model: "qwen3-max" },
   { provider: "dashscope", model: "qwen3-next-80b-a3b-instruct" },
 
+  { provider: "zenmux", model: "google/gemini-2.5-flash-lite" },
   { provider: "zenmux", model: "google/gemini-3-flash-preview" },
 ];
+
+// Models not allowed for in-game players (summary & generation only)
+export const NON_PLAYER_MODELS = [GENERATOR_MODEL, SUMMARY_MODEL];
+
+export function filterPlayerModels(models: ModelRef[]): ModelRef[] {
+  return models.filter((ref) => !NON_PLAYER_MODELS.includes(ref.model));
+}
+
+// Built-in player model pool (excludes summary/generation models)
+export const PLAYER_MODELS: ModelRef[] = filterPlayerModels(AVAILABLE_MODELS);
 
 // All available models for custom key users (includes commented ones from AVAILABLE_MODELS)
 export const ALL_MODELS: ModelRef[] = [
@@ -242,5 +258,3 @@ export const ALL_MODELS: ModelRef[] = [
   { provider: "zenmux", model: "google/gemini-3-pro-preview" },
 ];
 
-export const GENERATOR_MODEL = "google/gemini-2.5-flash-lite";
-export const SUMMARY_MODEL = "google/gemini-2.5-flash-lite";

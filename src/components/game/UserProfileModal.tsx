@@ -42,7 +42,14 @@ import {
   isCustomKeyEnabled as getCustomKeyEnabled,
 } from "@/lib/api-keys";
 import { getModelLogoPath } from "@/lib/model-logo";
-import { ALL_MODELS, AVAILABLE_MODELS, GENERATOR_MODEL, SUMMARY_MODEL, type ModelRef } from "@/types/game";
+import {
+  ALL_MODELS,
+  AVAILABLE_MODELS,
+  GENERATOR_MODEL,
+  SUMMARY_MODEL,
+  filterPlayerModels,
+  type ModelRef,
+} from "@/types/game";
  
  interface UserProfileModalProps {
    open: boolean;
@@ -149,14 +156,21 @@ import { ALL_MODELS, AVAILABLE_MODELS, GENERATOR_MODEL, SUMMARY_MODEL, type Mode
     if (providers.size === 0) return [];
     return defaultModelPool.filter((ref) => providers.has(ref.provider));
   }, [dashscopeConfigured, defaultModelPool, zenmuxConfigured]);
+  const playerModelPool = useMemo(() => {
+    return filterPlayerModels(availableModelPool);
+  }, [availableModelPool]);
+  const defaultPlayerModels = useMemo(() => {
+    return filterPlayerModels(defaultAvailableModels);
+  }, [defaultAvailableModels]);
 
   useEffect(() => {
     if (!isCustomKeyEnabled) return;
     const availableSet = new Set(availableModelPool.map((ref) => ref.model));
+    const playerSet = new Set(playerModelPool.map((ref) => ref.model));
     setSelectedModelsState((prev) => {
-      const filtered = prev.filter((m) => availableSet.has(m));
+      const filtered = prev.filter((m) => playerSet.has(m));
       if (filtered.length > 0) return filtered;
-      return defaultAvailableModels.map((ref) => ref.model).filter((m) => availableSet.has(m));
+      return defaultPlayerModels.map((ref) => ref.model).filter((m) => playerSet.has(m));
     });
     setGeneratorModelState((prev) => {
       if (prev && availableSet.has(prev)) return prev;
@@ -168,7 +182,7 @@ import { ALL_MODELS, AVAILABLE_MODELS, GENERATOR_MODEL, SUMMARY_MODEL, type Mode
       if (availableSet.has(SUMMARY_MODEL)) return SUMMARY_MODEL;
       return availableModelPool[0]?.model ?? "";
     });
-  }, [availableModelPool, defaultAvailableModels, isCustomKeyEnabled]);
+  }, [availableModelPool, defaultPlayerModels, isCustomKeyEnabled, playerModelPool]);
 
   const selectedModelSummary = useMemo(() => {
     if (selectedModels.length === 0) return t("customKey.selectModel");
@@ -212,12 +226,13 @@ import { ALL_MODELS, AVAILABLE_MODELS, GENERATOR_MODEL, SUMMARY_MODEL, type Mode
       }
     }
     const availableSet = new Set(availableModelPool.map((ref) => ref.model));
+    const playerAvailableSet = new Set(playerModelPool.map((ref) => ref.model));
     if (isCustomKeyEnabled && availableSet.size === 0) {
       // Prevent saving an unusable custom-key state with no LLM keys.
       toast(t("customKey.toasts.needLlmKey"), { description: t("customKey.toasts.needLlmKeyDesc") });
       return;
     }
-    const nextSelectedModels = selectedModels.filter((m) => availableSet.has(m));
+    const nextSelectedModels = selectedModels.filter((m) => playerAvailableSet.has(m));
     const fallbackGenerator = availableSet.has(GENERATOR_MODEL)
       ? GENERATOR_MODEL
       : availableModelPool[0]?.model ?? "";
@@ -226,7 +241,7 @@ import { ALL_MODELS, AVAILABLE_MODELS, GENERATOR_MODEL, SUMMARY_MODEL, type Mode
       : availableModelPool[0]?.model ?? "";
     const nextGeneratorModel = availableSet.has(generatorModel) ? generatorModel : fallbackGenerator;
     const nextSummaryModel = availableSet.has(summaryModel) ? summaryModel : fallbackSummary;
-    const removedSelected = selectedModels.filter((m) => !availableSet.has(m));
+    const removedSelected = selectedModels.filter((m) => !playerAvailableSet.has(m));
     const generatorAdjusted = Boolean(generatorModel) && !availableSet.has(generatorModel);
     const summaryAdjusted = Boolean(summaryModel) && !availableSet.has(summaryModel);
 
@@ -585,8 +600,8 @@ import { ALL_MODELS, AVAILABLE_MODELS, GENERATOR_MODEL, SUMMARY_MODEL, type Mode
                               <CaretDown size={16} className={`shrink-0 transition-transform ${isModelSelectorOpen ? "rotate-180" : ""}`} />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
-                            {availableModelPool.map((r) => (
+                        <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                            {playerModelPool.map((r) => (
                               <DropdownMenuCheckboxItem
                                 key={`${r.provider}:${r.model}`}
                                 checked={selectedModels.includes(r.model)}
