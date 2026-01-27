@@ -12,6 +12,7 @@ export interface StartGameOptions {
   difficulty?: DifficultyLevel;
   playerCount?: number;
   isGenshinMode?: boolean;
+  isSpectatorMode?: boolean;
 }
 
 export type Phase =
@@ -122,6 +123,7 @@ export interface GameState {
   isPaused?: boolean;
   scenario?: GameScenario;
   isGenshinMode?: boolean;
+  isSpectatorMode?: boolean;
   difficulty: DifficultyLevel;
   players: Player[];
   events: GameEvent[];
@@ -218,7 +220,6 @@ export const AVAILABLE_MODELS: ModelRef[] = [
   { provider: "dashscope", model: "qwen-plus" },
   { provider: "dashscope", model: "Moonshot-Kimi-K2-Instruct" },
   { provider: "dashscope", model: "qwen3-max" },
-  { provider: "dashscope", model: "qwen3-next-80b-a3b-instruct" },
 
   { provider: "zenmux", model: "google/gemini-2.5-flash-lite" },
   { provider: "zenmux", model: "google/gemini-3-flash-preview" },

@@ -27,6 +27,7 @@
     "@tiptap/suggestion": "^3.15.3",
     "@vercel/analytics": "^1.6.1",
     "ahooks": "^3.9.6",
+    "ai-json-fixer": "^0.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.24.0",
@@ -42,6 +43,7 @@
     "streamdown": "^1.6.10",
     "stripe": "^20.2.0",
     "tailwind-merge": "^3.4.0",
+    "undici": "^7.19.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

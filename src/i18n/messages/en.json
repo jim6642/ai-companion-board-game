@@ -362,6 +362,10 @@
     "genshinMode": {
       "title": "Model original mode",
       "description": "By default, each AI gets a realistic persona and name. When enabled, persona and names are not generated; the model's original name is used with numeric suffixes for duplicates."
+    },
+    "spectatorMode": {
+      "title": "Spectator Mode",
+      "description": "Watch AI players only, without participating. Tap player cards to reveal their true role"
     }
   }
   ,
@@ -1286,13 +1290,6 @@
       "seerResult": "Seat {seat} {name} is {result}"
     }
   },
-  "gameMaster": {
-    "invalidSeat": "(Invalid seat)",
-    "summary": {
-      "system": "You are a Werewolf game recorder.\n\nCompress the given log into 3–6 key facts for long-term memory.\n\nRequirements:\n- Summarize only what appears in the log; do not infer\n- Each item 10–35 characters\n- Prioritize: executions/last words, key alignments/accusations, clear vote shifts, night deaths (if present)\n\nOutput format: return a JSON array, e.g., [\"Day 1: Seat 2 executed; last words accuse 10\", \"Seat 9 voted Seat 1\"]",
-      "user": "【Day {day} daytime log】\n{transcript}\n\nReturn a JSON array:"
-    }
-  },
   "characterGenerator": {
     "rosterLine": "{index}. {name} ({gender}, age {age}) - {basicInfo}",
     "rosterLineSimple": "{index}. {name} ({gender}) - {basicInfo}",
@@ -1698,6 +1695,20 @@
   "gameMaster": {
     "invalidSeat": "(invalid seat)",
     "tooManyRequests": "Too many requests, please try again later.",
+    "badgeSignup": {
+      "systemPrompt": "Werewolf game assistant. Decide if players run for sheriff based on role/personality.\n\nRules:\n- Seer/Witch/Hunter: likely run\n- Guard: usually don't run\n- Werewolf: 50% chance\n- Villager: extroverts run, introverts don't\n\nIMPORTANT: Return ONLY simple JSON:\n{\"seat_number\": true or false, ...}\n\nExample: {\"2\": true, \"3\": false, \"4\": true}\n\nNo other fields (no player_name, reason, etc). Only seat numbers and booleans.",
+      "userPrompt": "Players:\n{playerDescriptions}\n\nSeats: {seatList}\n\nReturn only JSON: {\"seat\": true/false, ...}",
+      "playerDesc": "- Seat {seat} {name} ({role}): {personality}",
+      "nightActionSuffix": ". Last night action: {action}",
+      "noPersonality": "Normal personality",
+      "seerChecked": "Checked {targetName}, result: {result}",
+      "werewolf": "Werewolf",
+      "notWerewolf": "Not Werewolf",
+      "witchHealed": "Used antidote",
+      "witchPoisoned": "Used poison",
+      "guardProtected": "Protected {targetName}",
+      "werewolfParticipated": "Participated in wolf kill"
+    },
     "dailySummary": {
       "systemPrompt": "You are an objective Werewolf game recorder.\n\nTask: Compress the given record into a coherent FACT SUMMARY for long-term player memory.\n\nCore principles\n- Objectively record \"who said what, who did what\". No judgments.\n- Avoid evaluative words like \"illogical\", \"steering\", \"suspicious\", \"unreasonable\".\n- Preserve original points and stances, not your opinions.\n\nMust include\n1. Death info: who died at night/in voting\n2. Role claims: who claimed what role, who reported what checks, who confirmed\n3. Speech stances: each player's core viewpoint/stance (quote or paraphrase, no judgment)\n4. Alignment stances: who supported whom, who questioned whom (objective)\n(For sheriff election and public vote patterns, the system records details separately; mention results briefly like \"Seat X elected sheriff\" or \"Seat X was exiled\".)\n\nFormat requirements\n- Any player mention must include a seat number (e.g., \"Seat 2\", \"Seat 10\")\n- Use coherent paragraphs; multiple paragraphs allowed\n- Keep details; do not over-compress\n- No word limit; completeness first\n\nOutput format: return a JSON object:\n{ \"summary\": \"Coherent summary text for Day X...\" }",
       "userPrompt": "【Day {day} Daytime Log】\n{transcript}\n\nReturn a JSON object:"

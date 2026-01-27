@@ -5,6 +5,9 @@ const ZENMUX_API_URL = "https://zenmux.ai/api/v1/chat/completions";
 const DASHSCOPE_API_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
 const DASHSCOPE_CHAT_COMPLETIONS_URL = `${DASHSCOPE_API_BASE_URL}/chat/completions`;
 
+// API 调用超时时间（毫秒）
+const API_TIMEOUT_MS = 60000;
+
 type Provider = "zenmux" | "dashscope";
 
 function getProviderForModel(model: string): Provider | null {
@@ -226,14 +229,23 @@ async function runBatchItem(
       requestBody.response_format = response_format;
     }
 
-    const response = await fetch(DASHSCOPE_CHAT_COMPLETIONS_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${dashscopeApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(DASHSCOPE_CHAT_COMPLETIONS_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${dashscopeApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -270,25 +282,34 @@ async function runBatchItem(
     requestBody.max_tokens = Math.max(16, Math.floor(max_tokens));
   }
 
-  const isGoogleModel = model?.toLowerCase().startsWith("google/");
-  if (isGoogleModel) {
+  // 默认关闭 reasoning 以加速响应
+  if (reasoning?.enabled === true) {
+    requestBody.reasoning = { ...reasoning, exclude: true };
+  } else {
     requestBody.reasoning = { enabled: false };
-  } else if (reasoning) {
-    requestBody.reasoning = reasoning;
   }
 
   if (response_format && supportsResponseFormat(model)) {
     requestBody.response_format = response_format;
   }
 
-  const response = await fetch(ZENMUX_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(ZENMUX_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -417,14 +438,23 @@ export async function POST(request: NextRequest) {
         requestBody.response_format = response_format;
       }
 
-      const response = await fetch(dashscopeApiUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${dashscopeApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+      let response: Response;
+      try {
+        response = await fetch(dashscopeApiUrl, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${dashscopeApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -479,14 +509,12 @@ export async function POST(request: NextRequest) {
       requestBody.stream = true;
     }
 
-    // Google Gemini: reasoning tokens count against max_completion_tokens, causing truncation
-    // Gemini requires thinking_budget >= 512, which is too high for short responses (e.g., 600 token speech)
-    // Must disable reasoning entirely to prevent content truncation
-    const isGoogleModel = model?.toLowerCase().startsWith("google/");
-    if (isGoogleModel) {
+    // 默认关闭 reasoning 以加速响应
+    // 如果请求明确要求开启，则使用请求的配置
+    if (reasoning?.enabled === true) {
+      requestBody.reasoning = { ...reasoning, exclude: true };
+    } else {
       requestBody.reasoning = { enabled: false };
-    } else if (reasoning) {
-      requestBody.reasoning = reasoning;
     }
 
     // Only include response_format for models that support it
@@ -494,14 +522,23 @@ export async function POST(request: NextRequest) {
       requestBody.response_format = response_format;
     }
 
-    const response = await fetch(ZENMUX_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(ZENMUX_API_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

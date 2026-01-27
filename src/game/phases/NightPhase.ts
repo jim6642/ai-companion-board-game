@@ -27,6 +27,10 @@ import {
 import { playNarrator } from "@/lib/narrator-audio-player";
 import { getI18n } from "@/i18n/translator";
 
+function randomFakeActionDelay(): number {
+  return Math.floor(Math.random() * 3000) + 3000;
+}
+
 type NightPhaseRuntime = {
   token: FlowToken;
   setGameState: (value: GameState | ((prev: GameState) => GameState)) => void;
@@ -111,39 +115,42 @@ export class NightPhase extends GamePhase {
     const systemMessages = getSystemMessages();
     const uiText = getUiText();
     const guard = state.players.find((p) => p.role === "Guard" && p.alive);
-    if (!guard) return state;
     let currentState = this.transitionPhase(state, "NIGHT_GUARD_ACTION");
     currentState = addSystemMessage(currentState, systemMessages.guardActionStart);
     runtime.setGameState(currentState);
 
-    if (guard) {
-      if (guard.isHuman) {
-        runtime.setDialogue(speakerSystem, uiText.waitingGuard, false);
-      } else {
-        runtime.setIsWaitingForAI(true);
-        runtime.setDialogue(speakerSystem, uiText.guardActing, false);
-      }
+    runtime.setIsWaitingForAI(true);
+    runtime.setDialogue(speakerSystem, uiText.guardActing, false);
+    await playNarrator("guardWake");
 
-      await playNarrator("guardWake");
-
-      if (guard.isHuman) {
-        return currentState;
-      }
-
-      const guardTarget = await generateGuardAction(currentState, guard);
+    if (!guard) {
+      await delay(randomFakeActionDelay());
       await runtime.waitForUnpause();
-
       if (!runtime.isTokenValid(runtime.token)) return currentState;
-
-      currentState = {
-        ...currentState,
-        nightActions: { ...currentState.nightActions, guardTarget },
-      };
-      runtime.setGameState(currentState);
       runtime.setIsWaitingForAI(false);
-
       await playNarrator("guardClose");
+      return currentState;
     }
+
+    if (guard.isHuman) {
+      runtime.setIsWaitingForAI(false);
+      runtime.setDialogue(speakerSystem, uiText.waitingGuard, false);
+      return currentState;
+    }
+
+    const guardTarget = await generateGuardAction(currentState, guard);
+    await runtime.waitForUnpause();
+
+    if (!runtime.isTokenValid(runtime.token)) return currentState;
+
+    currentState = {
+      ...currentState,
+      nightActions: { ...currentState.nightActions, guardTarget },
+    };
+    runtime.setGameState(currentState);
+    runtime.setIsWaitingForAI(false);
+
+    await playNarrator("guardClose");
 
     return currentState;
   }
@@ -178,11 +185,20 @@ export class NightPhase extends GamePhase {
       try {
         for (let round = 1; round <= GAME_CONFIG.MAX_REVOTE_COUNT; round++) {
           wolfVotes = {};
-          for (const wolf of wolves) {
-            const targetSeat = await generateWolfAction(currentState, wolf, wolfVotes);
-            await runtime.waitForUnpause();
-            if (!runtime.isTokenValid(runtime.token)) return currentState;
-            wolfVotes[wolf.playerId] = targetSeat;
+          
+          // 并发执行所有狼人的投票决策
+          const votePromises = wolves.map(async (wolf) => {
+            const targetSeat = await generateWolfAction(currentState, wolf, {});
+            return { playerId: wolf.playerId, targetSeat };
+          });
+          
+          const voteResults = await Promise.all(votePromises);
+          
+          await runtime.waitForUnpause();
+          if (!runtime.isTokenValid(runtime.token)) return currentState;
+          
+          for (const { playerId, targetSeat } of voteResults) {
+            wolfVotes[playerId] = targetSeat;
           }
 
           const chosenSeat = computeUniqueTopSeat(wolfVotes);
@@ -232,48 +248,51 @@ export class NightPhase extends GamePhase {
     const uiText = getUiText();
     const witch = state.players.find((p) => p.role === "Witch" && p.alive);
     const canWitchAct = witch && (!state.roleAbilities.witchHealUsed || !state.roleAbilities.witchPoisonUsed);
-    if (!witch || !canWitchAct) return state;
     let currentState = this.transitionPhase(state, "NIGHT_WITCH_ACTION");
     currentState = addSystemMessage(currentState, systemMessages.witchActionStart);
     runtime.setGameState(currentState);
 
-    if (witch && canWitchAct) {
-      if (witch.isHuman) {
-        runtime.setDialogue(speakerSystem, uiText.waitingWitch, false);
-      } else {
-        runtime.setIsWaitingForAI(true);
-        runtime.setDialogue(speakerSystem, uiText.witchActing, false);
-      }
+    runtime.setIsWaitingForAI(true);
+    runtime.setDialogue(speakerSystem, uiText.witchActing, false);
+    await playNarrator("witchWake");
 
-      await playNarrator("witchWake");
-
-      if (witch.isHuman) {
-        return currentState;
-      }
-
-      const witchAction = await generateWitchAction(currentState, witch, currentState.nightActions.wolfTarget);
+    if (!witch || !canWitchAct) {
+      await delay(randomFakeActionDelay());
       await runtime.waitForUnpause();
-
       if (!runtime.isTokenValid(runtime.token)) return currentState;
-
-      if (witchAction.type === "save") {
-        currentState = {
-          ...currentState,
-          nightActions: { ...currentState.nightActions, witchSave: true },
-          roleAbilities: { ...currentState.roleAbilities, witchHealUsed: true },
-        };
-      } else if (witchAction.type === "poison" && witchAction.target !== undefined) {
-        currentState = {
-          ...currentState,
-          nightActions: { ...currentState.nightActions, witchPoison: witchAction.target },
-          roleAbilities: { ...currentState.roleAbilities, witchPoisonUsed: true },
-        };
-      }
-      runtime.setGameState(currentState);
       runtime.setIsWaitingForAI(false);
-
       await playNarrator("witchClose");
+      return currentState;
     }
+
+    if (witch.isHuman) {
+      runtime.setIsWaitingForAI(false);
+      runtime.setDialogue(speakerSystem, uiText.waitingWitch, false);
+      return currentState;
+    }
+
+    const witchAction = await generateWitchAction(currentState, witch, currentState.nightActions.wolfTarget);
+    await runtime.waitForUnpause();
+
+    if (!runtime.isTokenValid(runtime.token)) return currentState;
+
+    if (witchAction.type === "save") {
+      currentState = {
+        ...currentState,
+        nightActions: { ...currentState.nightActions, witchSave: true },
+        roleAbilities: { ...currentState.roleAbilities, witchHealUsed: true },
+      };
+    } else if (witchAction.type === "poison" && witchAction.target !== undefined) {
+      currentState = {
+        ...currentState,
+        nightActions: { ...currentState.nightActions, witchPoison: witchAction.target },
+        roleAbilities: { ...currentState.roleAbilities, witchPoisonUsed: true },
+      };
+    }
+    runtime.setGameState(currentState);
+    runtime.setIsWaitingForAI(false);
+
+    await playNarrator("witchClose");
 
     return currentState;
   }
@@ -284,46 +303,49 @@ export class NightPhase extends GamePhase {
     const systemMessages = getSystemMessages();
     const uiText = getUiText();
     const seer = state.players.find((p) => p.role === "Seer" && p.alive);
-    if (!seer) return state;
     let currentState = this.transitionPhase(state, "NIGHT_SEER_ACTION");
     currentState = addSystemMessage(currentState, systemMessages.seerActionStart);
     runtime.setGameState(currentState);
 
-    if (seer) {
-      if (seer.isHuman) {
-        runtime.setDialogue(speakerSystem, uiText.waitingSeer, false);
-      } else {
-        runtime.setIsWaitingForAI(true);
-        runtime.setDialogue(speakerSystem, uiText.seerChecking, false);
-      }
+    runtime.setIsWaitingForAI(true);
+    runtime.setDialogue(speakerSystem, uiText.seerChecking, false);
+    await playNarrator("seerWake");
 
-      await playNarrator("seerWake");
-
-      if (seer.isHuman) {
-        return currentState;
-      }
-
-      const targetSeat = await generateSeerAction(currentState, seer);
+    if (!seer) {
+      await delay(randomFakeActionDelay());
+      await runtime.waitForUnpause();
       if (!runtime.isTokenValid(runtime.token)) return currentState;
-
-      const targetPlayer = currentState.players.find((p) => p.seat === targetSeat);
-      const isWolf = targetPlayer?.role === "Werewolf";
-
-      const seerHistory = currentState.nightActions.seerHistory || [];
-      currentState = {
-        ...currentState,
-        nightActions: {
-          ...currentState.nightActions,
-          seerTarget: targetSeat,
-          seerResult: { targetSeat, isWolf: isWolf || false },
-          seerHistory: [...seerHistory, { targetSeat, isWolf: isWolf || false, day: currentState.day }],
-        },
-      };
-      runtime.setGameState(currentState);
       runtime.setIsWaitingForAI(false);
-
       await playNarrator("seerClose");
+      return currentState;
     }
+
+    if (seer.isHuman) {
+      runtime.setIsWaitingForAI(false);
+      runtime.setDialogue(speakerSystem, uiText.waitingSeer, false);
+      return currentState;
+    }
+
+    const targetSeat = await generateSeerAction(currentState, seer);
+    if (!runtime.isTokenValid(runtime.token)) return currentState;
+
+    const targetPlayer = currentState.players.find((p) => p.seat === targetSeat);
+    const isWolf = targetPlayer?.role === "Werewolf";
+
+    const seerHistory = currentState.nightActions.seerHistory || [];
+    currentState = {
+      ...currentState,
+      nightActions: {
+        ...currentState.nightActions,
+        seerTarget: targetSeat,
+        seerResult: { targetSeat, isWolf: isWolf || false },
+        seerHistory: [...seerHistory, { targetSeat, isWolf: isWolf || false, day: currentState.day }],
+      },
+    };
+    runtime.setGameState(currentState);
+    runtime.setIsWaitingForAI(false);
+
+    await playNarrator("seerClose");
 
     return currentState;
   }
