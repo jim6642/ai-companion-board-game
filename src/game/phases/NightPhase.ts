@@ -600,11 +600,9 @@ export class NightPhase extends GamePhase {
       (p) => p.alive && p.playerId !== player.playerId
     );
 
-    const isWitchTheVictim = wolfTarget === player.seat;
     const canSave =
       !state.roleAbilities.witchHealUsed &&
-      wolfTarget !== undefined &&
-      !isWitchTheVictim;
+      wolfTarget !== undefined;
     const canPoison = !state.roleAbilities.witchPoisonUsed;
 
     const victimInfo =
@@ -632,9 +630,7 @@ export class NightPhase extends GamePhase {
         : t("prompts.night.witch.noAttack");
     const saveLine = canSave
       ? t("prompts.night.witch.saveOption", { seat: wolfTarget! + 1 })
-      : isWitchTheVictim
-        ? t("prompts.night.witch.noSelfSave")
-        : t("prompts.night.witch.noSave");
+      : t("prompts.night.witch.noSave");
     const poisonLine = canPoison ? t("prompts.night.witch.poisonOption") : t("prompts.night.witch.noPoison");
     const poisonTargets = alivePlayers
       .map((p) => t("promptUtils.gameContext.seatLabel", { seat: p.seat + 1 }))

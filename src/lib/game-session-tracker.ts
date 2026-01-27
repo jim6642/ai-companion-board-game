@@ -51,6 +51,91 @@ let state: SessionState = createInitialState();
 // 防抖：避免短时间内重复同步
 const SYNC_DEBOUNCE_MS = 5000;
 
+function toErrorDebugObject(error: unknown): Record<string, unknown> {
+  if (error == null) return { error: null };
+  if (typeof error !== "object") return { error };
+  const obj = error as Record<string, unknown>;
+  const ownProps = Object.getOwnPropertyNames(error).reduce<Record<string, unknown>>((acc, k) => {
+    acc[k] = (error as any)[k];
+    return acc;
+  }, {});
+  return {
+    ...ownProps,
+    message: typeof (obj as any).message === "string" ? (obj as any).message : undefined,
+    code: (obj as any).code,
+    details: (obj as any).details,
+    hint: (obj as any).hint,
+    name: (obj as any).name,
+  };
+}
+
+async function getAccessToken(): Promise<string | null> {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) return null;
+  return data.session?.access_token ?? null;
+}
+
+async function createSessionViaApi(payload: {
+  playerCount: number;
+  difficulty?: string;
+  usedCustomKey: boolean;
+  modelUsed?: string;
+  userAgent?: string;
+}): Promise<{ ok: true; sessionId: string } | { ok: false; error: unknown; status?: number }> {
+  const token = await getAccessToken();
+  if (!token) return { ok: false, error: new Error("Missing access token") };
+  try {
+    const res = await fetch("/api/game-sessions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ action: "create", ...payload }),
+    });
+    const json = (await res.json().catch(() => ({}))) as any;
+    if (!res.ok || !json?.sessionId) {
+      return { ok: false, status: res.status, error: json };
+    }
+    return { ok: true, sessionId: String(json.sessionId) };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
+async function updateSessionViaApi(payload: {
+  sessionId: string;
+  winner?: "wolf" | "villager" | null;
+  completed: boolean;
+  roundsPlayed: number;
+  durationSeconds: number;
+  aiCallsCount: number;
+  aiInputChars: number;
+  aiOutputChars: number;
+  aiPromptTokens: number;
+  aiCompletionTokens: number;
+}): Promise<{ ok: true } | { ok: false; error: unknown; status?: number }> {
+  const token = await getAccessToken();
+  if (!token) return { ok: false, error: new Error("Missing access token") };
+  try {
+    const res = await fetch("/api/game-sessions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ action: "update", ...payload }),
+    });
+    const json = (await res.json().catch(() => ({}))) as any;
+    if (!res.ok || json?.success !== true) {
+      return { ok: false, status: res.status, error: json };
+    }
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
 /**
  * 游戏会话追踪器
  * 直接通过 Supabase 客户端操作数据库
@@ -91,6 +176,22 @@ export const gameSessionTracker = {
       ai_completion_tokens: 0,
     };
 
+    const apiCreate = await createSessionViaApi({
+      playerCount: config.playerCount,
+      difficulty: config.difficulty,
+      usedCustomKey: config.usedCustomKey,
+      modelUsed: config.modelUsed,
+      userAgent: insertData.user_agent ?? undefined,
+    });
+
+    if (apiCreate.ok) {
+      const sessionId = apiCreate.sessionId;
+      state.sessionId = sessionId;
+      state.lastSyncTime = Date.now();
+      console.log("[game-session] Session created:", sessionId);
+      return sessionId;
+    }
+
     const { data, error } = await supabase
       .from("game_sessions")
       .insert(insertData as never)
@@ -98,7 +199,11 @@ export const gameSessionTracker = {
       .single();
 
     if (error || !data) {
-      console.error("[game-session] Failed to create session:", error);
+      console.error("[game-session] Failed to create session:", {
+        apiError: toErrorDebugObject(apiCreate.error),
+        apiStatus: apiCreate.status,
+        supabaseError: toErrorDebugObject(error),
+      });
       return null;
     }
 
@@ -161,15 +266,34 @@ export const gameSessionTracker = {
       ai_completion_tokens: state.aiCompletionTokens,
     };
 
-    const { error } = await supabase
-      .from("game_sessions")
-      .update(updateData as never)
-      .eq("id", state.sessionId)
-      .eq("user_id", state.userId);
+    const durationSeconds = Math.round((Date.now() - state.startTime) / 1000);
+    const apiUpdate = await updateSessionViaApi({
+      sessionId: state.sessionId,
+      completed: false,
+      roundsPlayed: updateData.rounds_played ?? 0,
+      durationSeconds,
+      aiCallsCount: updateData.ai_calls_count ?? 0,
+      aiInputChars: updateData.ai_input_chars ?? 0,
+      aiOutputChars: updateData.ai_output_chars ?? 0,
+      aiPromptTokens: updateData.ai_prompt_tokens ?? 0,
+      aiCompletionTokens: updateData.ai_completion_tokens ?? 0,
+    });
 
-    if (error) {
-      console.error("[game-session] Failed to sync progress:", error);
-      return;
+    if (!apiUpdate.ok) {
+      const { error } = await supabase
+        .from("game_sessions")
+        .update(updateData as never)
+        .eq("id", state.sessionId)
+        .eq("user_id", state.userId);
+
+      if (error) {
+        console.error("[game-session] Failed to sync progress:", {
+          apiError: toErrorDebugObject(apiUpdate.error),
+          apiStatus: apiUpdate.status,
+          supabaseError: toErrorDebugObject(error),
+        });
+        return;
+      }
     }
 
     state.lastSyncTime = now;
@@ -198,15 +322,34 @@ export const gameSessionTracker = {
       ended_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase
-      .from("game_sessions")
-      .update(updateData as never)
-      .eq("id", state.sessionId)
-      .eq("user_id", state.userId);
+    const apiUpdate = await updateSessionViaApi({
+      sessionId: state.sessionId,
+      winner,
+      completed,
+      roundsPlayed: updateData.rounds_played ?? 0,
+      durationSeconds: updateData.duration_seconds ?? durationSeconds,
+      aiCallsCount: updateData.ai_calls_count ?? 0,
+      aiInputChars: updateData.ai_input_chars ?? 0,
+      aiOutputChars: updateData.ai_output_chars ?? 0,
+      aiPromptTokens: updateData.ai_prompt_tokens ?? 0,
+      aiCompletionTokens: updateData.ai_completion_tokens ?? 0,
+    });
 
-    if (error) {
-      console.error("[game-session] Failed to end session:", error);
-      return;
+    if (!apiUpdate.ok) {
+      const { error } = await supabase
+        .from("game_sessions")
+        .update(updateData as never)
+        .eq("id", state.sessionId)
+        .eq("user_id", state.userId);
+
+      if (error) {
+        console.error("[game-session] Failed to end session:", {
+          apiError: toErrorDebugObject(apiUpdate.error),
+          apiStatus: apiUpdate.status,
+          supabaseError: toErrorDebugObject(error),
+        });
+        return;
+      }
     }
 
     console.log("[game-session] Session ended:", state.sessionId, { winner, completed, durationSeconds });
