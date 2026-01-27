@@ -568,7 +568,11 @@ export function useGameLogic() {
   badgeTransferRef.current = badgePhase.handleBadgeTransfer;
   onStartVoteRef.current = enterVotePhase;
   onBadgeSpeechEndRef.current = async (state: GameState) => {
-    await badgePhase.startBadgeElectionPhase(state);
+    const summarized = await maybeGenerateDailySummary(state);
+    if (summarized !== state) {
+      setGameState(summarized);
+    }
+    await badgePhase.startBadgeElectionPhase(summarized);
   };
   onPkSpeechEndRef.current = async (state: GameState) => {
     const token = getToken();

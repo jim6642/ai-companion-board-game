@@ -17,6 +17,11 @@ function getProviderForModel(model: string): Provider | null {
   return modelRef?.provider ?? null;
 }
 
+/** Resolve ModelRef for a model id; used to apply per-model temperature/reasoning overrides. */
+function getModelRef(model: string): (typeof AVAILABLE_MODELS)[number] | (typeof ALL_MODELS)[number] | undefined {
+  return ALL_MODELS.find((ref) => ref.model === model) ?? AVAILABLE_MODELS.find((ref) => ref.model === model);
+}
+
 function normalizeDashscopeModelName(model: string): string {
   return model.replace(/^qwen\//i, "");
 }
@@ -179,8 +184,11 @@ async function runBatchItem(
     }
   }
 
+  const modelRefOverride = getModelRef(model);
   const normalizedTemperature =
-    typeof temperature === "number" && Number.isFinite(temperature) ? temperature : 0.7;
+    modelRefOverride?.temperature !== undefined
+      ? modelRefOverride.temperature
+      : (typeof temperature === "number" && Number.isFinite(temperature) ? temperature : 0.7);
   const cappedTemperature = (() => {
     const lower = typeof model === "string" ? model.toLowerCase() : "";
     const needZeroOne =
@@ -192,6 +200,7 @@ async function runBatchItem(
     }
     return Math.max(0, normalizedTemperature);
   })();
+  const effectiveReasoning = modelRefOverride?.reasoning !== undefined ? modelRefOverride.reasoning : reasoning;
 
   let processedMessages: unknown[] = messages;
   if (!supportsMultipartContent(model)) {
@@ -282,9 +291,10 @@ async function runBatchItem(
     requestBody.max_tokens = Math.max(16, Math.floor(max_tokens));
   }
 
-  // 默认关闭 reasoning 以加速响应
-  if (reasoning?.enabled === true) {
-    requestBody.reasoning = { ...reasoning, exclude: true };
+  // Apply ModelRef.reasoning override when present; otherwise default off for speed
+  const reasoningToUse = effectiveReasoning ?? reasoning;
+  if (reasoningToUse?.enabled === true) {
+    requestBody.reasoning = { ...reasoningToUse, exclude: true };
   } else {
     requestBody.reasoning = { enabled: false };
   }
@@ -359,8 +369,11 @@ export async function POST(request: NextRequest) {
     const headerDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim();
     const isDefaultModel = AVAILABLE_MODELS.some((ref) => ref.model === model);
 
+    const modelRefOverride = getModelRef(model);
     const normalizedTemperature =
-      typeof temperature === "number" && Number.isFinite(temperature) ? temperature : 0.7;
+      modelRefOverride?.temperature !== undefined
+        ? modelRefOverride.temperature
+        : (typeof temperature === "number" && Number.isFinite(temperature) ? temperature : 0.7);
     // ZenMux requires temperature in 0..1; Moonshot/Kimi also
     const cappedTemperature = (() => {
       const lower = typeof model === "string" ? model.toLowerCase() : "";
@@ -373,6 +386,7 @@ export async function POST(request: NextRequest) {
       }
       return Math.max(0, normalizedTemperature);
     })();
+    const effectiveReasoning = modelRefOverride?.reasoning !== undefined ? modelRefOverride.reasoning : reasoning;
 
     // Process messages based on model capabilities
     let processedMessages = messages;
@@ -509,10 +523,10 @@ export async function POST(request: NextRequest) {
       requestBody.stream = true;
     }
 
-    // 默认关闭 reasoning 以加速响应
-    // 如果请求明确要求开启，则使用请求的配置
-    if (reasoning?.enabled === true) {
-      requestBody.reasoning = { ...reasoning, exclude: true };
+    // Apply ModelRef.reasoning override when present; otherwise default off for speed
+    const reasoningToUse = effectiveReasoning ?? reasoning;
+    if (reasoningToUse?.enabled === true) {
+      requestBody.reasoning = { ...reasoningToUse, exclude: true };
     } else {
       requestBody.reasoning = { enabled: false };
     }

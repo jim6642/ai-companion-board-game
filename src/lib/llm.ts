@@ -1,5 +1,5 @@
 import { getDashscopeApiKey, getZenmuxApiKey, isCustomKeyEnabled } from "@/lib/api-keys";
-import { ALL_MODELS, AVAILABLE_MODELS } from "@/types/game";
+import { ALL_MODELS, AVAILABLE_MODELS, type ModelRef } from "@/types/game";
 import { gameStatsTracker } from "@/hooks/useGameStats";
 import { gameSessionTracker } from "@/lib/game-session-tracker";
 
@@ -85,6 +85,18 @@ export interface GenerateOptions {
   max_tokens?: number;
   reasoning?: { enabled: boolean };
   response_format?: ResponseFormat;
+}
+
+/** Merge modelRef overrides (temperature, reasoning) into options; modelRef values override call-time when present. */
+export function mergeOptionsFromModelRef<T extends GenerateOptions>(
+  modelRef: ModelRef | undefined,
+  options: T
+): T {
+  if (!modelRef) return options;
+  const out = { ...options } as T;
+  if (modelRef.temperature !== undefined) (out as GenerateOptions).temperature = modelRef.temperature;
+  if (modelRef.reasoning !== undefined) (out as GenerateOptions).reasoning = modelRef.reasoning;
+  return out;
 }
 
 export type BatchCompletionResult =

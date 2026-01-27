@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { generateCompletion, generateCompletionBatch, generateCompletionStream, stripMarkdownCodeFences, type LLMMessage } from "./llm";
+import { generateCompletion, generateCompletionBatch, generateCompletionStream, mergeOptionsFromModelRef, stripMarkdownCodeFences, type LLMMessage } from "./llm";
 import type { ChatCompletionResponse } from "./llm";
 import { StreamingSpeechParser } from "./streaming-speech-parser";
 import {
@@ -582,11 +582,11 @@ export async function* generateAISpeechStream(
 
   let fullResponse = "";
   try {
-    for await (const chunk of generateCompletionStream({
+    for await (const chunk of generateCompletionStream(mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
       model: player.agentProfile!.modelRef.model,
       messages,
       temperature: GAME_TEMPERATURE.SPEECH,
-    })) {
+    }))) {
       fullResponse += chunk;
       yield chunk;
     }
@@ -701,11 +701,11 @@ export async function generateAISpeechSegments(
   };
 
   try {
-    const result = await generateCompletion({
+    const result = await generateCompletion(mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
       model: player.agentProfile!.modelRef.model,
       messages,
       temperature: GAME_TEMPERATURE.SPEECH,
-    });
+    }));
 
     const cleanedSpeech = stripMarkdownCodeFences(result.content);
     const sanitizedSpeech = sanitizeSeatMentions(cleanedSpeech, state.players.length);
@@ -822,11 +822,11 @@ export async function generateAISpeechSegmentsStream(
   });
 
   try {
-    const stream = generateCompletionStream({
+    const stream = generateCompletionStream(mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
       model: player.agentProfile!.modelRef.model,
       messages,
       temperature: GAME_TEMPERATURE.SPEECH,
-    });
+    }));
 
     let accumulatedContent = "";
     let chunkCount = 0;
@@ -978,12 +978,12 @@ export async function generateAIVote(
 
   let result: { content: string; raw: ChatCompletionResponse };
   try {
-    result = await generateCompletion({
+    result = await generateCompletion(mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
       model: player.agentProfile!.modelRef.model,
       messages,
       temperature: GAME_TEMPERATURE.ACTION,
       response_format: { type: "json_object" },
-    });
+    }));
 
     const rawContent = result.content;
     const cleanedVote = stripMarkdownCodeFences(rawContent);
@@ -1269,11 +1269,11 @@ export async function generateAIBadgeVote(
   const { messages } = buildMessagesForPrompt(prompt);
 
   try {
-    const result = await generateCompletion({
+    const result = await generateCompletion(mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
       model: player.agentProfile!.modelRef.model,
       messages,
       temperature: GAME_TEMPERATURE.ACTION,
-    });
+    }));
 
     const cleanedBadgeVote = stripMarkdownCodeFences(result.content);
 
@@ -1332,11 +1332,11 @@ export async function generateBadgeTransfer(
   const startTime = Date.now();
   const { messages } = buildMessagesForPrompt(prompt);
 
-  const result = await generateCompletion({
+  const result = await generateCompletion(mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
     model: player.agentProfile!.modelRef.model,
     messages,
     temperature: GAME_TEMPERATURE.ACTION,
-  });
+  }));
 
   const cleanedTransfer = stripMarkdownCodeFences(result.content);
 
@@ -1380,11 +1380,11 @@ export async function generateSeerAction(
   const startTime = Date.now();
   const { messages } = buildMessagesForPrompt(prompt);
 
-  const result = await generateCompletion({
+  const result = await generateCompletion(mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
     model: player.agentProfile!.modelRef.model,
     messages,
     temperature: GAME_TEMPERATURE.ACTION,
-  });
+  }));
 
   const rawContent = result.content;
   const cleanedSeer = stripMarkdownCodeFences(rawContent);
@@ -1433,11 +1433,11 @@ export async function generateWolfAction(
   const startTime = Date.now();
   const { messages } = buildMessagesForPrompt(prompt);
 
-  const result = await generateCompletion({
+  const result = await generateCompletion(mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
     model: player.agentProfile!.modelRef.model,
     messages,
     temperature: GAME_TEMPERATURE.ACTION,
-  });
+  }));
 
   const rawContent = result.content;
   const cleanedWolf = stripMarkdownCodeFences(rawContent);
@@ -1490,11 +1490,11 @@ export async function generateWitchAction(
   const startTime = Date.now();
   const { messages } = buildMessagesForPrompt(prompt);
 
-  const result = await generateCompletion({
+  const result = await generateCompletion(mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
     model: player.agentProfile!.modelRef.model,
     messages,
     temperature: GAME_TEMPERATURE.ACTION,
-  });
+  }));
 
   const cleanedWitch = stripMarkdownCodeFences(result.content);
 
@@ -1570,11 +1570,11 @@ export async function generateGuardAction(
   const startTime = Date.now();
   const { messages } = buildMessagesForPrompt(prompt);
 
-  const result = await generateCompletion({
+  const result = await generateCompletion(mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
     model: player.agentProfile!.modelRef.model,
     messages,
     temperature: GAME_TEMPERATURE.ACTION,
-  });
+  }));
 
   const cleanedGuard = stripMarkdownCodeFences(result.content);
 
@@ -1625,11 +1625,11 @@ export async function generateHunterShoot(
   const startTime = Date.now();
   const { messages } = buildMessagesForPrompt(prompt);
 
-  const result = await generateCompletion({
+  const result = await generateCompletion(mergeOptionsFromModelRef(player.agentProfile!.modelRef, {
     model: player.agentProfile!.modelRef.model,
     messages,
     temperature: GAME_TEMPERATURE.ACTION,
-  });
+  }));
 
   const cleanedHunter = stripMarkdownCodeFences(result.content);
 

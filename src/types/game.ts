@@ -49,6 +49,10 @@ export type Alignment = "village" | "wolf";
 export interface ModelRef {
   provider: "zenmux" | "dashscope";
   model: string;
+  /** Override call-time temperature for this model (e.g. some models only support 1) */
+  temperature?: number;
+  /** Override call-time reasoning/thinking for this model (e.g. some models must enable it) */
+  reasoning?: { enabled: boolean, exclude?: boolean,effort?: "minimal" | "low" | "medium" | "high" };
 }
 
 export interface Persona {
@@ -221,6 +225,7 @@ export const AVAILABLE_MODELS: ModelRef[] = [
   { provider: "dashscope", model: "Moonshot-Kimi-K2-Instruct" },
   { provider: "dashscope", model: "qwen3-max" },
 
+  { provider: "zenmux", model: "deepseek/deepseek-v3.2" },
   { provider: "zenmux", model: "google/gemini-2.5-flash-lite" },
   { provider: "zenmux", model: "google/gemini-3-flash-preview" },
 ];
