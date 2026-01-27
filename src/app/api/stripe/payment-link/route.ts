@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
 
     const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+    console.log(`[Stripe Payment Link] Creating checkout session for user ${user.id}, quantity: ${quantity}`);
+    
     // Create a Checkout Session instead of Payment Link to track user
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -80,6 +82,8 @@ export async function POST(request: NextRequest) {
       cancel_url: `${origin}?payment=cancelled`,
     });
 
+    console.log(`[Stripe Payment Link] Created session ${session.id} with metadata:`, { user_id: user.id, quantity });
+    
     return NextResponse.json({ url: session.url });
   } catch (error) {
     // Enhanced error logging

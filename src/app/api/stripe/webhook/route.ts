@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    console.log(`[Stripe Webhook] ✅ Event received: ${event.type}`);
   } catch (err) {
     console.error("[Stripe Webhook] Signature verification failed:", err);
     return NextResponse.json(
@@ -56,20 +57,35 @@ export async function POST(request: NextRequest) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     
+    console.log(`[Stripe Webhook] checkout.session.completed - session: ${session.id}, payment_status: ${session.payment_status}, metadata:`, session.metadata);
+    
     // Verify payment status
     if (session.payment_status !== "paid") {
+      console.log(`[Stripe Webhook] Skipping - payment not paid`);
       return NextResponse.json({ received: true });
     }
 
     const userId = session.metadata?.user_id;
     const quantity = parseInt(session.metadata?.quantity || "0", 10);
 
-    if (!userId || quantity < 2) {
-      // No valid metadata - likely a test event or external checkout
+    if (!userId || quantity < 1) {
+      console.log(`[Stripe Webhook] Skipping - invalid metadata: userId=${userId}, quantity=${quantity}`);
       return NextResponse.json({ received: true });
     }
 
     try {
+      // Check if this session was already processed (idempotency)
+      const { data: existingTx } = await supabaseAdmin
+        .from("payment_transactions")
+        .select("id")
+        .eq("stripe_session_id", session.id)
+        .single();
+
+      if (existingTx) {
+        console.log(`[Stripe Webhook] Session ${session.id} already processed, skipping`);
+        return NextResponse.json({ received: true });
+      }
+
       // Get current user credits
       const { data: userCredits, error: fetchError } = await supabaseAdmin
         .from("user_credits")
@@ -105,7 +121,26 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log(`[Stripe Webhook] Added ${quantity} credits to user ${userId}. New balance: ${newCredits}`);
+      // Log the transaction
+      const { error: txError } = await supabaseAdmin
+        .from("payment_transactions")
+        .insert({
+          user_id: userId,
+          stripe_session_id: session.id,
+          stripe_payment_intent_id: session.payment_intent as string,
+          amount_cents: session.amount_total || 0,
+          currency: session.currency || "usd",
+          quantity: quantity,
+          credits_added: quantity,
+          status: "completed",
+        } as never);
+
+      if (txError) {
+        console.error(`[Stripe Webhook] Failed to log transaction:`, txError);
+        // Don't fail the webhook, credits were already added
+      }
+
+      console.log(`[Stripe Webhook] ✅ Added ${quantity} credits to user ${userId}. New balance: ${newCredits}`);
     } catch (error) {
       console.error(`[Stripe Webhook] Error processing session ${session.id}:`, error);
       return NextResponse.json(
