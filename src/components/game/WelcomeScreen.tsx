@@ -6,6 +6,7 @@ import { WerewolfIcon } from "@/components/icons/FlatIcons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import type { DevPreset, DifficultyLevel, Role, StartGameOptions } from "@/types/game";
@@ -18,6 +19,7 @@ import { ResetPasswordModal } from "@/components/game/ResetPasswordModal";
 import { UserProfileModal } from "@/components/game/UserProfileModal";
 import { LocaleSwitcher } from "@/components/game/LocaleSwitcher";
 import { useCredits } from "@/hooks/useCredits";
+import { difficultyAtom, playerCountAtom } from "@/store/settings";
 import { hasDashscopeKey, hasZenmuxKey, isCustomKeyEnabled } from "@/lib/api-keys";
 import { useAppLocale } from "@/i18n/useAppLocale";
 
@@ -248,8 +250,8 @@ export function WelcomeScreen({
   const [isGroupOpen, setIsGroupOpen] = useState(false);
   const [groupImgOk, setGroupImgOk] = useState<boolean | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>("normal");
-  const [playerCount, setPlayerCount] = useState(10);
+  const [difficulty, setDifficulty] = useAtom(difficultyAtom);
+  const [playerCount, setPlayerCount] = useAtom(playerCountAtom);
   const [githubStars, setGithubStars] = useState<number | null>(null);
 
   useEffect(() => {
