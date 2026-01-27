@@ -178,6 +178,177 @@ export function stripMarkdownCodeFences(text: string): string {
   return t.trim();
 }
 
+function stripJsonPrefix(text: string): string {
+  const t = text.trimStart();
+  if (/^json\s*[\[{]/i.test(t)) {
+    return t.replace(/^json\s*/i, "");
+  }
+  return text;
+}
+
+function extractFirstJsonBlock(text: string): string | null {
+  const startObj = text.indexOf("{");
+  const startArr = text.indexOf("[");
+  const start =
+    startObj === -1 ? startArr : startArr === -1 ? startObj : Math.min(startObj, startArr);
+  if (start === -1) return null;
+
+  const opening = text[start];
+  const expectedClosing = opening === "{" ? "}" : "]";
+
+  let i = start;
+  let depth = 0;
+  let inString = false;
+  let escaping = false;
+  for (; i < text.length; i += 1) {
+    const ch = text[i];
+
+    if (inString) {
+      if (escaping) {
+        escaping = false;
+        continue;
+      }
+      if (ch === "\\") {
+        escaping = true;
+        continue;
+      }
+      if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === opening) {
+      depth += 1;
+      continue;
+    }
+    if (ch === expectedClosing) {
+      depth -= 1;
+      if (depth === 0) {
+        return text.slice(start, i + 1);
+      }
+      continue;
+    }
+
+    if (opening === "{" && ch === "[") {
+      depth += 1;
+      continue;
+    }
+    if (opening === "{" && ch === "]") {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) {
+        return text.slice(start, i + 1);
+      }
+      continue;
+    }
+    if (opening === "[" && ch === "{") {
+      depth += 1;
+      continue;
+    }
+    if (opening === "[" && ch === "}") {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) {
+        return text.slice(start, i + 1);
+      }
+      continue;
+    }
+  }
+
+  return null;
+}
+
+function normalizeJsonText(text: string): string {
+  return text
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/,\s*([}\]])/g, "$1")
+    .trim();
+}
+
+function escapeDanglingQuotesInStrings(text: string): string {
+  let out = "";
+  let inString = false;
+  let escaping = false;
+
+  const nextNonWs = (idx: number): string | null => {
+    for (let j = idx; j < text.length; j += 1) {
+      const c = text[j];
+      if (!/\s/.test(c)) return c;
+    }
+    return null;
+  };
+
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (!inString) {
+      if (ch === '"') inString = true;
+      out += ch;
+      continue;
+    }
+
+    if (escaping) {
+      escaping = false;
+      out += ch;
+      continue;
+    }
+
+    if (ch === "\\") {
+      escaping = true;
+      out += ch;
+      continue;
+    }
+
+    if (ch === '"') {
+      const n = nextNonWs(i + 1);
+      const isTerminator = n === null || n === "," || n === "}" || n === "]" || n === ":";
+      if (isTerminator) {
+        inString = false;
+        out += ch;
+        continue;
+      }
+      out += "\\\"";
+      continue;
+    }
+
+    out += ch;
+  }
+
+  return out;
+}
+
+function parseJsonTolerant<T>(raw: string): T {
+  const trimmed = stripJsonPrefix(stripMarkdownCodeFences(raw));
+  const direct = normalizeJsonText(trimmed);
+  try {
+    return JSON.parse(direct) as T;
+  } catch {
+    // continue
+  }
+
+  const extracted = extractFirstJsonBlock(direct) ?? extractFirstJsonBlock(trimmed);
+  if (!extracted) {
+    throw new Error(`Failed to parse JSON response: ${raw}`);
+  }
+
+  const normalized = normalizeJsonText(extracted);
+  try {
+    return JSON.parse(normalized) as T;
+  } catch {
+    // continue
+  }
+
+  const repaired = escapeDanglingQuotesInStrings(normalized);
+  try {
+    return JSON.parse(repaired) as T;
+  } catch {
+    throw new Error(`Failed to parse JSON response: ${raw}`);
+  }
+}
+
 export async function generateCompletion(
   options: GenerateOptions
 ): Promise<{ content: string; reasoning_details?: unknown; raw: ChatCompletionResponse }> {
@@ -444,7 +615,8 @@ export async function generateJSON<T>(
 
   const lastMessage = messagesWithFormat[messagesWithFormat.length - 1];
   if (lastMessage && lastMessage.role === "user") {
-    const suffix = "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON.";
+    const suffix =
+      "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON. If you need to include double quotes inside string values, escape them as \\\".";
     if (typeof lastMessage.content === "string") {
       lastMessage.content += suffix;
     } else if (Array.isArray(lastMessage.content)) {
@@ -458,37 +630,14 @@ export async function generateJSON<T>(
     }
   }
 
+  const shouldForceJsonObject =
+    !options.response_format && getProviderForModel(options.model) === "zenmux";
+
   const result = await generateCompletion({
     ...options,
+    ...(shouldForceJsonObject ? { response_format: { type: "json_object" as const } } : {}),
     messages: messagesWithFormat,
   });
 
-  let jsonStr = stripMarkdownCodeFences(result.content);
-
-  try {
-    return JSON.parse(jsonStr) as T;
-  } catch {
-    // 尝试提取 JSON 对象或数组
-    const objectMatch = jsonStr.match(/\{[\s\S]*\}/);
-    const arrayMatch = jsonStr.match(/\[[\s\S]*\]/);
-
-    // 优先使用对象格式（因为我们通常期望 { characters: [...] }）
-    if (objectMatch) {
-      try {
-        return JSON.parse(objectMatch[0]) as T;
-      } catch {
-        // 对象解析失败，尝试数组
-      }
-    }
-
-    if (arrayMatch) {
-      try {
-        return JSON.parse(arrayMatch[0]) as T;
-      } catch {
-        // 数组解析也失败
-      }
-    }
-
-    throw new Error(`Failed to parse JSON response: ${result.content}`);
-  }
+  return parseJsonTolerant<T>(result.content);
 }

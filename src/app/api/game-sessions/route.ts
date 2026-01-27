@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       ai_output_chars: payload.aiOutputChars,
       ai_prompt_tokens: payload.aiPromptTokens,
       ai_completion_tokens: payload.aiCompletionTokens,
-      ended_at: new Date().toISOString(),
+      ...(payload.completed ? { ended_at: new Date().toISOString() } : {}),
     };
 
     const { error: updateError } = await supabaseAdmin

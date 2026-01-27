@@ -1503,8 +1503,7 @@ export async function generateWitchAction(
 
   const canSave =
     !state.roleAbilities.witchHealUsed &&
-    wolfTarget !== undefined &&
-    wolfTarget !== player.seat;
+    wolfTarget !== undefined;
   const canPoison = !state.roleAbilities.witchPoisonUsed;
 
   let parsedAction: WitchAction;
