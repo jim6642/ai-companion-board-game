@@ -1290,13 +1290,6 @@
       "seerResult": "Seat {seat} {name} is {result}"
     }
   },
-  "gameMaster": {
-    "invalidSeat": "(Invalid seat)",
-    "summary": {
-      "system": "You are a Werewolf game recorder.\n\nCompress the given log into 3–6 key facts for long-term memory.\n\nRequirements:\n- Summarize only what appears in the log; do not infer\n- Each item 10–35 characters\n- Prioritize: executions/last words, key alignments/accusations, clear vote shifts, night deaths (if present)\n\nOutput format: return a JSON array, e.g., [\"Day 1: Seat 2 executed; last words accuse 10\", \"Seat 9 voted Seat 1\"]",
-      "user": "【Day {day} daytime log】\n{transcript}\n\nReturn a JSON array:"
-    }
-  },
   "characterGenerator": {
     "rosterLine": "{index}. {name} ({gender}, age {age}) - {basicInfo}",
     "rosterLineSimple": "{index}. {name} ({gender}) - {basicInfo}",
