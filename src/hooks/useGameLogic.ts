@@ -138,10 +138,17 @@ export function useGameLogic() {
     setDialogue,
     clearDialogue,
     initSpeechQueue,
+    initStreamingSpeechQueue,
+    appendToSpeechQueue,
+    finalizeSpeechQueue,
     getSpeechQueue,
     advanceSpeechQueue,
     clearSpeechQueue,
     resetDialogueState,
+    markCurrentSegmentCommitted,
+    isCurrentSegmentCommitted,
+    markCurrentSegmentCompleted,
+    isCurrentSegmentCompleted,
   } = dialogue;
 
   // ============================================
@@ -525,6 +532,9 @@ export function useGameLogic() {
     setWaitingForNextRound,
     isTokenValid,
     initSpeechQueue,
+    initStreamingSpeechQueue,
+    appendToSpeechQueue,
+    finalizeSpeechQueue,
     setAfterLastWords: (cb) => { afterLastWordsRef.current = cb; },
   });
 
@@ -601,9 +611,8 @@ export function useGameLogic() {
     if (!isTokenValid(token)) return;
     if (isAwaitingRoleRevealRef.current) return;
 
-    // 天黑时同步游戏进度到数据库
-    gameSessionTracker.incrementRound();
-    gameSessionTracker.syncProgress().catch(() => {});
+    // 天黑时同步游戏进度到数据库（incrementRound 内部会立即同步）
+    gameSessionTracker.incrementRound().catch(() => {});
 
     const systemMessages = getSystemMessages();
     const lastGuardTarget = state.nightActions.guardTarget ?? state.nightActions.lastGuardTarget;
@@ -918,6 +927,7 @@ export function useGameLogic() {
       difficulty = "normal",
       playerCount = 10,
       isGenshinMode = false,
+      isSpectatorMode = false,
     } = options ?? {};
 
     const totalPlayers = playerCount;
@@ -941,7 +951,6 @@ export function useGameLogic() {
         playerCount,
         difficulty,
         usedCustomKey: isCustomKeyEnabled(),
-        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
       };
       gameStatsTracker.start(statsConfig);
 
@@ -950,7 +959,7 @@ export function useGameLogic() {
         playerCount,
         difficulty,
         usedCustomKey: isCustomKeyEnabled(),
-        modelUsed: statsConfig.userAgent,
+        modelUsed: getGeneratorModel(),
       }).then((sessionId) => {
         if (sessionId) {
           gameStatsTracker.setSessionId(sessionId);
@@ -963,7 +972,8 @@ export function useGameLogic() {
       const scenario = isGenshinMode ? undefined : getRandomScenario();
       const makeId = () => generateUUID();
 
-      const humanSeat = 0;
+      // In spectator mode, there's no human player - all seats are AI
+      const humanSeat = isSpectatorMode ? -1 : 0;
 
       const aiSeats = Array.from({ length: totalPlayers }, (_, seat) => seat).filter(
         (seat) => seat !== humanSeat
@@ -977,9 +987,9 @@ export function useGameLogic() {
         return shuffled;
       })();
 
-      const aiModelRefs = sampleModelRefs(totalPlayers - 1);
+      const aiModelRefs = sampleModelRefs(isSpectatorMode ? totalPlayers : totalPlayers - 1);
       const initialPlayers: Player[] = Array.from({ length: totalPlayers }).map((_, seat) => {
-        const isHuman = seat === humanSeat;
+        const isHuman = !isSpectatorMode && seat === humanSeat;
         return {
           playerId: makeId(),
           seat,
@@ -1001,6 +1011,7 @@ export function useGameLogic() {
         day: 0,
         difficulty,
         isGenshinMode,
+        isSpectatorMode,
       });
 
       setGameStarted(true);
@@ -1008,12 +1019,35 @@ export function useGameLogic() {
 
       let characters = [];
       let genshinModelRefs: ModelRef[] | undefined = undefined;
+      const numAiPlayers = isSpectatorMode ? totalPlayers : totalPlayers - 1;
 
       if (isGenshinMode) {
-        genshinModelRefs = buildGenshinModelRefs(totalPlayers - 1);
-        characters = await generateGenshinModeCharacters(totalPlayers - 1, genshinModelRefs);
+        genshinModelRefs = buildGenshinModelRefs(numAiPlayers);
+        characters = await generateGenshinModeCharacters(numAiPlayers, genshinModelRefs);
+        
+        // 为 Genshin 模式添加逐个出现的动画效果
+        characters.forEach((character, index) => {
+          const seat = aiSeatOrder[index] ?? index + 1;
+          window.setTimeout(() => {
+            setGameState((prev) => {
+              const nextPlayers = prev.players.map((pl) => {
+                if (pl.seat !== seat) return pl;
+                if (pl.isHuman) return pl;
+                return {
+                  ...pl,
+                  displayName: character.displayName,
+                  agentProfile: {
+                    modelRef: genshinModelRefs![index] ?? getRandomModelRef(),
+                    persona: character.persona,
+                  },
+                };
+              });
+              return { ...prev, players: nextPlayers };
+            });
+          }, 200 + index * 180); // 逐个出现，每个间隔 180ms
+        });
       } else {
-        characters = await generateCharacters(totalPlayers - 1, scenario, {
+        characters = await generateCharacters(numAiPlayers, scenario, {
           onBaseProfiles: (profiles) => {
             profiles.forEach((p, i) => {
               const seat = aiSeatOrder[i] ?? i + 1;
@@ -1053,7 +1087,7 @@ export function useGameLogic() {
 
       const players = setupPlayers(
         characters,
-        0,
+        humanSeat,
         humanName || "你",
         totalPlayers,
         fixedRoles,
@@ -1070,6 +1104,7 @@ export function useGameLogic() {
         day: 1,
         difficulty,
         isGenshinMode,
+        isSpectatorMode,
       };
 
       newState = addSystemMessage(newState, systemMessages.gameStart);
@@ -1121,9 +1156,25 @@ export function useGameLogic() {
 
       setGameState(newState);
 
-      pendingStartStateRef.current = devPreset ? null : newState;
-      hasContinuedAfterRevealRef.current = false;
-      isAwaitingRoleRevealRef.current = true;
+      // In spectator mode, skip role reveal and start the game immediately
+      if (isSpectatorMode) {
+        pendingStartStateRef.current = null;
+        hasContinuedAfterRevealRef.current = true;
+        isAwaitingRoleRevealRef.current = false;
+        
+        // Start the night phase directly
+        const token = getToken();
+        if (isTokenValid(token)) {
+          const systemMessages = getSystemMessages();
+          setDialogue(speakerHost, systemMessages.nightFall(newState.day), false);
+          await playNarrator("nightFall");
+          await runNightPhaseAction(newState, token, "START_NIGHT");
+        }
+      } else {
+        pendingStartStateRef.current = devPreset ? null : newState;
+        hasContinuedAfterRevealRef.current = false;
+        isAwaitingRoleRevealRef.current = true;
+      }
     } catch (error) {
       const msg = String(error);
       if (msg.includes("ZenMux API error: 401") || msg.includes(" 401")) {
@@ -1355,22 +1406,29 @@ export function useGameLogic() {
       setDialogue(t("speakers.system"), t("gameLogicMessages.youVotedAttack", { seat: targetSeat + 1, name: targetPlayer?.displayName || "" }), false);
       setGameState(currentState);
 
-      // AI 狼人投票
+      // AI 狼人投票（并发执行）
       const aiWolves = wolves.filter((w) => !w.isHuman);
       if (aiWolves.length > 0) {
         setIsWaitingForAI(true);
         try {
           const { generateWolfAction } = await import("@/lib/game-master");
-          for (const w of aiWolves) {
-            await randomDelay(DELAY_CONFIG.AI_MIN, DELAY_CONFIG.AI_MAX);
+          
+          // 并发执行所有 AI 狼人的投票
+          const votePromises = aiWolves.map(async (w) => {
             const voteSeat = await generateWolfAction(currentState, w, existingVotes);
-            existingVotes[w.playerId] = voteSeat;
-            currentState = {
-              ...currentState,
-              nightActions: { ...currentState.nightActions, wolfVotes: existingVotes },
-            };
-            setGameState(currentState);
+            return { playerId: w.playerId, voteSeat };
+          });
+          
+          const voteResults = await Promise.all(votePromises);
+          
+          for (const { playerId, voteSeat } of voteResults) {
+            existingVotes[playerId] = voteSeat;
           }
+          currentState = {
+            ...currentState,
+            nightActions: { ...currentState.nightActions, wolfVotes: existingVotes },
+          };
+          setGameState(currentState);
         } catch (error) {
           console.error("[wolfcha] AI wolf vote failed:", error);
           // On error, AI wolves follow human's choice
@@ -1549,15 +1607,20 @@ export function useGameLogic() {
       return { finished: false, shouldAdvanceToNextSpeaker: false };
     }
 
+    if (queue.isStreaming && !isCurrentSegmentCompleted()) {
+      return { finished: false, shouldAdvanceToNextSpeaker: false };
+    }
+
     const { segments, currentIndex, player, afterSpeech } = queue;
 
     let nextState = gameStateRef.current;
 
-    // 将当前句子添加到消息列表
+    // 将当前句子添加到消息列表（如果尚未提交）
     const currentSegment = segments[currentIndex];
-    if (currentSegment && currentSegment.trim().length > 0) {
+    if (currentSegment && currentSegment.trim().length > 0 && !isCurrentSegmentCommitted()) {
       nextState = addPlayerMessage(nextState, player.playerId, currentSegment);
       setGameState(nextState);
+      markCurrentSegmentCommitted();
 
       const rawTranscript = buildRawDayTranscript(nextState);
       const shouldSummarizeEarly =
@@ -1598,7 +1661,7 @@ export function useGameLogic() {
     // 不设置 waitingForNextRound，直接返回 shouldAdvanceToNextSpeaker: true
     // 让调用方立即调用 handleNextRound，避免单条消息时需要按两次回车的问题
     return { finished: true, shouldAdvanceToNextSpeaker: true };
-  }, [clearDialogue, setIsWaitingForAI, setWaitingForNextRound, getSpeechQueue, advanceSpeechQueue, setGameState]);
+  }, [clearDialogue, setIsWaitingForAI, setWaitingForNextRound, getSpeechQueue, advanceSpeechQueue, setGameState, isCurrentSegmentCommitted, markCurrentSegmentCommitted, isCurrentSegmentCompleted]);
 
   /** 切换暂停 */
   const togglePause = useCallback(() => {
@@ -1642,5 +1705,7 @@ export function useGameLogic() {
     scrollToBottom,
     advanceSpeech,
     togglePause,
+    markCurrentSegmentCompleted,
+    isCurrentSegmentCompleted,
   };
 }

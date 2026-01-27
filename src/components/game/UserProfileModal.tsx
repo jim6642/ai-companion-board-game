@@ -556,9 +556,7 @@ import {
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs text-[var(--text-muted)]">{t("customKey.payAsYouGo.minQuantity")}</p>
-                    <div className="rounded-md bg-[var(--color-warning-bg)] border border-[var(--color-warning)]/30 p-2">
-                      <p className="text-xs text-[var(--color-warning)] font-medium">{t("customKey.payAsYouGo.minQuantityHint")}</p>
-                    </div>
+                    <p className="text-xs text-[var(--text-muted)] opacity-70">{t("customKey.payAsYouGo.minQuantityHint")}</p>
                   </div>
                 </div>
 

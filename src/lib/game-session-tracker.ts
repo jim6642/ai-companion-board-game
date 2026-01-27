@@ -160,6 +160,11 @@ export const gameSessionTracker = {
       userId: user.id,
     };
 
+    // 获取用户地区信息（基于浏览器语言和时区）
+    const region = typeof navigator !== "undefined" 
+      ? `${navigator.language || "unknown"}|${Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown"}`
+      : null;
+
     const insertData: GameSessionInsert = {
       user_id: user.id,
       player_count: config.playerCount,
@@ -167,7 +172,8 @@ export const gameSessionTracker = {
       completed: false,
       used_custom_key: config.usedCustomKey,
       model_used: config.modelUsed || null,
-      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      user_email: user.email || null,
+      region,
       rounds_played: 0,
       ai_calls_count: 0,
       ai_input_chars: 0,
@@ -238,15 +244,17 @@ export const gameSessionTracker = {
   },
 
   /**
-   * 增加回合数
+   * 增加回合数并立即同步到数据库
    */
-  incrementRound() {
+  async incrementRound(): Promise<void> {
     state.roundsPlayed += 1;
+    // 回合数变化时立即同步（绕过防抖）
+    await this.syncProgressImmediate();
   },
 
   /**
-   * 在关键阶段同步数据到数据库
-   * 调用时机：天黑、天亮、发言开始
+   * 在关键阶段同步数据到数据库（带防抖）
+   * 调用时机：天亮、发言开始等
    */
   async syncProgress(): Promise<void> {
     if (!state.sessionId || !state.userId) return;
@@ -256,6 +264,15 @@ export const gameSessionTracker = {
     if (now - state.lastSyncTime < SYNC_DEBOUNCE_MS) {
       return;
     }
+
+    await this.syncProgressImmediate();
+  },
+
+  /**
+   * 立即同步数据到数据库（无防抖）
+   */
+  async syncProgressImmediate(): Promise<void> {
+    if (!state.sessionId || !state.userId) return;
 
     const updateData: GameSessionUpdate = {
       rounds_played: state.roundsPlayed,
@@ -296,7 +313,7 @@ export const gameSessionTracker = {
       }
     }
 
-    state.lastSyncTime = now;
+    state.lastSyncTime = Date.now();
     console.log("[game-session] Progress synced, round:", state.roundsPlayed);
   },
 

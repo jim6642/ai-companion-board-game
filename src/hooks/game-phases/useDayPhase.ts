@@ -10,7 +10,7 @@ import {
   addSystemMessage,
   addPlayerMessage,
   killPlayer,
-  generateAISpeechSegments,
+  generateAISpeechSegmentsStream,
 } from "@/lib/game-master";
 import { PHASE_CATEGORIES } from "@/lib/game-constants";
 import { type FlowToken } from "@/lib/game-flow-controller";
@@ -24,6 +24,9 @@ export interface DayPhaseCallbacks {
   setWaitingForNextRound: (waiting: boolean) => void;
   isTokenValid: (token: FlowToken) => boolean;
   initSpeechQueue: (segments: string[], player: Player, afterSpeech?: (s: unknown) => Promise<void>) => void;
+  initStreamingSpeechQueue: (player: Player, afterSpeech?: (s: unknown) => Promise<void>) => void;
+  appendToSpeechQueue: (segment: string) => void;
+  finalizeSpeechQueue: () => void;
   setAfterLastWords: (callback: ((s: GameState) => Promise<void>) | null) => void;
 }
 
@@ -50,6 +53,9 @@ export function useDayPhase(
     setWaitingForNextRound,
     isTokenValid,
     initSpeechQueue,
+    initStreamingSpeechQueue,
+    appendToSpeechQueue,
+    finalizeSpeechQueue,
     setAfterLastWords,
   } = callbacks;
 
@@ -77,7 +83,10 @@ export function useDayPhase(
   // 防止 AI 发言重复触发
   const currentSpeakingPlayerRef = useRef<string | null>(null);
 
-  /** AI 发言（分段输出） */
+  // 用于存储流式生成的段落以便预取音频
+  const streamingSegmentsRef = useRef<string[]>([]);
+
+  /** AI 发言（流式分段输出） */
   const runAISpeech = useCallback(async (
     state: GameState,
     player: Player,
@@ -95,60 +104,89 @@ export function useDayPhase(
 
     currentSpeakingPlayerRef.current = player.playerId;
     setIsWaitingForAI(true);
-    setDialogue(player.displayName, t("dayPhase.organizing"), false);
+    setDialogue(player.displayName, t("dayPhase.organizing"), true);
+
+    // 重置流式段落收集器
+    streamingSegmentsRef.current = [];
+    let hasReceivedFirstSegment = false;
+
+    // Get current locale for voice resolution
+    const locale = getLocale() as AppLocale;
+    const voiceId = resolveVoiceId(
+      player.agentProfile?.persona?.voiceId,
+      player.agentProfile?.persona?.gender,
+      player.agentProfile?.persona?.age,
+      locale
+    );
 
     try {
-      let segments: string[];
-      try {
-        segments = await generateAISpeechSegments(state, player);
-      } catch {
-        segments = [t("dayPhase.interrupted")];
+      // 初始化流式发言队列
+      initStreamingSpeechQueue(player, options?.afterSpeech as ((s: unknown) => Promise<void>) | undefined);
+
+      // 使用流式生成
+      await generateAISpeechSegmentsStream(state, player, {
+        onSegmentReceived: (segment, index) => {
+          // 检查当前阶段是否仍是发言阶段
+          const currentPhase = gameStateRef.current.phase;
+          if (!isSpeechLikePhase(currentPhase)) {
+            return;
+          }
+
+          streamingSegmentsRef.current.push(segment);
+
+          // 第一个段落到达时，立即显示
+          if (!hasReceivedFirstSegment) {
+            hasReceivedFirstSegment = true;
+            setIsWaitingForAI(false);
+          }
+
+          // 添加到发言队列
+          appendToSpeechQueue(segment);
+
+          // 异步预取音频
+          try {
+            const task = {
+              id: makeAudioTaskId(voiceId, segment),
+              text: segment,
+              voiceId,
+              playerId: player.playerId,
+            };
+            audioManager.prefetchTasks([task], { concurrency: 1 }).catch(() => {});
+          } catch {
+            // ignore tts prefetch errors
+          }
+        },
+        onComplete: () => {
+          // 检查当前阶段是否仍是发言阶段
+          const currentPhase = gameStateRef.current.phase;
+          if (!isSpeechLikePhase(currentPhase)) {
+            console.warn("[wolfcha] runAISpeech: phase changed during AI speech generation, skipping display. Expected speech phase, got:", currentPhase);
+            return;
+          }
+
+          // 标记流式生成完成
+          finalizeSpeechQueue();
+        },
+        onError: () => {
+          // 如果没有收到任何段落，显示中断消息
+          if (!hasReceivedFirstSegment) {
+            appendToSpeechQueue(t("dayPhase.interrupted"));
+            finalizeSpeechQueue();
+          }
+        },
+      });
+    } catch {
+      // 如果流式生成失败且没有收到任何段落
+      if (!hasReceivedFirstSegment) {
+        initSpeechQueue([t("dayPhase.interrupted")], player, options?.afterSpeech as ((s: unknown) => Promise<void>) | undefined);
       }
-
-      setDialogue(player.displayName, t("dayPhase.organizing"), false);
-
-      const normalizedSegments = segments.map((segment) => segment.trim()).filter((segment) => segment.length > 0);
-
-      try {
-        // Get current locale for voice resolution
-        const locale = getLocale() as AppLocale;
-        const voiceId = resolveVoiceId(
-          player.agentProfile?.persona?.voiceId,
-          player.agentProfile?.persona?.gender,
-          player.agentProfile?.persona?.age,
-          locale
-        );
-        const tasks = normalizedSegments
-          .map((text) => ({
-            id: makeAudioTaskId(voiceId, text),
-            text,
-            voiceId,
-            playerId: player.playerId,
-          }));
-        await audioManager.prefetchTasks(tasks, { concurrency: 3 });
-      } catch {
-        // ignore tts prefetch errors and continue to text-only
-      }
-
-      const liveState = gameStateRef.current;
-      if (liveState.gameId === state.gameId && liveState.phase === state.phase) {
-        buildPostSpeechState(state, player, normalizedSegments);
-      }
-
-      // 检查当前阶段是否仍是发言阶段，避免在投票阶段显示发言
-      const currentPhase = gameStateRef.current.phase;
-      if (!isSpeechLikePhase(currentPhase)) {
-        console.warn("[wolfcha] runAISpeech: phase changed during AI speech generation, skipping display. Expected speech phase, got:", currentPhase);
-        return;
-      }
-
-      // 初始化发言队列
-      initSpeechQueue(normalizedSegments, player, options?.afterSpeech as ((s: unknown) => Promise<void>) | undefined);
     } finally {
       currentSpeakingPlayerRef.current = null;
-      setIsWaitingForAI(false);
+      if (!hasReceivedFirstSegment) {
+        setIsWaitingForAI(false);
+      }
     }
-  }, [setIsWaitingForAI, setDialogue, initSpeechQueue, isSpeechLikePhase]);
+  }, [setIsWaitingForAI, setDialogue, initSpeechQueue, initStreamingSpeechQueue, appendToSpeechQueue, finalizeSpeechQueue, isSpeechLikePhase, t]);
 
   // 更新 ref 以打破循环依赖
   /** 开始遗言阶段 */
