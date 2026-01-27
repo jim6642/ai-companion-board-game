@@ -9,7 +9,6 @@ interface CreateSessionPayload {
   difficulty?: string;
   usedCustomKey: boolean;
   modelUsed?: string;
-  userAgent?: string;
 }
 
 interface UpdateSessionPayload {
@@ -74,7 +73,6 @@ export async function POST(request: Request) {
       completed: false,
       used_custom_key: payload.usedCustomKey,
       model_used: payload.modelUsed || null,
-      user_agent: payload.userAgent || null,
     };
 
     const { data, error: insertError } = await supabaseAdmin

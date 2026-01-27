@@ -83,7 +83,8 @@ export interface Database {
           ai_completion_tokens: number;
           used_custom_key: boolean;
           model_used: string | null;
-          user_agent: string | null;
+          user_email: string | null;
+          region: string | null;
           created_at: string;
           ended_at: string | null;
         };
@@ -103,7 +104,8 @@ export interface Database {
           ai_completion_tokens?: number;
           used_custom_key?: boolean;
           model_used?: string | null;
-          user_agent?: string | null;
+          user_email?: string | null;
+          region?: string | null;
           created_at?: string;
           ended_at?: string | null;
         };
@@ -123,7 +125,8 @@ export interface Database {
           ai_completion_tokens?: number;
           used_custom_key?: boolean;
           model_used?: string | null;
-          user_agent?: string | null;
+          user_email?: string | null;
+          region?: string | null;
           created_at?: string;
           ended_at?: string | null;
         };

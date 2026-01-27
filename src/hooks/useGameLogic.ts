@@ -601,9 +601,8 @@ export function useGameLogic() {
     if (!isTokenValid(token)) return;
     if (isAwaitingRoleRevealRef.current) return;
 
-    // 天黑时同步游戏进度到数据库
-    gameSessionTracker.incrementRound();
-    gameSessionTracker.syncProgress().catch(() => {});
+    // 天黑时同步游戏进度到数据库（incrementRound 内部会立即同步）
+    gameSessionTracker.incrementRound().catch(() => {});
 
     const systemMessages = getSystemMessages();
     const lastGuardTarget = state.nightActions.guardTarget ?? state.nightActions.lastGuardTarget;
@@ -941,7 +940,6 @@ export function useGameLogic() {
         playerCount,
         difficulty,
         usedCustomKey: isCustomKeyEnabled(),
-        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
       };
       gameStatsTracker.start(statsConfig);
 
@@ -950,7 +948,7 @@ export function useGameLogic() {
         playerCount,
         difficulty,
         usedCustomKey: isCustomKeyEnabled(),
-        modelUsed: statsConfig.userAgent,
+        modelUsed: getGeneratorModel(),
       }).then((sessionId) => {
         if (sessionId) {
           gameStatsTracker.setSessionId(sessionId);
