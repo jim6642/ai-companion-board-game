@@ -138,10 +138,15 @@ export function useGameLogic() {
     setDialogue,
     clearDialogue,
     initSpeechQueue,
+    initStreamingSpeechQueue,
+    appendToSpeechQueue,
+    finalizeSpeechQueue,
     getSpeechQueue,
     advanceSpeechQueue,
     clearSpeechQueue,
     resetDialogueState,
+    markCurrentSegmentCommitted,
+    isCurrentSegmentCommitted,
   } = dialogue;
 
   // ============================================
@@ -525,6 +530,9 @@ export function useGameLogic() {
     setWaitingForNextRound,
     isTokenValid,
     initSpeechQueue,
+    initStreamingSpeechQueue,
+    appendToSpeechQueue,
+    finalizeSpeechQueue,
     setAfterLastWords: (cb) => { afterLastWordsRef.current = cb; },
   });
 
@@ -1010,6 +1018,28 @@ export function useGameLogic() {
       if (isGenshinMode) {
         genshinModelRefs = buildGenshinModelRefs(totalPlayers - 1);
         characters = await generateGenshinModeCharacters(totalPlayers - 1, genshinModelRefs);
+        
+        // 为 Genshin 模式添加逐个出现的动画效果
+        characters.forEach((character, index) => {
+          const seat = aiSeatOrder[index] ?? index + 1;
+          window.setTimeout(() => {
+            setGameState((prev) => {
+              const nextPlayers = prev.players.map((pl) => {
+                if (pl.seat !== seat) return pl;
+                if (pl.isHuman) return pl;
+                return {
+                  ...pl,
+                  displayName: character.displayName,
+                  agentProfile: {
+                    modelRef: genshinModelRefs![index] ?? getRandomModelRef(),
+                    persona: character.persona,
+                  },
+                };
+              });
+              return { ...prev, players: nextPlayers };
+            });
+          }, 200 + index * 180); // 逐个出现，每个间隔 180ms
+        });
       } else {
         characters = await generateCharacters(totalPlayers - 1, scenario, {
           onBaseProfiles: (profiles) => {
@@ -1353,22 +1383,29 @@ export function useGameLogic() {
       setDialogue(t("speakers.system"), t("gameLogicMessages.youVotedAttack", { seat: targetSeat + 1, name: targetPlayer?.displayName || "" }), false);
       setGameState(currentState);
 
-      // AI 狼人投票
+      // AI 狼人投票（并发执行）
       const aiWolves = wolves.filter((w) => !w.isHuman);
       if (aiWolves.length > 0) {
         setIsWaitingForAI(true);
         try {
           const { generateWolfAction } = await import("@/lib/game-master");
-          for (const w of aiWolves) {
-            await randomDelay(DELAY_CONFIG.AI_MIN, DELAY_CONFIG.AI_MAX);
+          
+          // 并发执行所有 AI 狼人的投票
+          const votePromises = aiWolves.map(async (w) => {
             const voteSeat = await generateWolfAction(currentState, w, existingVotes);
-            existingVotes[w.playerId] = voteSeat;
-            currentState = {
-              ...currentState,
-              nightActions: { ...currentState.nightActions, wolfVotes: existingVotes },
-            };
-            setGameState(currentState);
+            return { playerId: w.playerId, voteSeat };
+          });
+          
+          const voteResults = await Promise.all(votePromises);
+          
+          for (const { playerId, voteSeat } of voteResults) {
+            existingVotes[playerId] = voteSeat;
           }
+          currentState = {
+            ...currentState,
+            nightActions: { ...currentState.nightActions, wolfVotes: existingVotes },
+          };
+          setGameState(currentState);
         } catch (error) {
           console.error("[wolfcha] AI wolf vote failed:", error);
           // On error, AI wolves follow human's choice
@@ -1551,11 +1588,12 @@ export function useGameLogic() {
 
     let nextState = gameStateRef.current;
 
-    // 将当前句子添加到消息列表
+    // 将当前句子添加到消息列表（如果尚未提交）
     const currentSegment = segments[currentIndex];
-    if (currentSegment && currentSegment.trim().length > 0) {
+    if (currentSegment && currentSegment.trim().length > 0 && !isCurrentSegmentCommitted()) {
       nextState = addPlayerMessage(nextState, player.playerId, currentSegment);
       setGameState(nextState);
+      markCurrentSegmentCommitted();
 
       const rawTranscript = buildRawDayTranscript(nextState);
       const shouldSummarizeEarly =
@@ -1596,7 +1634,7 @@ export function useGameLogic() {
     // 不设置 waitingForNextRound，直接返回 shouldAdvanceToNextSpeaker: true
     // 让调用方立即调用 handleNextRound，避免单条消息时需要按两次回车的问题
     return { finished: true, shouldAdvanceToNextSpeaker: true };
-  }, [clearDialogue, setIsWaitingForAI, setWaitingForNextRound, getSpeechQueue, advanceSpeechQueue, setGameState]);
+  }, [clearDialogue, setIsWaitingForAI, setWaitingForNextRound, getSpeechQueue, advanceSpeechQueue, setGameState, isCurrentSegmentCommitted, markCurrentSegmentCommitted]);
 
   /** 切换暂停 */
   const togglePause = useCallback(() => {

@@ -14,6 +14,9 @@ export interface SpeechQueueState {
   currentIndex: number;
   player: Player;
   afterSpeech?: (s: unknown) => Promise<void>;
+  isStreaming?: boolean; // 是否正在流式接收中
+  isFinalized?: boolean; // 流式接收是否已完成
+  committedIndices?: Set<number>; // 已提交到历史记录的段落索引
 }
 
 /**
@@ -71,6 +74,7 @@ export function useDialogueManager() {
 
     const nextIndex = queue.currentIndex + 1;
     if (nextIndex < queue.segments.length) {
+      // 还有更多段落
       speechQueueRef.current = { ...queue, currentIndex: nextIndex };
       setCurrentDialogue({
         speaker: queue.player.displayName,
@@ -78,7 +82,11 @@ export function useDialogueManager() {
         isStreaming: true,
       });
       return { finished: false, segment: queue.segments[nextIndex] };
+    } else if (queue.isStreaming && !queue.isFinalized) {
+      // 流式未完成，等待更多段落
+      return { finished: false, waiting: true };
     } else {
+      // 所有段落已完成
       const afterSpeech = queue.afterSpeech;
       speechQueueRef.current = null;
       clearDialogue();
@@ -89,6 +97,75 @@ export function useDialogueManager() {
   /** 清除发言队列 */
   const clearSpeechQueue = useCallback(() => {
     speechQueueRef.current = null;
+  }, []);
+
+  /** 初始化流式发言队列（不需要预先知道所有段落） */
+  const initStreamingSpeechQueue = useCallback((
+    player: Player,
+    afterSpeech?: (s: unknown) => Promise<void>
+  ) => {
+    speechQueueRef.current = {
+      segments: [],
+      currentIndex: 0,
+      player,
+      afterSpeech,
+      isStreaming: true,
+      isFinalized: false,
+      committedIndices: new Set(),
+    };
+  }, []);
+
+  /** 标记当前段落已提交到历史记录 */
+  const markCurrentSegmentCommitted = useCallback(() => {
+    const queue = speechQueueRef.current;
+    if (!queue) return;
+    if (!queue.committedIndices) {
+      queue.committedIndices = new Set();
+    }
+    queue.committedIndices.add(queue.currentIndex);
+  }, []);
+
+  /** 检查当前段落是否已提交 */
+  const isCurrentSegmentCommitted = useCallback(() => {
+    const queue = speechQueueRef.current;
+    if (!queue) return false;
+    return queue.committedIndices?.has(queue.currentIndex) ?? false;
+  }, []);
+
+  /** 向流式发言队列追加段落 */
+  const appendToSpeechQueue = useCallback((segment: string) => {
+    const queue = speechQueueRef.current;
+    if (!queue) return;
+
+    const trimmed = segment.trim();
+    if (!trimmed) return;
+
+    queue.segments.push(trimmed);
+
+    // 如果这是第一个段落，或者用户正在等待下一段（currentIndex >= segments.length - 1）
+    // 则立即显示新段落
+    const shouldDisplayImmediately = 
+      queue.segments.length === 1 || 
+      queue.currentIndex >= queue.segments.length - 1;
+
+    if (shouldDisplayImmediately) {
+      // 更新 currentIndex 指向新段落
+      queue.currentIndex = queue.segments.length - 1;
+      setCurrentDialogue({
+        speaker: queue.player.displayName,
+        text: trimmed,
+        isStreaming: true,
+      });
+    }
+  }, []);
+
+  /** 标记流式发言队列已完成接收 */
+  const finalizeSpeechQueue = useCallback(() => {
+    const queue = speechQueueRef.current;
+    if (!queue) return;
+
+    queue.isStreaming = false;
+    queue.isFinalized = true;
   }, []);
 
   /** 重置所有对话状态 */
@@ -113,9 +190,14 @@ export function useDialogueManager() {
     setDialogue,
     clearDialogue,
     initSpeechQueue,
+    initStreamingSpeechQueue,
+    appendToSpeechQueue,
+    finalizeSpeechQueue,
     getSpeechQueue,
     advanceSpeechQueue,
     clearSpeechQueue,
     resetDialogueState,
+    markCurrentSegmentCommitted,
+    isCurrentSegmentCommitted,
   };
 }

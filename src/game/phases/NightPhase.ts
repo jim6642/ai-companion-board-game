@@ -178,11 +178,20 @@ export class NightPhase extends GamePhase {
       try {
         for (let round = 1; round <= GAME_CONFIG.MAX_REVOTE_COUNT; round++) {
           wolfVotes = {};
-          for (const wolf of wolves) {
-            const targetSeat = await generateWolfAction(currentState, wolf, wolfVotes);
-            await runtime.waitForUnpause();
-            if (!runtime.isTokenValid(runtime.token)) return currentState;
-            wolfVotes[wolf.playerId] = targetSeat;
+          
+          // 并发执行所有狼人的投票决策
+          const votePromises = wolves.map(async (wolf) => {
+            const targetSeat = await generateWolfAction(currentState, wolf, {});
+            return { playerId: wolf.playerId, targetSeat };
+          });
+          
+          const voteResults = await Promise.all(votePromises);
+          
+          await runtime.waitForUnpause();
+          if (!runtime.isTokenValid(runtime.token)) return currentState;
+          
+          for (const { playerId, targetSeat } of voteResults) {
+            wolfVotes[playerId] = targetSeat;
           }
 
           const chosenSeat = computeUniqueTopSeat(wolfVotes);

@@ -63,12 +63,19 @@ export function PlayerCardCompact({
   const prevAliveRef = useRef<boolean>(player.alive);
   const [deathPulse, setDeathPulse] = useState(false);
   const [hasRevealed, setHasRevealed] = useState(false);
+  const [revealPop, setRevealPop] = useState(false);
 
   useEffect(() => {
     if (isReady && !hasRevealed) {
       setHasRevealed(true);
+      // 触发放大动画效果
+      if (!revealedAvatarIds.has(player.playerId)) {
+        setRevealPop(true);
+        const timer = window.setTimeout(() => setRevealPop(false), 600);
+        return () => window.clearTimeout(timer);
+      }
     }
-  }, [isReady, hasRevealed]);
+  }, [isReady, hasRevealed, player.playerId]);
 
   useEffect(() => {
     if (isReady && !revealedAvatarIds.has(player.playerId)) {
@@ -148,7 +155,7 @@ export function PlayerCardCompact({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
       animate={
         deathPulse
           ? {
@@ -156,9 +163,19 @@ export function PlayerCardCompact({
               y: [0, -2, 0],
               scale: [1, 1.015, 1],
             }
-          : { opacity: 1, y: 0 }
+          : revealPop
+          ? {
+              opacity: 1,
+              y: 0,
+              scale: [1, 1.08, 1.03, 1],
+            }
+          : { opacity: 1, y: 0, scale: 1 }
       }
-      transition={{ delay: animationDelay, duration: 0.3 }}
+      transition={
+        revealPop
+          ? { delay: 0, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }
+          : { delay: animationDelay, duration: 0.3 }
+      }
       whileHover={variant === "mobile" ? {} : {}}
       whileTap={isReady ? { scale: 0.98 } : {}}
       onClick={handleClick}

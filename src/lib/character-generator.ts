@@ -1,4 +1,5 @@
-import { generateJSON } from "./llm";
+import { generateJSON, generateCompletionStream, stripMarkdownCodeFences } from "./llm";
+import { LLMJSONParser } from "ai-json-fixer";
 import {
   ALL_MODELS,
   GENERATOR_MODEL,
@@ -480,57 +481,135 @@ export async function generateCharacters(
     options?.onBaseProfiles?.(baseProfiles);
 
     const fullPrompt = buildFullPersonasPrompt(usedScenario, baseProfiles);
-    const fullResult = await generateJSON<unknown>({
+    
+    // 使用流式生成，每解析出一个角色就立即调用回调
+    const finalizedCharacters: GeneratedCharacter[] = [];
+    const emittedIndices = new Set<number>();
+    let accumulatedContent = "";
+    const parser = new LLMJSONParser();
+    
+    const stream = generateCompletionStream({
       model: getGeneratorModel(),
       messages: [{ role: "user", content: fullPrompt }],
       temperature: GAME_TEMPERATURE.CHARACTER_GENERATION,
       max_tokens: 6000,
     });
 
-    const normalized = normalizeGeneratedCharacters(fullResult);
-    let alignedCharacters = alignCharactersToProfiles(normalized.characters, baseProfiles);
+    for await (const chunk of stream) {
+      accumulatedContent += chunk;
+      
+      // 使用正则提取完整的角色对象
+      // 匹配 {"displayName": "...", "persona": {...}} 结构
+      const cleaned = stripMarkdownCodeFences(accumulatedContent);
+      
+      // 找到所有可能完整的角色对象
+      // 通过匹配 displayName 后跟 persona 对象的闭合 } 来识别完整角色
+      const characterPattern = /\{\s*"displayName"\s*:\s*"[^"]+"\s*,\s*"persona"\s*:\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\s*\}/g;
+      const matches = cleaned.match(characterPattern);
+      
+      if (matches) {
+        for (const match of matches) {
+          try {
+            const c = JSON.parse(match) as GeneratedCharacter;
+            if (!c.displayName || !c.persona) continue;
+            
+            // 找到对应的 profile index
+            const profileIndex = baseProfiles.findIndex(p => 
+              p.displayName === c.displayName && !emittedIndices.has(baseProfiles.indexOf(p))
+            );
+            
+            if (profileIndex === -1) continue;
+            
+            const profile = baseProfiles[profileIndex];
+            
+            // 验证 persona 是否有效
+            if (isValidPersonaForProfile(c.persona, profile)) {
+              emittedIndices.add(profileIndex);
+              
+              const voiceId = resolveVoiceId(
+                c.persona.voiceId,
+                c.persona.gender,
+                c.persona.age,
+                "zh" as AppLocale
+              );
 
-    if (!alignedCharacters) {
-      const repairPrompt = buildRepairFullPersonasPrompt(usedScenario, baseProfiles, normalized.raw);
-      const repaired = await generateJSON<unknown>({
-        model: getGeneratorModel(),
-        messages: [{ role: "user", content: repairPrompt }],
-        temperature: GAME_TEMPERATURE.CHARACTER_REPAIR,
-        max_tokens: 6000,
-      });
+              const character: GeneratedCharacter = {
+                displayName: profile.displayName,
+                persona: {
+                  ...c.persona,
+                  voiceId,
+                  relationships: undefined,
+                },
+              };
 
-      const normalizedRepaired = normalizeGeneratedCharacters(repaired);
-      alignedCharacters = alignCharactersToProfiles(normalizedRepaired.characters, baseProfiles);
-
-      if (!alignedCharacters) {
-        throw new Error("Character generation returned invalid schema after repair");
+              finalizedCharacters[profileIndex] = character;
+              options?.onCharacter?.(profileIndex, character);
+              console.log(`[character-gen] emitted character ${profileIndex}: ${character.displayName}`);
+            }
+          } catch {
+            // 解析失败是正常的
+          }
+        }
       }
     }
 
-    const finalizedCharacters = alignedCharacters.map((c, index) => {
-      const profile = baseProfiles[index];
-      // 分配 Voice ID：按性别 + 年龄选择（缺失/非法时兜底到默认音色）
-      // Note: We always store Chinese voice ID at generation time.
-      // Runtime resolution (useDayPhase) will switch to English based on current locale.
-      const voiceId = resolveVoiceId(
-        c.persona.voiceId,
-        c.persona.gender,
-        c.persona.age,
-        "zh" as AppLocale
-      );
+    // 流式结束后，检查是否所有角色都已生成
+    if (finalizedCharacters.filter(Boolean).length < baseProfiles.length) {
+      // 回退到完整解析
+      const cleaned = stripMarkdownCodeFences(accumulatedContent);
+      let fullResult: unknown;
+      try {
+        fullResult = JSON.parse(cleaned);
+      } catch {
+        fullResult = parser.parse(cleaned);
+      }
+      
+      const normalized = normalizeGeneratedCharacters(fullResult);
+      let alignedCharacters = alignCharactersToProfiles(normalized.characters, baseProfiles);
 
-      const character: GeneratedCharacter = {
-        displayName: profile.displayName,
-        persona: {
-          ...c.persona,
-          voiceId,
-          relationships: undefined,
-        },
-      };
+      if (!alignedCharacters) {
+        const repairPrompt = buildRepairFullPersonasPrompt(usedScenario, baseProfiles, normalized.raw);
+        const repaired = await generateJSON<unknown>({
+          model: getGeneratorModel(),
+          messages: [{ role: "user", content: repairPrompt }],
+          temperature: GAME_TEMPERATURE.CHARACTER_REPAIR,
+          max_tokens: 6000,
+        });
 
-      options?.onCharacter?.(index, character);
-      return character;
-    });
+        const normalizedRepaired = normalizeGeneratedCharacters(repaired);
+        alignedCharacters = alignCharactersToProfiles(normalizedRepaired.characters, baseProfiles);
+
+        if (!alignedCharacters) {
+          throw new Error("Character generation returned invalid schema after repair");
+        }
+      }
+
+      // 补充未生成的角色
+      for (let i = 0; i < alignedCharacters.length; i++) {
+        if (finalizedCharacters[i]) continue;
+        
+        const c = alignedCharacters[i];
+        const profile = baseProfiles[i];
+        const voiceId = resolveVoiceId(
+          c.persona.voiceId,
+          c.persona.gender,
+          c.persona.age,
+          "zh" as AppLocale
+        );
+
+        const character: GeneratedCharacter = {
+          displayName: profile.displayName,
+          persona: {
+            ...c.persona,
+            voiceId,
+            relationships: undefined,
+          },
+        };
+
+        finalizedCharacters[i] = character;
+        options?.onCharacter?.(i, character);
+      }
+    }
 
     await aiLogger.log({
       type: "character_generation",
