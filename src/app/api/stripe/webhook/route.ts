@@ -6,9 +6,6 @@ import { supabaseAdmin, ensureAdminClient } from "@/lib/supabase-admin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
 export async function POST(request: NextRequest) {
   try {
     ensureAdminClient();
@@ -18,6 +15,14 @@ export async function POST(request: NextRequest) {
       { error: "Server misconfiguration" },
       { status: 500 }
     );
+  }
+
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!stripeSecretKey) {
+    console.error("[Stripe Webhook] STRIPE_SECRET_KEY is not configured");
+    return NextResponse.json({ error: "Stripe is not configured" }, { status: 500 });
   }
 
   // Validate webhook secret is configured
@@ -43,6 +48,7 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event;
 
   try {
+    const stripe = new Stripe(stripeSecretKey);
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     console.log(`[Stripe Webhook] ✅ Event received: ${event.type}`);
   } catch (err) {

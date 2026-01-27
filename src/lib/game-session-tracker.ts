@@ -80,7 +80,6 @@ async function createSessionViaApi(payload: {
   difficulty?: string;
   usedCustomKey: boolean;
   modelUsed?: string;
-  userAgent?: string;
 }): Promise<{ ok: true; sessionId: string } | { ok: false; error: unknown; status?: number }> {
   const token = await getAccessToken();
   if (!token) return { ok: false, error: new Error("Missing access token") };
@@ -187,7 +186,6 @@ export const gameSessionTracker = {
       difficulty: config.difficulty,
       usedCustomKey: config.usedCustomKey,
       modelUsed: config.modelUsed,
-      userAgent: insertData.user_agent ?? undefined,
     });
 
     if (apiCreate.ok) {
