@@ -12,16 +12,19 @@ import {
   generateHunterShoot,
 } from "@/lib/game-master";
 import { getSystemMessages } from "@/lib/game-texts";
-import { useTranslations } from "next-intl";
+import { getI18n } from "@/i18n/translator";
 import { DELAY_CONFIG, getRoleName } from "@/lib/game-constants";
 import { delay, type FlowToken } from "@/lib/game-flow-controller";
 import { playNarrator } from "@/lib/narrator-audio-player";
+import { gameStatsTracker } from "@/hooks/useGameStats";
+import { gameSessionTracker } from "@/lib/game-session-tracker";
 
 export interface SpecialEventsCallbacks {
   setDialogue: (speaker: string, text: string, isStreaming?: boolean) => void;
   setIsWaitingForAI: (waiting: boolean) => void;
   waitForUnpause: () => Promise<void>;
   isTokenValid: (token: FlowToken) => boolean;
+  getAccessToken: () => string | null;
 }
 
 export interface SpecialEventsActions {
@@ -38,13 +41,18 @@ export interface SpecialEventsActions {
 export function useSpecialEvents(
   callbacks: SpecialEventsCallbacks
 ): SpecialEventsActions {
-  const t = useTranslations();
-  const systemMessages = getSystemMessages();
-  const speakerHost = t("speakers.host");
-  const speakerSystem = t("speakers.system");
+  const getTexts = () => {
+    const { t } = getI18n();
+    return {
+      t,
+      systemMessages: getSystemMessages(),
+      speakerHost: t("speakers.host"),
+      speakerSystem: t("speakers.system"),
+    };
+  };
   const [, setGameState] = useAtom(gameStateAtom);
 
-  const { setDialogue, setIsWaitingForAI, waitForUnpause, isTokenValid } = callbacks;
+  const { setDialogue, setIsWaitingForAI, waitForUnpause, isTokenValid, getAccessToken } = callbacks;
 
   /** 处理猎人死亡开枪 */
   const handleHunterDeath = useCallback(async (
@@ -54,6 +62,7 @@ export function useSpecialEvents(
     token: FlowToken,
     afterHunter: (state: GameState) => Promise<void>
   ) => {
+    const texts = getTexts();
     let currentState = transitionPhase(state, "HUNTER_SHOOT");
     setGameState(currentState);
 
@@ -61,7 +70,7 @@ export function useSpecialEvents(
       // 存储是否夜间死亡的信息，供后续 handleNightAction 使用
       (currentState as GameState & { _hunterDiedAtNight?: boolean })._hunterDiedAtNight = diedAtNight;
       setGameState(currentState);
-      setDialogue(speakerSystem, t("specialEvents.hunterPrompt"), false);
+      setDialogue(texts.speakerSystem, texts.t("specialEvents.hunterPrompt"), false);
       return;
     }
 
@@ -76,8 +85,8 @@ export function useSpecialEvents(
       currentState = killPlayer(currentState, targetSeat);
       const target = currentState.players.find((p) => p.seat === targetSeat);
       if (target) {
-        currentState = addSystemMessage(currentState, systemMessages.hunterShoot(hunter.seat + 1, targetSeat + 1, target.displayName));
-        setDialogue(speakerHost, systemMessages.hunterShoot(hunter.seat + 1, targetSeat + 1, target.displayName), false);
+        currentState = addSystemMessage(currentState, texts.systemMessages.hunterShoot(hunter.seat + 1, targetSeat + 1, target.displayName));
+        setDialogue(texts.speakerHost, texts.systemMessages.hunterShoot(hunter.seat + 1, targetSeat + 1, target.displayName), false);
       }
 
       // 记录猎人开枪
@@ -128,18 +137,25 @@ export function useSpecialEvents(
 
   /** 游戏结束 */
   const endGame = useCallback(async (state: GameState, winner: Alignment) => {
+    const texts = getTexts();
     let currentState = transitionPhase(state, "GAME_END");
     currentState = { ...currentState, winner };
 
     const roleReveal = currentState.players
-      .map((p) => t("specialEvents.roleRevealItem", { seat: p.seat + 1, name: p.displayName, role: getRoleName(p.role) }))
+      .map((p) => texts.t("specialEvents.roleRevealItem", { seat: p.seat + 1, name: p.displayName, role: getRoleName(p.role) }))
       .join(" | ");
 
-    currentState = addSystemMessage(currentState, winner === "village" ? systemMessages.villageWin : systemMessages.wolfWin);
-    currentState = addSystemMessage(currentState, t("specialEvents.roleRevealLine", { list: roleReveal }));
-    setDialogue(speakerHost, winner === "village" ? t("specialEvents.villageWinLine") : t("specialEvents.wolfWinLine"), false);
+    currentState = addSystemMessage(currentState, winner === "village" ? texts.systemMessages.villageWin : texts.systemMessages.wolfWin);
+    currentState = addSystemMessage(currentState, texts.t("specialEvents.roleRevealLine", { list: roleReveal }));
+    setDialogue(texts.speakerHost, winner === "village" ? texts.t("specialEvents.villageWinLine") : texts.t("specialEvents.wolfWinLine"), false);
 
     setGameState(currentState);
+    
+    // 更新游戏会话数据（前端直接调用 Supabase）
+    const winnerType = winner === "village" ? "villager" : "wolf";
+    gameSessionTracker.end(winnerType, true).catch((err) => {
+      console.error("[game-session] Failed to end:", err);
+    });
     
     // 播放游戏结束语音
     await playNarrator(winner === "village" ? "villageWin" : "wolfWin");
@@ -151,6 +167,7 @@ export function useSpecialEvents(
     token: FlowToken,
     afterResolve: (state: GameState) => Promise<void>
   ) => {
+    const texts = getTexts();
     let currentState = transitionPhase(state, "NIGHT_RESOLVE");
     setGameState(currentState);
 
@@ -210,9 +227,12 @@ export function useSpecialEvents(
     if (!isTokenValid(token)) return;
 
     currentState = transitionPhase(currentState, "DAY_START");
-    currentState = addSystemMessage(currentState, systemMessages.dayBreak);
+    currentState = addSystemMessage(currentState, texts.systemMessages.dayBreak);
     setGameState(currentState);
-    setDialogue(speakerHost, systemMessages.dayBreak, false);
+    setDialogue(texts.speakerHost, texts.systemMessages.dayBreak, false);
+
+    // 天亮时同步游戏进度到数据库
+    gameSessionTracker.syncProgress().catch(() => {});
 
     // 播放旁白语音
     await playNarrator("dayBreak");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { UserCircle, Key, SignOut, ShareNetwork, Copy, CaretDown, Check, ArrowRight, Eye, EyeSlash } from "@phosphor-icons/react";
+import { UserCircle, Key, SignOut, ShareNetwork, Copy, CaretDown, Check, ArrowRight, Eye, EyeSlash, CreditCard, Minus, Plus } from "@phosphor-icons/react";
  import {
    Dialog,
    DialogContent,
@@ -62,6 +62,8 @@ import {
    onShareInvite: () => void;
   onSignOut: () => void | Promise<void>;
   onCustomKeyEnabledChange?: (value: boolean) => void;
+  accessToken?: string;
+  onCreditsChange?: () => void;
  }
  
  export function UserProfileModal({
@@ -75,6 +77,8 @@ import {
    onShareInvite,
    onSignOut,
   onCustomKeyEnabledChange,
+  accessToken,
+  onCreditsChange,
  }: UserProfileModalProps) {
   const t = useTranslations();
   const [zenmuxKey, setZenmuxKeyState] = useState("");
@@ -96,6 +100,9 @@ import {
     zenmux: "",
     dashscope: "",
   });
+  const [purchaseQuantity, setPurchaseQuantity] = useState(2);
+  const [purchaseQuantityInput, setPurchaseQuantityInput] = useState("2");
+  const [isPurchasing, setIsPurchasing] = useState(false);
 
    const displayCredits = useMemo(() => {
     if (credits === null || credits === undefined) return t("userProfile.empty");
@@ -365,6 +372,33 @@ import {
     toast(t("customKey.toasts.cleared"));
   };
 
+  const handlePurchase = async () => {
+    if (isPurchasing || purchaseQuantity < 2 || !accessToken) return;
+    setIsPurchasing(true);
+    try {
+      const response = await fetch("/api/stripe/payment-link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ quantity: purchaseQuantity }),
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast(t("customKey.payAsYouGo.error"));
+      }
+    } catch {
+      toast(t("customKey.payAsYouGo.error"));
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const totalPrice = (purchaseQuantity * 0.5).toFixed(2);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -382,6 +416,7 @@ import {
         <Tabs defaultValue="profile">
           <TabsList>
             <TabsTrigger value="profile">{t("customKey.tabs.profile")}</TabsTrigger>
+            <TabsTrigger value="payAsYouGo">{t("customKey.tabs.payAsYouGo")}</TabsTrigger>
             <TabsTrigger value="custom">{t("customKey.tabs.custom")}</TabsTrigger>
           </TabsList>
 
@@ -436,6 +471,110 @@ import {
                   </Button>
                 </div>
               </TabsContent>
+
+          <TabsContent value="payAsYouGo">
+            <div className="space-y-4">
+              <section className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-bg)]">
+                    <CreditCard size={20} className="text-[var(--color-accent)]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-[var(--text-primary)]">{t("customKey.payAsYouGo.title")}</h3>
+                    <p className="text-xs text-[var(--text-muted)] mt-1">{t("customKey.payAsYouGo.description")}</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[var(--text-muted)]">{t("customKey.payAsYouGo.pricePerGame", { price: "0.50" })}</span>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">{t("customKey.payAsYouGo.quantity")}</Label>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newVal = Math.max(2, purchaseQuantity - 1);
+                        setPurchaseQuantity(newVal);
+                        setPurchaseQuantityInput(newVal.toString());
+                      }}
+                      disabled={purchaseQuantity <= 2}
+                      className="h-9 w-9 p-0"
+                    >
+                      <Minus size={16} />
+                    </Button>
+                    <Input
+                      type="number"
+                      min={2}
+                      max={100}
+                      value={purchaseQuantityInput}
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        setPurchaseQuantityInput(inputValue);
+                        // Allow empty input for better UX
+                        if (inputValue === "") {
+                          return;
+                        }
+                        const val = parseInt(inputValue, 10);
+                        if (!isNaN(val) && val >= 2) {
+                          setPurchaseQuantity(Math.min(100, Math.max(2, val)));
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const inputValue = e.target.value;
+                        if (inputValue === "" || isNaN(parseInt(inputValue, 10))) {
+                          setPurchaseQuantityInput("2");
+                          setPurchaseQuantity(2);
+                        } else {
+                          const val = parseInt(inputValue, 10);
+                          const clampedVal = Math.min(100, Math.max(2, val));
+                          setPurchaseQuantityInput(clampedVal.toString());
+                          setPurchaseQuantity(clampedVal);
+                        }
+                      }}
+                      className="h-9 w-20 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newVal = Math.min(100, purchaseQuantity + 1);
+                        setPurchaseQuantity(newVal);
+                        setPurchaseQuantityInput(newVal.toString());
+                      }}
+                      disabled={purchaseQuantity >= 100}
+                      className="h-9 w-9 p-0"
+                    >
+                      <Plus size={16} />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)]">{t("customKey.payAsYouGo.minQuantity")}</p>
+                </div>
+
+                <div className="border-t border-[var(--border-color)] pt-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{t("customKey.payAsYouGo.total")}</span>
+                    <span className="text-lg font-semibold text-[var(--color-gold)]">${totalPrice}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handlePurchase}
+                    disabled={isPurchasing}
+                    className="w-full gap-2"
+                  >
+                    <CreditCard size={16} />
+                    {isPurchasing ? t("customKey.payAsYouGo.redirecting") : t("customKey.payAsYouGo.purchase")}
+                  </Button>
+                </div>
+              </section>
+            </div>
+          </TabsContent>
 
           <TabsContent value="custom">
             <div className="space-y-5">
