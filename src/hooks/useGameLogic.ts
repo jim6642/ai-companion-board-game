@@ -51,6 +51,7 @@ import { supabase } from "@/lib/supabase";
 import { gameStatsTracker } from "@/hooks/useGameStats";
 import { gameSessionTracker } from "@/lib/game-session-tracker";
 import { isCustomKeyEnabled } from "@/lib/api-keys";
+import { aiLogger } from "@/lib/ai-logger";
 
 // 子模块
 import { useDialogueManager, type DialogueState } from "./useDialogueManager";
@@ -953,6 +954,10 @@ export function useGameLogic() {
       showTableTimeoutRef.current = null;
     }
 
+    // Clear client-side AI logs so exported logs only include the current match.
+    // This prevents mixing previous matches (e.g. non-genshin/English prompts or character_generation).
+    await aiLogger.clearLogs();
+
     setIsLoading(true);
     try {
       // 初始化游戏统计追踪器
@@ -1225,6 +1230,7 @@ export function useGameLogic() {
 
   /** 重新开始 */
   const restartGame = useCallback(() => {
+    void aiLogger.clearLogs();
     setGameState(createInitialGameState());
     resetDialogueState();
     setInputText("");

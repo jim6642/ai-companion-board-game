@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { GameState } from "@/types/game";
 import { aiLogger } from "@/lib/ai-logger";
+import type { AILogEntry } from "@/lib/ai-logger";
 import { useTranslations } from "next-intl";
 import { useAppLocale } from "@/i18n/useAppLocale";
 
@@ -118,7 +119,7 @@ export function SettingsModal({
   const discordInviteUrl = "https://discord.gg/ETkdZWgy";
   const [view, setView] = useState<"settings" | "about">("settings");
   const [groupImgOk, setGroupImgOk] = useState<boolean | null>(null);
-  const [aiLogs, setAiLogs] = useState<unknown[]>([]);
+  const [aiLogs, setAiLogs] = useState<AILogEntry[]>([]);
 
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
 
@@ -129,7 +130,7 @@ export function SettingsModal({
     (async () => {
       try {
         const logs = await aiLogger.getLogs();
-        if (!cancelled) setAiLogs(logs as unknown[]);
+        if (!cancelled) setAiLogs(Array.isArray(logs) ? (logs as AILogEntry[]) : []);
       } catch {
         if (!cancelled) setAiLogs([]);
       }
@@ -141,33 +142,8 @@ export function SettingsModal({
   }, [open]);
 
   const logJsonText = useMemo(() => {
-    const exportedAt = new Date().toISOString();
-    const env = typeof window === "undefined" ? undefined : {
-      url: window.location.href,
-      userAgent: window.navigator.userAgent,
-      language: window.navigator.language,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    };
-
-    const payload = {
-      meta: {
-        app: "wolfcha",
-        appVersion,
-        exportedAt,
-      },
-      env,
-      settings: {
-        bgmVolume,
-        isSoundEnabled,
-        isAiVoiceEnabled,
-        isAutoAdvanceDialogueEnabled,
-      },
-      aiLogs,
-      gameState,
-    };
-
-    return JSON.stringify(payload, null, 2);
-  }, [aiLogs, appVersion, bgmVolume, gameState, isAiVoiceEnabled, isAutoAdvanceDialogueEnabled, isSoundEnabled]);
+    return JSON.stringify(aiLogs, null, 2);
+  }, [aiLogs]);
 
   const handleCopyLog = useCallback(async () => {
     try {
