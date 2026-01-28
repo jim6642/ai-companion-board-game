@@ -12,6 +12,7 @@ import {
   generateAIBadgeSignupBatch,
   generateBadgeTransfer,
   BADGE_VOTE_ABSTAIN,
+  BADGE_TRANSFER_TORN,
 } from "@/lib/game-master";
 import { getSystemMessages, getUiText } from "@/lib/game-texts";
 import { DELAY_CONFIG, GAME_CONFIG } from "@/lib/game-constants";
@@ -561,7 +562,7 @@ export function useBadgePhase(
     const targetSeat = await generateBadgeTransfer(currentState, sheriff);
     setIsWaitingForAI(false);
 
-    if (targetSeat === 0) {
+    if (targetSeat === BADGE_TRANSFER_TORN) {
       // 撕毁警徽
       currentState = {
         ...currentState,
@@ -599,7 +600,7 @@ export function useBadgePhase(
 
     let currentState: GameState;
 
-    if (targetSeat === 0) {
+    if (targetSeat === BADGE_TRANSFER_TORN) {
       // 撕毁警徽
       currentState = {
         ...gameState,

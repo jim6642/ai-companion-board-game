@@ -328,7 +328,8 @@ export class DaySpeechPhase extends GamePhase {
 
       const sheriffSeat = speechState.badge.holderSeat;
       if (typeof sheriffSeat === "number" && aliveSeats.includes(sheriffSeat)) {
-        return sheriffSeat;
+        // Sheriff should speak last; start from the next alive seat after sheriff.
+        return getNextAliveSeat(speechState, sheriffSeat, true, "clockwise");
       }
       return aliveSeats[0];
     };
@@ -463,7 +464,18 @@ export class DaySpeechPhase extends GamePhase {
         nextSeat = getNextCandidateSeat();
       } else {
         const direction = state.speechDirection ?? "clockwise";
-        nextSeat = getNextAliveSeat(state, state.currentSpeakerSeat ?? -1, false, direction);
+        const sheriffSeat = state.badge.holderSeat;
+        const isSheriffAlive = typeof sheriffSeat === "number" && state.players.some((p) => p.seat === sheriffSeat && p.alive);
+
+        if (isDaySpeech && isSheriffAlive) {
+          nextSeat = getNextAliveSeat(state, state.currentSpeakerSeat ?? -1, true, direction);
+          // If we're about to loop back to the start, schedule sheriff as the final speaker.
+          if (nextSeat !== null && nextSeat === state.daySpeechStartSeat && state.currentSpeakerSeat !== sheriffSeat) {
+            nextSeat = sheriffSeat;
+          }
+        } else {
+          nextSeat = getNextAliveSeat(state, state.currentSpeakerSeat ?? -1, false, direction);
+        }
       }
 
       const startSeat = state.daySpeechStartSeat;
