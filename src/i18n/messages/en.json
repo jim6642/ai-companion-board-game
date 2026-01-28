@@ -880,14 +880,14 @@
       },
       "base": "【Identity】\nYou are Seat {seat} \"{name}\"\nRole: {role}\n\n【Scenario】\nThis is an online Werewolf game. Players communicate by text.\n\n{winCondition}\n\n{persona}\n\n{difficultyHint}",
       "task": {
-        "lastWords": "You have been eliminated. Deliver your final words.",
+        "lastWords": "You've been eliminated. Deliver your last words.\n【Identity Check】You are Seat #{seat} ({name}). Do not confuse your seat number.",
         "campaign": "Sheriff campaign speech. Deliver your campaign statement.",
         "dayDiscussion": "Day discussion. Share your view.",
         "section": "【Task】\n{taskLine}{campaignRequirements}"
       },
       "guidelines": {
-        "genshin": "【Speaking rules】\n1. Base judgments on current state and rules. Don't invent personas or catchphrases.\n2. Keep it concise and explain your intent for this round.\n3. Keep it around 4-6 sentences total; 1-2 sentences per message bubble.\n4. Only mention valid seats: 1-{totalSeats} (no @12 or out-of-range numbers).\n5. Only discuss living players; avoid postmortems.\n\n【Output format】\nReturn a JSON string array, each element a message bubble.\nExample:\n[\"I'm leaning toward Seat 3's details.\", \"I'll focus my vote between 2 and 3 today.\"]",
-        "default": "【Core principles】\n1. **Immersive roleplay**: You are {playerName}. Fully adopt the character's personality and speaking habits.\n2. **Distinct personality**: If you're hot-headed, be impatient; if you're clumsy, be a bit scattered. Don't turn into a logic robot.\n3. **In-game focus**: Base speech on this game's info (speeches, stances, votes, night results). Avoid outside storylines.\n4. **Natural chat**: Speak like a real person in group chat—short lines, hesitations, emotions. Don't write a report.\n5. **Targeted interaction**: React to previous speakers' opinions and attitudes.\n6. **Only living players**: Avoid discussing eliminated players; focus on current speakers and votes.\n\n【Speaking guide】\n- Casual phrasing is fine, but don't overdo fillers.\n- Persona shows in tone and wording, not backstory.\n- Keep it around 4-6 sentences total; 1-2 sentences per message bubble.\n- Refer to others as \"Seat X\" when possible.\n- Only mention valid seats: 1-{totalSeats} (no @12 or out-of-range numbers).\n- No stage directions (e.g., *pushes glasses*). Output only speech.\n- Split into 2-5 natural message bubbles of varying length.\n{roleHintLine}\n\n【Output format】\nReturn a JSON string array, each element a message bubble.\nExample:\n[\"Hey...\", \"Seat 3, your logic feels off.\", \"Feels like you're forcing it.\"]"
+        "genshin": "【Speaking rules】\n1. Base judgments on current state and rules. Don't invent personas or catchphrases.\n2. Keep it concise and explain your intent for this round.\n3. Keep it around 4-6 sentences total; 1-2 sentences per message bubble.\n4. Only discuss living players; avoid postmortems.\n\n【Output format】\nReturn a JSON string array, each element a message bubble.",
+        "default": "【Core principles】\n1. **Immersive roleplay**: You are {playerName}. Fully adopt the character's personality and speaking habits.\n2. **In-game focus**: Base speech on this game's info (speeches, stances, votes, night results). Avoid outside storylines.\n3. **Only living players**: Avoid discussing eliminated players; focus on current speakers and votes.\n\n【Speaking guide】\n- Casual phrasing is fine, but don't overdo fillers.\n- Persona shows in tone and wording, not backstory.\n- Keep it around 4-6 sentences total; 1-2 sentences per message bubble.\n- Refer to others as \"Seat X\" when possible.\n- No stage directions (e.g., *pushes glasses*). Output only speech.\n- Split into 2-5 natural message bubbles of varying length.\n{roleHintLine}\n\n【Output format】\nReturn a JSON string array, each element a message bubble."
       },
       "phaseHint": {
         "badge": "You are delivering a sheriff campaign speech. Follow campaign requirements strictly.",
@@ -904,7 +904,7 @@
         "seer": "Hint: decide based on your check result"
       },
       "base": "【Identity】\nYou are Seat {seat} \"{name}\"\nRole: {role}\n\n{winCondition}\n\n{difficultyHint}",
-      "task": "【Task】\nVoting phase: choose a player to execute.\nStay consistent with your speech today.\nDo not rely only on the last speaker or recent lines; consider the full-day context.\nOnly output the seat number. No analysis or roleplay.\n\nOptions: {options}\n\n{roleHints}",
+      "task": "【Task】\nVoting phase: choose one player to eliminate.\nStay consistent with your speech today.\nDo not rely only on the last speaker or recent lines; consider the full day's record and overall stance.\nOnly output a seat number. No analysis or roleplay.\n\n【Critical Thinking】\nDo NOT blindly follow the sheriff or early speakers' vote calls.\nAsk yourself: Does the targeted player truly show wolf tells? Or are they just emotional or being scapegoated?\nIf you lack evidence, consider voting for players who spoke vaguely, lurked, or flip-flopped.\nMaintain your independent judgment—do not bandwagon.\n\nOptions: {options}\n\n{roleHints}",
       "option": "Seat {seat} ({name})",
       "userNoTranscript": "(None)",
       "userNoSelfSpeech": "(You didn't speak today)",
@@ -956,7 +956,10 @@
         "base": "【Identity】\nYou are Seat {seat} \"{name}\"\nRole: {role}\n\n{winCondition}\n\n{persona}\n\n{difficultyHint}",
         "task": "【Task】\nThis is the sheriff signup phase. Decide whether to run for sheriff based on the current situation.\nGood team: Running gives you leadership and vote control, but may expose you.\nWolf team: Running lets you control the pace, but makes you a target.\n\n【Signup principle】If you have no important info to share, or cannot convince others or lead, prefer not to sign up (0).\n\n【Output format】\nOnly output a single digit: 1 to sign up, 0 to skip\nNo explanations, no extra text, no code blocks",
         "user": "{context}\n\n【Today's discussion】\n{todayTranscript}\n\nDo you want to run for sheriff?",
-        "noTranscript": "(None)"
+        "noTranscript": "(None)",
+        "wolfTacticJump": "【Special Tactic Order】\nYour strategy this game: Fake-claim Seer and fight for the badge.\nThe wolf team needs to create chaos and seize control. You are the designated fake-claimer.\nYou MUST sign up (1). When you speak, pretend to be the real Seer.",
+        "wolfTacticSupport": "【Tactic Order】\nYour teammate (Seat {seat}) may fake-claim Seer this game.\nObserve the situation. Do NOT sign up this round—stay low and prepare to support or counter-push.\nChoose not to sign up (0).",
+        "wolfTacticObserve": "【Tactic Order】\nObserve the situation this game. No need to rush for the badge.\nChoose not to sign up (0)."
       },
       "election": {
         "base": "【Identity】\nYou are Seat {seat} \"{name}\"\nRole: {role}\n\n{winCondition}\n\n{difficultyHint}",
@@ -1427,10 +1430,10 @@
     "roleKnowHow": {
       "werewolf": "<role_tips>\n【When to claim / hard-claim】\n- Consider claiming when info roles are unclear, the real seer isn't confirmed, or the badge fight is critical\n- If the real seer is strong and credible, a hard-claim can split the table but only if you can survive scrutiny\n- If teammates are collapsing or the vote is doomed, a claim can create new conflicts and buy time\n\n【Strategy library (optional)】\n- Hard-claim seer: keep checks and badge flow consistent; avoid \"wolf-omniscient\" reasoning\n- Soft claim or strong villager posture: lead with logic and vote guidance instead of a direct claim\n- Mix pressure and stability across the team; avoid synchronized pushes\n- Scatter wolf votes to reduce exposure\n\n【Self-check】\n- Your check reasons/badge flow should look like a blind good player's choices\n- Don't eliminate too many players too early or build perfect, overfitted logic\n- Avoid syncing timing and stances with teammates too closely\n</role_tips>",
       "seer": "<role_tips>\n- Reveal timing: if first check is wolf, consider revealing day 1 to lead; if good, observe first\n- Report order: report wolves before good players for higher info value\n- First check strategy: check edge seats or suspicious speakers; avoid obvious good players\n- Counter-claim: ask opponent to report first; check if their logic is sound\n- Self-protection: you're the top wolf target; hint for guard protection\n- Last words prep: if you feel death coming, prepare your check report\n- Death info: if someone died at night, react to the cause in your speech\n</role_tips>",
-      "witch": "<role_tips>\n- First night potion: usually don't save night 1 unless the target is clearly a key role\n- Antidote rule: save confirmed good or key roles; don't save unknown identities\n- Poison timing: save for confirmed wolves; don't poison impulsively\n- Info hiding: don't easily reveal your potion usage; it's valuable info\n- Self-save rule: you can self-save; use this to your advantage\n- Stance value: you know who was knifed; this is a key clue for wolf reads\n- Death info: if someone died at night, react to the cause in your speech\n</role_tips>",
-      "hunter": "<role_tips>\n- Shoot timing: on death, shoot a confirmed wolf\n- Fake identity: you can bait with fake claims, but don't reveal too early\n- Poison rule: if poisoned by witch, you cannot shoot; note this limit\n- Last words value: if voted out, you can shoot after last words\n- Deterrence: wolves know you're hunter and will hesitate; use this\n- Survival awareness: your shot is valuable; try to live to a key moment\n- Death info: if someone died at night, react to the cause in your speech\n</role_tips>",
-      "guard": "<role_tips>\n- Protection priority: Seer > Witch > other key roles > key good players\n- Consecutive protection: cannot protect the same player two nights in a row; plan ahead\n- Read the knife: judge who wolves will knife tonight based on the situation\n- Empty knife judgment: if your target didn't die, wolves may have knifed someone else\n- Info hiding: don't easily reveal who you protected; it's valuable info\n- Coordinate with seer: if seer revealed, prioritize protecting them\n- Death info: if someone died at night, react to the cause in your speech\n</role_tips>",
-      "villager": "<role_tips>\n- Listening: listen for contradictions and tells\n- Stance timing: don't pick a side too early; wait for enough info\n- Vote coordination: follow key roles' vote calls to form majority\n- Speech value: speak up and share your reads\n- Vote carefully: don't vote without evidence\n- Situation awareness: keep track of alive roles and counts\n- Death info: if someone died at night, react to the cause in your speech\n</role_tips>"
+      "witch": "<role_tips>\n- First night: usually don't save (unless the target is a confirmed claimed Seer)\n- Heal strategy: From night 2 onward, if a likely-good player is knifed (even a Villager), USE the heal\n- Poison timing: save it for confirmed wolves or highly suspicious fake-claimers\n- Self-save: you cannot self-save; if knifed, you die\n- Stance value: you know who was knifed; use this to read wolves\n- Death info: if someone died at night, react to the cause in your speech\n</role_tips>",
+      "hunter": "<role_tips>\n- Shoot timing: on death, shoot a confirmed wolf\n- Poison rule: if poisoned by witch, you cannot shoot; note this limit\n- Last words value: if voted out, you can shoot after last words\n- Death info: if someone died at night, react to the cause in your speech\n</role_tips>",
+      "guard": "<role_tips>\n- Protection priority: Seer > Witch > other key roles > key good players\n- Consecutive protection: cannot protect the same player two nights in a row; plan ahead\n- Read the knife: judge who wolves will knife tonight based on the situation\n- Coordinate with seer: if seer revealed, prioritize protecting them\n- Death info: if someone died at night, react to the cause in your speech\n</role_tips>",
+      "villager": "<role_tips>\n- Listening: listen for contradictions and tells\n- Independent thinking: don't blindly follow sheriff or early speakers; form your own judgment\n- Challenge spirit: if you think the vote target is wrong, speak up with your opinion\n- Speech value: speak up and share your independent perspective\n- Situation awareness: keep track of alive roles and counts\n- Death info: if someone died at night, react to the cause in your speech\n</role_tips>"
     },
     "difficultySpeech": {
       "easy": "【Difficulty】Beginner (relaxed, intuitive)\n【Style】\n- Rely on intuition and emotion; avoid complex chains\n- More likely to trust others or follow the majority\n- Werewolf: play safely; avoid advanced tactics; small slips allowed\n- Good: follow info roles more; fewer hard pushes",
@@ -1501,6 +1504,8 @@
       "eliminated": " (eliminated)",
       "lastWordsLabel": "【Last words】",
       "bannedDiscussion": "Do not discuss eliminated players",
+      "focusReminder": "Focus on living players. You may reference death causes for reasoning, but avoid over-analyzing eliminated players",
+      "timeReminder": "【Current Time】Day {day} {phase}. You are Seat #{seat} ({name})",
       "wolfFriendlyFireNote": "Rule note: werewolf kills may target teammates or self (self-kill allowed); keep this in mind.",
       "deathCauseWolf": "wolf kill",
       "deathCausePoison": "poisoned",
@@ -1515,7 +1520,15 @@
       "tie": "tie",
       "seerResultWolf": "wolf",
       "seerResultGood": "good",
-      "semicolon": "; "
+      "semicolon": "; ",
+      "guardMemoryTitle": "【Last Night Recap】",
+      "guardLastNightAction": "You protected #{seat} {name} last night.",
+      "guardProtectionSuccess": "Your protection worked—#{seat} {name} is still alive today.",
+      "guardProtectionFailed": "Unfortunately, #{seat} {name} has been eliminated (possibly poisoned or other causes).",
+      "guardConstraintTitle": "【Rule Constraint】",
+      "guardCannotProtect": "Because you protected #{seat} last night, you CANNOT protect #{seat} {name} again tonight.",
+      "guardFirstNight": "This is your first action—you haven't protected anyone before.",
+      "guardNoConstraint": "No constraint—you may protect any living player."
     }
   },
   "devConsole": {
@@ -1702,7 +1715,7 @@
     "invalidSeat": "(invalid seat)",
     "tooManyRequests": "Too many requests, please try again later.",
     "badgeSignup": {
-      "systemPrompt": "Werewolf game assistant. Decide if each player runs for sheriff based on their role, personality, and any night-action context. Use your judgment.\n\nIMPORTANT: Return ONLY simple JSON:\n{\"seat_number\": true or false, ...}\n\nExample: {\"2\": true, \"3\": false, \"4\": true}\n\nNo other fields (no player_name, reason, etc). Only seat numbers and booleans.",
+      "systemPrompt": "Werewolf game assistant. Decide if each player runs for sheriff based on their role, personality, and any night-action context.\n\n【Signup Strategy Guide】\n- Seer: If first check found wolf, should signup and claim seer; if found villager, can lurk or signup\n- Witch/Hunter/Guard: Usually don't need to claim role on day 1\n- Villager: Can signup for more speaking power, but not required\n- Werewolf: 【IMPORTANT】At least 1 wolf MUST signup to fake-claim seer and cause confusion! If no good seer claims, wolves should rush to signup first\n\n【Balance Requirements】\n- Normally 2-4 players should signup\n- If only 1 person signs up, game is boring - consider more participants\n\nIMPORTANT: Return ONLY simple JSON:\n{\"seat_number\": true or false, ...}\n\nExample: {\"2\": true, \"3\": false, \"4\": true}\n\nNo other fields (no player_name, reason, etc). Only seat numbers and booleans.",
       "userPrompt": "Players:\n{playerDescriptions}\n\nSeats: {seatList}\n\nReturn only JSON: {\"seat\": true/false, ...}",
       "playerDesc": "- Seat {seat} {name} ({role}): {personality}",
       "nightActionSuffix": ". Last night action: {action}",

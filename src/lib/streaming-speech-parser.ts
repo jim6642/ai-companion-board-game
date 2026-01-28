@@ -169,7 +169,9 @@ export class StreamingSpeechParser {
               const parsed = JSON.parse('"' + currentString + '"');
               if (typeof parsed === "string") {
                 const cleaned = parsed.trim();
-                if (arrayDepth > 0 && cleaned && cleaned.length > 5) {
+                // 过滤掉常见的 JSON 键名，只保留实际内容
+                const commonKeys = new Set(["message", "content", "text", "value", "speech", "speaker", "role", "type", "index", "id"]);
+                if (arrayDepth > 0 && cleaned && cleaned.length > 5 && !commonKeys.has(cleaned.toLowerCase())) {
                   validSegments.push(cleaned);
                 }
               }
@@ -240,10 +242,24 @@ export class StreamingSpeechParser {
       const parsed = parser.parse(cleaned);
 
       if (Array.isArray(parsed)) {
-        return parsed
-          .filter((item): item is string => typeof item === "string")
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0);
+        const segments: string[] = [];
+        for (const item of parsed) {
+          if (typeof item === "string") {
+            // 情况1: ["话1", "话2"] - 字符串数组
+            const cleaned = item.trim();
+            if (cleaned) segments.push(cleaned);
+          } else if (item && typeof item === "object") {
+            // 情况2: [{"speaker": "...", "message": "..."}] - 对象数组
+            // 优先提取 content, message, text, value 等常见字段
+            const obj = item as Record<string, unknown>;
+            const text = obj.content || obj.message || obj.text || obj.value || obj.speech;
+            if (typeof text === "string") {
+              const cleaned = text.trim();
+              if (cleaned) segments.push(cleaned);
+            }
+          }
+        }
+        return segments.length > 0 ? segments : null;
       }
 
       // 如果是对象，尝试提取值

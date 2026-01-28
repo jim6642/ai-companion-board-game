@@ -287,6 +287,10 @@ export function useDayPhase(
             return;
           }
 
+          // Deduplication: skip if segment already collected
+          if (streamingSegmentsRef.current.includes(segment)) {
+            return;
+          }
           streamingSegmentsRef.current.push(segment);
 
           // 第一个段落到达时，立即显示

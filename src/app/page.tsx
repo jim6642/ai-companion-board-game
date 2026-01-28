@@ -50,6 +50,7 @@ import { SettingsModal } from "@/components/game/SettingsModal";
 
 import { buildSimpleAvatarUrl, getModelLogoUrl } from "@/lib/avatar-config";
 import { audioManager, makeAudioTaskId } from "@/lib/audio-manager";
+import { getNarratorPlayer } from "@/lib/narrator-audio-player";
 import { resolveVoiceId, type AppLocale } from "@/lib/voice-constants";
 import { getLocale } from "@/i18n/locale-store";
 import { useSettings } from "@/hooks/useSettings";
@@ -490,6 +491,12 @@ export default function Home() {
   useEffect(() => {
     audioManager.setEnabled(shouldUseAiVoice);
   }, [shouldUseAiVoice]);
+
+  useEffect(() => {
+    const narratorPlayer = getNarratorPlayer();
+    narratorPlayer.setVolume(bgmVolume);
+    narratorPlayer.setEnabled(isSoundEnabled && bgmVolume > 0);
+  }, [bgmVolume, isSoundEnabled]);
 
   // UI 状态
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);

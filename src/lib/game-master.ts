@@ -306,16 +306,38 @@ export function addPlayerMessage(
   const player = state.players.find((p) => p.playerId === playerId);
   if (!player) return state;
 
-  if (content.trim().length === 0) return state;
+  const trimmedContent = content.trim();
+  if (trimmedContent.length === 0) return state;
 
   // Auto-detect last words phase or use explicit flag
   const isLastWords = options?.isLastWords ?? state.phase === "DAY_LAST_WORDS";
+
+  // Deduplication: prevent adding identical message from same player in same day/phase
+  // Check recent messages (last 20) to avoid O(n) scan on large message arrays
+  const recentMessages = state.messages.slice(-20);
+  const isDuplicate = recentMessages.some(
+    (m) =>
+      m.playerId === playerId &&
+      m.day === state.day &&
+      m.phase === state.phase &&
+      m.content === trimmedContent &&
+      (isLastWords ? m.isLastWords === true : !m.isLastWords)
+  );
+  if (isDuplicate) {
+    console.warn("[wolfcha] addPlayerMessage: duplicate message blocked", {
+      playerId,
+      day: state.day,
+      phase: state.phase,
+      contentPreview: trimmedContent.slice(0, 50),
+    });
+    return state;
+  }
 
   const message: ChatMessage = {
     id: uuidv4(),
     playerId,
     playerName: player.displayName,
-    content,
+    content: trimmedContent,
     timestamp: Date.now(),
     day: state.day,
     phase: state.phase,
@@ -730,12 +752,25 @@ export async function generateAISpeechSegments(
     try {
       const jsonMatch = sanitizedSpeech.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
-        const segments = JSON.parse(jsonMatch[0]) as string[];
+        const segments = JSON.parse(jsonMatch[0]) as unknown[];
         if (Array.isArray(segments) && segments.length > 0) {
-          const normalized = segments
-            .filter((s) => typeof s === "string")
-            .map((s) => s.trim().replace(/^["']+|["']+$/g, ""))
-            .filter((s) => s.trim().length > 0);
+          const normalized: string[] = [];
+          for (const item of segments) {
+            if (typeof item === "string") {
+              // 情况1: ["话1", "话2"] - 字符串数组
+              const cleaned = item.trim().replace(/^["']+|["']+$/g, "");
+              if (cleaned) normalized.push(cleaned);
+            } else if (item && typeof item === "object") {
+              // 情况2: [{"speaker": "...", "message": "..."}] - 对象数组
+              // 优先提取 content, message, text, value 等常见字段
+              const obj = item as Record<string, unknown>;
+              const text = obj.content || obj.message || obj.text || obj.value || obj.speech;
+              if (typeof text === "string") {
+                const cleaned = text.trim();
+                if (cleaned) normalized.push(cleaned);
+              }
+            }
+          }
 
           if (normalized.length > 0) {
             return normalized;
@@ -812,10 +847,17 @@ export async function generateAISpeechSegmentsStream(
   const startTime = Date.now();
   const { messages } = buildMessagesForPrompt(prompt);
 
+  // Track segments already emitted via streaming to prevent double-emit in fallback
+  const emittedSegments = new Set<string>();
+  let emittedCount = 0;
+
   const parser = new StreamingSpeechParser({
     onSegmentReceived: (segment, index) => {
       const sanitized = sanitizeSeatMentions(segment, state.players.length);
-      options.onSegmentReceived?.(sanitized, index);
+      if (!emittedSegments.has(sanitized)) {
+        emittedSegments.add(sanitized);
+        options.onSegmentReceived?.(sanitized, emittedCount++);
+      }
     },
     onProgress: options.onProgress,
     onError: options.onError,
@@ -842,13 +884,14 @@ export async function generateAISpeechSegmentsStream(
       }
     }
     
-    console.log(`[streaming] done. total chunks: ${chunkCount}, segments emitted: ${parser.getSegmentCount()}`);
+    console.log(`[streaming] done. total chunks: ${chunkCount}, segments emitted: ${parser.getSegmentCount()}, unique emitted: ${emittedSegments.size}`);
 
     // 结束解析
     const segments = parser.end();
 
     // 如果流式解析没有产生结果，回退到传统解析
-    if (segments.length === 0) {
+    // 注意：只有当 emittedSegments 也为空时才进行回退，避免重复发射
+    if (segments.length === 0 && emittedSegments.size === 0) {
       const cleanedSpeech = stripMarkdownCodeFences(accumulatedContent);
       const sanitizedSpeech = sanitizeSeatMentions(cleanedSpeech, state.players.length);
 
@@ -856,17 +899,32 @@ export async function generateAISpeechSegmentsStream(
       const jsonMatch = sanitizedSpeech.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         try {
-          const parsed = JSON.parse(jsonMatch[0]) as string[];
+          const parsed = JSON.parse(jsonMatch[0]) as unknown[];
           if (Array.isArray(parsed) && parsed.length > 0) {
-            const normalized = parsed
-              .filter((s) => typeof s === "string")
-              .map((s) => s.trim().replace(/^["']+|["']+$/g, ""))
-              .filter((s) => s.trim().length > 0);
+            const normalized: string[] = [];
+            for (const item of parsed) {
+              if (typeof item === "string") {
+                // 情况1: ["话1", "话2"] - 字符串数组
+                const cleaned = item.trim().replace(/^["']+|["']+$/g, "");
+                if (cleaned) normalized.push(cleaned);
+              } else if (item && typeof item === "object") {
+                // 情况2: [{"speaker": "...", "message": "..."}] - 对象数组
+                const obj = item as Record<string, unknown>;
+                const text = obj.content || obj.message || obj.text || obj.value || obj.speech;
+                if (typeof text === "string") {
+                  const cleaned = text.trim();
+                  if (cleaned) normalized.push(cleaned);
+                }
+              }
+            }
 
             if (normalized.length > 0) {
-              // 通知回退解析的结果
-              normalized.forEach((seg, i) => {
-                options.onSegmentReceived?.(seg, i);
+              // 通知回退解析的结果（只发射未发射过的）
+              normalized.forEach((seg) => {
+                if (!emittedSegments.has(seg)) {
+                  emittedSegments.add(seg);
+                  options.onSegmentReceived?.(seg, emittedCount++);
+                }
               });
               options.onComplete?.(normalized);
               return normalized;
@@ -885,8 +943,11 @@ export async function generateAISpeechSegmentsStream(
         .filter((s) => s.length > 2);
 
       if (fallbackSegments.length > 0) {
-        fallbackSegments.forEach((seg, i) => {
-          options.onSegmentReceived?.(seg, i);
+        fallbackSegments.forEach((seg) => {
+          if (!emittedSegments.has(seg)) {
+            emittedSegments.add(seg);
+            options.onSegmentReceived?.(seg, emittedCount++);
+          }
         });
         options.onComplete?.(fallbackSegments);
         return fallbackSegments;
@@ -899,11 +960,21 @@ export async function generateAISpeechSegmentsStream(
         .trim();
 
       const result = cleanedSingle.length > 0 ? [cleanedSingle] : ["（……）"];
-      result.forEach((seg, i) => {
-        options.onSegmentReceived?.(seg, i);
+      result.forEach((seg) => {
+        if (!emittedSegments.has(seg)) {
+          emittedSegments.add(seg);
+          options.onSegmentReceived?.(seg, emittedCount++);
+        }
       });
       options.onComplete?.(result);
       return result;
+    }
+    
+    // 如果流式已经发射了 segments 但 parser.end() 返回空，使用已发射的
+    if (segments.length === 0 && emittedSegments.size > 0) {
+      const emittedList = Array.from(emittedSegments);
+      options.onComplete?.(emittedList);
+      return emittedList;
     }
 
     // Sanitize all segments

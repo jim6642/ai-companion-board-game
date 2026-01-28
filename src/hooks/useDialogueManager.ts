@@ -184,6 +184,12 @@ export function useDialogueManager() {
     const trimmed = segment.trim();
     if (!trimmed) return;
 
+    // Deduplication: prevent adding the same segment twice
+    // This can happen due to streaming parser edge cases
+    if (queue.segments.includes(trimmed)) {
+      return;
+    }
+
     // 在添加新段落前检查是否在等待下一段
     // 如果 currentIndex 指向当前最后一个段落，说明用户在等待
     const isFirstSegment = queue.segments.length === 0;

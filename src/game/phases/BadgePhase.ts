@@ -106,6 +106,28 @@ export class BadgePhase extends GamePhase {
     const todayTranscript = buildTodayTranscript(state, 1500);
 
     const { t } = getI18n();
+    
+    // 狼人动态指令注入：打破"纳什均衡"，强制分配悍跳位
+    let wolfTacticHint = "";
+    if (player.role === "Werewolf") {
+      const aliveWolves = state.players.filter((p) => p.role === "Werewolf" && p.alive);
+      // 使用 gameId + day 作为随机种子，确保同一局同一天选中同一个狼人
+      const seedHash = (state.gameId || "").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) + state.day;
+      const selectedWolfIndex = seedHash % aliveWolves.length;
+      const selectedWolf = aliveWolves[selectedWolfIndex];
+      
+      if (selectedWolf && selectedWolf.playerId === player.playerId) {
+        // 被选中的狼人：强制悍跳
+        wolfTacticHint = t("prompts.badge.signup.wolfTacticJump");
+      } else {
+        // 其他狼人：配合队友
+        const jumpWolfSeat = selectedWolf ? selectedWolf.seat + 1 : null;
+        wolfTacticHint = jumpWolfSeat 
+          ? t("prompts.badge.signup.wolfTacticSupport", { seat: jumpWolfSeat })
+          : t("prompts.badge.signup.wolfTacticObserve");
+      }
+    }
+    
     const cacheableContent = t("prompts.badge.signup.base", {
       seat: player.seat + 1,
       name: player.displayName,
@@ -118,6 +140,7 @@ export class BadgePhase extends GamePhase {
     const systemParts: SystemPromptPart[] = [
       { text: cacheableContent, cacheable: true, ttl: "1h" },
       { text: dynamicContent },
+      ...(wolfTacticHint ? [{ text: wolfTacticHint }] : []),
     ];
     const system = buildSystemTextFromParts(systemParts);
 

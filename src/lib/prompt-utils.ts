@@ -355,6 +355,8 @@ export const buildSystemAnnouncementsSinceDawn = (state: GameState, maxLines: nu
     .map((m) => String(m.content || "").trim())
     .filter((c) => {
       if (!c) return false;
+      // 过滤掉带有 0-based 索引的原始 JSON 数据，避免混淆 AI
+      if (c.startsWith("[VOTE_RESULT]")) return false;
       const systemMessages = getSystemMessages();
       // Filter out dawn and vote start messages in both locales
       const excluded = ["天亮了", "Dawn breaks, please open your eyes", systemMessages.dayBreak, "进入投票环节", "发言结束，开始投票。", "Discussion ends, voting begins.", systemMessages.voteStart];
@@ -396,9 +398,21 @@ export const buildGameContext = (
   const sheriffSeat = state.badge.holderSeat;
   const sheriffInfo = sheriffSeat !== null ? sheriffSeat + 1 : t("promptUtils.gameContext.noSheriff");
 
-  let context = `<game_state>
+  // 明确的时间和身份提示，放在最前面
+  const isNight = state.phase.includes("NIGHT");
+  const phaseText = isNight ? t("promptUtils.gameContext.night") : t("promptUtils.gameContext.day");
+  const timeReminder = t("promptUtils.gameContext.timeReminder", { 
+    day: state.day, 
+    phase: phaseText, 
+    seat: player.seat + 1, 
+    name: player.displayName 
+  });
+
+  let context = `<current_status>\n${timeReminder}\n</current_status>
+
+<game_state>
 day: ${state.day}
-phase: ${state.phase.includes("NIGHT") ? t("promptUtils.gameContext.night") : t("promptUtils.gameContext.day")}
+phase: ${phaseText}
 you: {seat: ${player.seat + 1}, name: ${player.displayName}}
 total_seats: ${totalSeats}
 alive: [${aliveSeats.join(", ")}]
@@ -470,8 +484,8 @@ alive_count: ${alivePlayers.length}
       }
     }
 
-    // Dead players warning
-    context += `\n\n<banned_discussion>${t("promptUtils.gameContext.bannedDiscussion")}: [${deadPlayers.map((p) => p.seat + 1).join(", ")}]</banned_discussion>`;
+    // Dead players note - softer guideline, allow referencing death causes but focus on alive players
+    context += `\n\n<focus_reminder>${t("promptUtils.gameContext.focusReminder")}</focus_reminder>`;
   }
 
   if (state.voteHistory && Object.keys(state.voteHistory).length > 0) {
@@ -573,9 +587,37 @@ alive_count: ${alivePlayers.length}
     context += `\n</your_potions>`;
   }
 
-  if (player.role === "Guard" && state.nightActions.lastGuardTarget !== undefined) {
-    const lastTarget = state.players.find((p) => p.seat === state.nightActions.lastGuardTarget);
-    context += `\n\n<your_guard>\nlast_protected: ${t("promptUtils.gameContext.seatLabel", { seat: state.nightActions.lastGuardTarget + 1 })}${lastTarget?.displayName || ''}\nnote: ${t("promptUtils.gameContext.guardLast", { seat: state.nightActions.lastGuardTarget + 1, name: lastTarget?.displayName || '' }).split("】")[1] || ''}\n</your_guard>`;
+  if (player.role === "Guard") {
+    const lastTarget = state.nightActions.lastGuardTarget !== undefined 
+      ? state.players.find((p) => p.seat === state.nightActions.lastGuardTarget)
+      : null;
+    const guardedSeat = state.nightActions.lastGuardTarget;
+    
+    // 叙事化呈现守卫信息，区分"回忆"和"限制"
+    let guardMemory = "";
+    if (guardedSeat !== undefined && lastTarget) {
+      // 检查昨晚守护是否成功（被守护的人是否存活）
+      const wasProtectionEffective = lastTarget.alive;
+      const protectionResult = wasProtectionEffective 
+        ? t("promptUtils.gameContext.guardProtectionSuccess", { seat: guardedSeat + 1, name: lastTarget.displayName })
+        : t("promptUtils.gameContext.guardProtectionFailed", { seat: guardedSeat + 1, name: lastTarget.displayName });
+      
+      guardMemory = `<night_memory>
+${t("promptUtils.gameContext.guardMemoryTitle")}
+${t("promptUtils.gameContext.guardLastNightAction", { seat: guardedSeat + 1, name: lastTarget.displayName })}
+${protectionResult}
+${t("promptUtils.gameContext.guardConstraintTitle")}
+${t("promptUtils.gameContext.guardCannotProtect", { seat: guardedSeat + 1, name: lastTarget.displayName })}
+</night_memory>`;
+    } else {
+      guardMemory = `<night_memory>
+${t("promptUtils.gameContext.guardMemoryTitle")}
+${t("promptUtils.gameContext.guardFirstNight")}
+${t("promptUtils.gameContext.guardConstraintTitle")}
+${t("promptUtils.gameContext.guardNoConstraint")}
+</night_memory>`;
+    }
+    context += `\n\n${guardMemory}`;
   }
 
   if (player.role === "Werewolf") {
@@ -587,17 +629,10 @@ alive_count: ${alivePlayers.length}
     context += `\n\n<wolf_team>\nalive_teammates: [${teammates.map((tm) => `${t("promptUtils.gameContext.seatLabel", { seat: tm.seat + 1 })}${tm.displayName}`).join(", ")}]\nwolf_count: {total: ${allWolves.length}, alive: ${aliveWolves.length}}\n</wolf_team>`;
   }
 
-  const showCurrentVotes = state.phase === "DAY_VOTE" || state.phase === "DAY_RESOLVE";
-  const voteEntries = showCurrentVotes ? Object.entries(state.votes) : [];
-  if (voteEntries.length > 0) {
-    const voteLines = voteEntries
-      .map(([voterId, targetSeat]) => {
-        const voter = state.players.find((p) => p.playerId === voterId);
-        return `  - {voter: ${voter ? voter.seat + 1 : '?'}, target: ${targetSeat + 1}}`;
-      })
-      .join("\n");
-    context += `\n\n<current_votes>\n${voteLines}\n</current_votes>`;
-  }
+  // NOTE: We intentionally do NOT include <current_votes> during DAY_VOTE phase.
+  // Showing real-time votes to later voters causes a "bandwagon effect" where
+  // AI players follow earlier votes instead of making independent decisions
+  // based on their own analysis and speeches.
 
   return context;
 };
