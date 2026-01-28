@@ -51,10 +51,6 @@ export interface AILogEntry {
 class AILogger {
   private localCache: AILogEntry[] | null = null;
 
-  private isProduction(): boolean {
-    return process.env.NODE_ENV === "production";
-  }
-
   private shouldPrint(): boolean {
     return process.env.NODE_ENV !== "production";
   }
@@ -113,24 +109,8 @@ class AILogger {
 
     this.printToConsole(fullEntry);
     this.appendLocal(fullEntry);
-    await this.saveToServer(fullEntry);
 
     return fullEntry;
-  }
-
-  private async saveToServer(entry: AILogEntry) {
-    if (this.isProduction()) return;
-    try {
-      await fetch("/api/ai-log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(entry),
-      });
-    } catch (e) {
-      if (this.shouldPrint()) {
-        console.error("Failed to save AI log to server:", e);
-      }
-    }
   }
 
   private printToConsole(entry: AILogEntry) {
@@ -178,23 +158,7 @@ class AILogger {
   }
 
   async getLogs(): Promise<AILogEntry[]> {
-    // 生产环境直接使用 localStorage（服务端不存储）
-    if (process.env.NODE_ENV === "production") {
-      return this.loadLocalLogs();
-    }
-    
-    try {
-      const res = await fetch("/api/ai-log");
-      const data = await res.json();
-      const serverLogs = Array.isArray(data?.logs) ? (data.logs as AILogEntry[]) : [];
-      if (serverLogs.length > 0) return serverLogs;
-      return this.loadLocalLogs();
-    } catch (e) {
-      if (this.shouldPrint()) {
-        console.error("Failed to get AI logs:", e);
-      }
-      return this.loadLocalLogs();
-    }
+    return this.loadLocalLogs();
   }
 
   async clearLogs() {
@@ -206,15 +170,6 @@ class AILogger {
       }
     }
     this.localCache = [];
-
-    if (this.isProduction()) return;
-    try {
-      await fetch("/api/ai-log", { method: "DELETE" });
-    } catch (e) {
-      if (this.shouldPrint()) {
-        console.error("Failed to clear AI logs:", e);
-      }
-    }
   }
 }
 
