@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { CustomCharacter, CustomCharacterInput } from "@/types/custom-character";
-import { MAX_CUSTOM_CHARACTERS } from "@/types/custom-character";
+import { DEFAULT_CUSTOM_CHARACTER_AGE, DEFAULT_CUSTOM_CHARACTER_GENDER, MAX_CUSTOM_CHARACTERS } from "@/types/custom-character";
 import type { User } from "@supabase/supabase-js";
+import { fillCustomCharacterOptionalFields } from "@/lib/custom-character-defaults";
 
 export function useCustomCharacters(user: User | null) {
   const [characters, setCharacters] = useState<CustomCharacter[]>([]);
@@ -49,18 +50,19 @@ export function useCustomCharacters(user: User | null) {
     setError(null);
 
     try {
+      const normalizedInput = fillCustomCharacterOptionalFields(input);
       const avatarSeed = input.avatar_seed || `${input.display_name}-${Date.now()}`;
       
       const { data, error: insertError } = await supabase
         .from("custom_characters")
         .insert({
           user_id: user.id,
-          display_name: input.display_name.trim(),
-          gender: input.gender,
-          age: input.age,
-          mbti: input.mbti.toUpperCase(),
-          basic_info: input.basic_info?.trim() || null,
-          style_label: input.style_label?.trim() || null,
+          display_name: normalizedInput.display_name.trim(),
+          gender: normalizedInput.gender,
+          age: normalizedInput.age,
+          mbti: normalizedInput.mbti.toUpperCase(),
+          basic_info: normalizedInput.basic_info?.trim() || null,
+          style_label: normalizedInput.style_label?.trim() || null,
           avatar_seed: avatarSeed,
         } as never)
         .select()
@@ -90,13 +92,27 @@ export function useCustomCharacters(user: User | null) {
 
     try {
       const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+      const shouldNormalizeOptionalFields =
+        input.mbti !== undefined || input.basic_info !== undefined || input.style_label !== undefined;
+      const normalizedInput = shouldNormalizeOptionalFields
+        ? fillCustomCharacterOptionalFields({
+            display_name: input.display_name ?? "",
+            gender: (input.gender as CustomCharacterInput["gender"]) ?? DEFAULT_CUSTOM_CHARACTER_GENDER,
+            age: input.age ?? DEFAULT_CUSTOM_CHARACTER_AGE,
+            mbti: input.mbti ?? "",
+            basic_info: input.basic_info ?? "",
+            style_label: input.style_label ?? "",
+            avatar_seed: input.avatar_seed,
+          })
+        : null;
       
       if (input.display_name !== undefined) updateData.display_name = input.display_name.trim();
       if (input.gender !== undefined) updateData.gender = input.gender;
       if (input.age !== undefined) updateData.age = input.age;
-      if (input.mbti !== undefined) updateData.mbti = input.mbti.toUpperCase();
-      if (input.basic_info !== undefined) updateData.basic_info = input.basic_info?.trim() || null;
-      if (input.style_label !== undefined) updateData.style_label = input.style_label?.trim() || null;
+      if (input.mbti !== undefined) updateData.mbti = (normalizedInput?.mbti ?? input.mbti).toUpperCase();
+      if (input.basic_info !== undefined) updateData.basic_info = normalizedInput?.basic_info?.trim() || null;
+      if (input.style_label !== undefined) updateData.style_label = normalizedInput?.style_label?.trim() || null;
       if (input.avatar_seed !== undefined) updateData.avatar_seed = input.avatar_seed;
 
       const { data, error: updateError } = await supabase

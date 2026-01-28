@@ -319,16 +319,19 @@ export class DaySpeechPhase extends GamePhase {
       currentSheriffSeat !== null ? currentState.players.find((p) => p.seat === currentSheriffSeat) : null;
     const deadSheriff = sheriffPlayer && !sheriffPlayer.alive ? sheriffPlayer : null;
 
-    const resolveStartSeat = (speechState: GameState): number | null => {
+    const resolveStartSeat = (speechState: GameState, options?: { preferSheriff?: boolean }): number | null => {
       const aliveSeats = speechState.players
         .filter((p) => p.alive)
         .map((p) => p.seat)
         .sort((a, b) => a - b);
       if (aliveSeats.length === 0) return null;
 
-      const sheriffSeat = speechState.badge.holderSeat;
-      if (typeof sheriffSeat === "number" && aliveSeats.includes(sheriffSeat)) {
-        return sheriffSeat;
+      const preferSheriff = options?.preferSheriff !== false;
+      if (preferSheriff) {
+        const sheriffSeat = speechState.badge.holderSeat;
+        if (typeof sheriffSeat === "number" && aliveSeats.includes(sheriffSeat)) {
+          return sheriffSeat;
+        }
       }
       return aliveSeats[0];
     };
@@ -352,7 +355,7 @@ export class DaySpeechPhase extends GamePhase {
         await playNarrator("discussionStart");
 
         const alivePlayers = speechState.players.filter((p) => p.alive);
-        const startSeat = resolveStartSeat(speechState);
+        const startSeat = resolveStartSeat(speechState, { preferSheriff: false });
         const firstSpeaker =
           startSeat !== null ? alivePlayers.find((p) => p.seat === startSeat) || null : null;
         const speechDirection: "clockwise" = "clockwise";

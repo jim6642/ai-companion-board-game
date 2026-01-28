@@ -12,7 +12,7 @@ export const GAME_CONFIG = {
   /** 最大重投次数（投票/狼人出刀） */
   MAX_REVOTE_COUNT: 3,
   /** 警长竞选最大重投次数 */
-  MAX_BADGE_REVOTE_COUNT: 4,
+  MAX_BADGE_REVOTE_COUNT: 2,
 } as const;
 
 /** 延迟时间配置（毫秒） */

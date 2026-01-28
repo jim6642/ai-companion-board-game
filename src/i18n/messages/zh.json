@@ -987,6 +987,7 @@
   "badgePhase": {
     "voteDetailTitle": "警长竞选投票详情",
     "tiePk": "警徽平票，进入PK发言",
+    "tieTear": "警徽第二轮仍平票，警徽自动撕毁，本局没有警长",
     "signupStart": "进入警徽竞选报名环节",
     "noSignup": "无人报名竞选警长，跳过警徽竞选",
     "transferPrompt": "点击玩家卡片选择移交警徽的对象",

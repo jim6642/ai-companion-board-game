@@ -58,6 +58,13 @@ export function CustomCharacterModal({
     style_label: "",
     avatar_seed: "",
   });
+  const [ageInput, setAgeInput] = useState<string>(String(25));
+
+  const normalizeAgeInput = useCallback((raw: string): number => {
+    const parsed = Number.parseInt(String(raw ?? "").trim(), 10);
+    if (!Number.isFinite(parsed)) return FIELD_LIMITS.age.min;
+    return Math.min(FIELD_LIMITS.age.max, Math.max(FIELD_LIMITS.age.min, parsed));
+  }, []);
 
   const resetForm = useCallback(() => {
     setFormData({
@@ -69,6 +76,7 @@ export function CustomCharacterModal({
       style_label: "",
       avatar_seed: `custom-${Date.now()}`,
     });
+    setAgeInput(String(25));
   }, []);
 
   const handleCreate = useCallback(() => {
@@ -87,6 +95,7 @@ export function CustomCharacterModal({
       style_label: char.style_label || "",
       avatar_seed: char.avatar_seed || "",
     });
+    setAgeInput(String(char.age));
     setEditingCharacter(char);
     setView("edit");
   }, []);
@@ -103,20 +112,30 @@ export function CustomCharacterModal({
       return;
     }
 
-    if (view === "create") {
-      const result = await onCreateCharacter(formData);
-      if (result) {
-        toast.success(t("customCharacter.toast.createSuccess"));
-        handleBack();
-      }
-    } else if (view === "edit" && editingCharacter) {
-      const result = await onUpdateCharacter(editingCharacter.id, formData);
-      if (result) {
-        toast.success(t("customCharacter.toast.updateSuccess"));
-        handleBack();
-      }
+    const normalizedAge = normalizeAgeInput(ageInput);
+    if (String(normalizedAge) !== ageInput) {
+      setAgeInput(String(normalizedAge));
     }
-  }, [formData, view, editingCharacter, onCreateCharacter, onUpdateCharacter, handleBack, t]);
+    const payload: CustomCharacterInput = { ...formData, age: normalizedAge };
+
+    if (view === "create") {
+      const result = await onCreateCharacter(payload);
+      if (!result) {
+        toast.error(t("gameLogicMessages.requestFailed"));
+        return;
+      }
+      toast.success(t("customCharacter.toast.createSuccess"));
+      handleBack();
+    } else if (view === "edit" && editingCharacter) {
+      const result = await onUpdateCharacter(editingCharacter.id, payload);
+      if (!result) {
+        toast.error(t("gameLogicMessages.requestFailed"));
+        return;
+      }
+      toast.success(t("customCharacter.toast.updateSuccess"));
+      handleBack();
+    }
+  }, [formData, view, editingCharacter, onCreateCharacter, onUpdateCharacter, handleBack, t, ageInput, normalizeAgeInput]);
 
   const handleDelete = useCallback(async (id: string) => {
     const success = await onDeleteCharacter(id);
@@ -552,11 +571,15 @@ export function CustomCharacterModal({
                 </label>
                 <input
                   type="number"
-                  value={formData.age}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    age: Math.min(FIELD_LIMITS.age.max, Math.max(FIELD_LIMITS.age.min, parseInt(e.target.value) || FIELD_LIMITS.age.min))
-                  }))}
+                  value={ageInput}
+                  onChange={(e) => {
+                    setAgeInput(e.target.value);
+                  }}
+                  onBlur={() => {
+                    const normalizedAge = normalizeAgeInput(ageInput);
+                    setFormData((prev) => ({ ...prev, age: normalizedAge }));
+                    setAgeInput(String(normalizedAge));
+                  }}
                   min={FIELD_LIMITS.age.min}
                   max={FIELD_LIMITS.age.max}
                   className="w-full px-3 py-2 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--color-accent)]"

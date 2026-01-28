@@ -25,6 +25,9 @@ export interface CustomCharacterInput {
   avatar_seed?: string;
 }
 
+export const DEFAULT_CUSTOM_CHARACTER_GENDER: Gender = "male";
+export const DEFAULT_CUSTOM_CHARACTER_AGE = 25;
+
 export const MAX_CUSTOM_CHARACTERS = 20;
 
 export const MBTI_OPTIONS = [

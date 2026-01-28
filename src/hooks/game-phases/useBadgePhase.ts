@@ -195,24 +195,30 @@ export function useBadgePhase(
     if (topSeats.length !== 1) {
       const revoteCount = (state.badge.revoteCount || 0) + 1;
 
-      // 超过最大重投次数，随机选一个
+      // 第二轮仍平票：自动撕毁（本局无警长）
       if (revoteCount >= GAME_CONFIG.MAX_BADGE_REVOTE_COUNT) {
-        const winnerSeat = topSeats[Math.floor(Math.random() * topSeats.length)];
-        const winner = state.players.find((p) => p.seat === winnerSeat);
-        const votedCount = counts[winnerSeat] || 0;
+        // 添加投票详情
+        const badgeVoteDetailMessage = generateBadgeVoteDetails(state.badge.votes, state.players, state.badge.candidates || []);
+
+        const badgeTieTearMessage = texts.t("badgePhase.tieTear" as never);
 
         let nextState: GameState = {
           ...state,
           badge: {
             ...state.badge,
-            holderSeat: winnerSeat,
+            holderSeat: null,
+            votes: {},
+            candidates: [],
             revoteCount,
             history: { ...state.badge.history, [state.day]: { ...state.badge.votes } },
           },
         };
-        nextState = addSystemMessage(nextState, texts.systemMessages.badgeElected(winnerSeat + 1, winner?.displayName || "", votedCount));
+
+        nextState = addSystemMessage(nextState, badgeVoteDetailMessage);
+        nextState = addSystemMessage(nextState, badgeTieTearMessage);
+
         setGameState(nextState);
-        setDialogue(texts.speakerHost, texts.systemMessages.badgeElected(winnerSeat + 1, winner?.displayName || "", votedCount), false);
+        setDialogue(texts.speakerHost, badgeTieTearMessage, false);
 
         await delay(DELAY_CONFIG.DIALOGUE);
         isResolvingBadgeElectionRef.current = false;
