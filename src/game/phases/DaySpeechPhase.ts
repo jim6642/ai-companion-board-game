@@ -464,6 +464,31 @@ export class DaySpeechPhase extends GamePhase {
       };
 
       const isDaySpeech = state.phase === "DAY_SPEECH";
+      const sheriffSeat = state.badge.holderSeat;
+      const isSheriffAlive = typeof sheriffSeat === "number" && state.players.some((p) => p.seat === sheriffSeat && p.alive);
+
+      // FIX: If the current speaker is the sheriff in DAY_SPEECH, go to vote immediately
+      // Sheriff is always the last speaker, so after sheriff speaks, we should transition to vote
+      if (isDaySpeech && isSheriffAlive && state.currentSpeakerSeat === sheriffSeat) {
+        await runtime.onStartVote(state, runtime.token);
+        return;
+      }
+
+      // Build a set of players who have already spoken today (for DAY_SPEECH phase)
+      const getTodaySpeakers = (): Set<number> => {
+        const dayStartIndex = getDayStartIndex(state);
+        const spokenSeats = new Set<number>();
+        for (let i = dayStartIndex; i < state.messages.length; i++) {
+          const m = state.messages[i];
+          if (!m.isSystem && m.playerId) {
+            const player = state.players.find((p) => p.playerId === m.playerId);
+            if (player) {
+              spokenSeats.add(player.seat);
+            }
+          }
+        }
+        return spokenSeats;
+      };
 
       let nextSeat: number | null;
       if (state.phase === "DAY_PK_SPEECH") {
@@ -472,8 +497,6 @@ export class DaySpeechPhase extends GamePhase {
         nextSeat = getNextCandidateSeat();
       } else {
         const direction = state.speechDirection ?? "clockwise";
-        const sheriffSeat = state.badge.holderSeat;
-        const isSheriffAlive = typeof sheriffSeat === "number" && state.players.some((p) => p.seat === sheriffSeat && p.alive);
 
         if (isDaySpeech && isSheriffAlive) {
           nextSeat = getNextAliveSeat(state, state.currentSpeakerSeat ?? -1, true, direction);
@@ -512,6 +535,17 @@ export class DaySpeechPhase extends GamePhase {
         }
         await runtime.onStartVote(state, runtime.token);
         return;
+      }
+
+      // FIX: Prevent duplicate speeches - check if this player has already spoken today
+      if (isDaySpeech) {
+        const todaySpeakers = getTodaySpeakers();
+        if (todaySpeakers.has(nextSeat)) {
+          // This player has already spoken, go to vote
+          // This is a safeguard to prevent infinite loops
+          await runtime.onStartVote(state, runtime.token);
+          return;
+        }
       }
 
       const currentState = { ...state, currentSpeakerSeat: nextSeat };

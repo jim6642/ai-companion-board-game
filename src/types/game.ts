@@ -68,7 +68,7 @@ export interface ModelRef {
 }
 
 export interface Persona {
-  styleLabel: string;
+  styleLabel?: string;
   voiceRules: string[];
   mbti: string;
   gender: "male" | "female" | "nonbinary";

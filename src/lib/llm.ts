@@ -361,6 +361,7 @@ function parseJsonTolerant<T>(raw: string): T {
   }
 }
 
+
 export async function generateCompletion(
   options: GenerateOptions
 ): Promise<{ content: string; reasoning_details?: unknown; raw: ChatCompletionResponse }> {

@@ -10,6 +10,7 @@ import type { CustomCharacter, CustomCharacterInput } from "@/types/custom-chara
 import { MBTI_OPTIONS, GENDER_OPTIONS, FIELD_LIMITS, MAX_CUSTOM_CHARACTERS } from "@/types/custom-character";
 import { buildAvatarUrl } from "@/lib/avatar-config";
 import type { Gender } from "@/lib/character-generator";
+import { LLMJSONParser } from "ai-json-fixer";
 
 interface CustomCharacterModalProps {
   open: boolean;
@@ -59,6 +60,7 @@ export function CustomCharacterModal({
     avatar_seed: "",
   });
   const [ageInput, setAgeInput] = useState<string>(String(25));
+  const jsonParser = useMemo(() => new LLMJSONParser(), []);
 
   const normalizeAgeInput = useCallback((raw: string): number => {
     const parsed = Number.parseInt(String(raw ?? "").trim(), 10);
@@ -256,7 +258,20 @@ export function CustomCharacterModal({
   const parseImportText = useCallback((rawText: string): CustomCharacterInput[] | null => {
     const text = String(rawText ?? "").trim();
     if (!text) return null;
-    const parsed = JSON.parse(text) as unknown;
+    const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+    let parsed: unknown = null;
+    try {
+      parsed = jsonParser.parse(cleaned);
+    } catch {
+      return null;
+    }
+    if (typeof parsed === "string") {
+      try {
+        parsed = JSON.parse(parsed) as unknown;
+      } catch {
+        return null;
+      }
+    }
     const list = Array.isArray(parsed)
       ? parsed
       : parsed && typeof parsed === "object" && Array.isArray((parsed as { characters?: unknown[] }).characters)
@@ -269,7 +284,7 @@ export function CustomCharacterModal({
     return list
       .map((item, idx) => (item && typeof item === "object" ? normalizeImportedCharacter(item as Record<string, unknown>, idx) : null))
       .filter((item): item is CustomCharacterInput => !!item);
-  }, [normalizeImportedCharacter]);
+  }, [normalizeImportedCharacter, jsonParser]);
 
   const handleImportSubmit = useCallback(async () => {
     if (remainingSlots <= 0) {
@@ -329,13 +344,23 @@ export function CustomCharacterModal({
       "  - style_label: string（可为空，<=400 字，用于说话风格/口吻，例如“冷静、短句、少废话”）",
       "  - avatar_seed: string（可为空；如不填我会自动生成）",
       "",
+      "【示例 JSON】",
+      "{",
+      "  \"display_name\": \"张伟\",",
+      "  \"gender\": \"male\",",
+      "  \"age\": 35,",
+      "  \"mbti\": \"ESTJ\",",
+      "  \"basic_info\": \"开了十年出租车的老司机\",",
+      "  \"style_label\": \"冷静、短句、少废话\"",
+      "}",
+      "",
       "补充要求：这个角色要适合狼人杀对局发言（会分析、会站边、会投票），不要太中二。",
       "",
       "可选偏好（你可以自由发挥）：",
       "- 我希望角色偏好/关键词：{在这里写你想要的风格，比如：理性、强势归票、幽默但不油腻}",
       "- 我希望角色背景：{比如：产品经理/律师/老师/社恐程序员等}",
       "",
-      "现在请直接输出 1 个 JSON 对象。",
+      "现在请直接输出 1 个 JSON 对象（不要 Markdown 代码块，不要解释文字）。",
     ].join("\n");
   }, []);
 
@@ -678,6 +703,19 @@ export function CustomCharacterModal({
           <div className="text-xs text-[var(--text-muted)]">
             {t("customCharacter.import.hint", { count: remainingSlots })}
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={async () => {
+              const text = aiPromptDraft || defaultAiPromptText;
+              const ok = await copyToClipboard(text);
+              if (ok) toast.success(t("customCharacter.toast.copied"));
+              else toast.error(t("customCharacter.toast.copyFailed"));
+            }}
+            className="w-full text-xs"
+          >
+            {t("customCharacter.aiPrompt.copy")}
+          </Button>
         </div>
         <div className="flex gap-2 pt-2">
           <Button type="button" variant="outline" onClick={() => setIsImportOpen(false)} className="flex-1">

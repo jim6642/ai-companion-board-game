@@ -120,7 +120,8 @@ export function PlayerCardCompact({
   }), [t]);
   const getRoleLabel = (role: Role) => roleLabels[role] ?? t("roles.villager");
   const persona = player.agentProfile?.persona;
-  const styleLabel = isGenshinMode ? (isMe ? t("common.you") : "") : persona?.styleLabel || (isMe ? t("common.you") : "");
+  // Show basicInfo instead of styleLabel for richer context
+  const basicInfoLabel = isGenshinMode ? (isMe ? t("common.you") : "") : persona?.basicInfo || (isMe ? t("common.you") : "");
   const modelLabel = player.agentProfile?.modelRef?.model;
 
   const isModelAvatar = isGenshinMode && !player.isHuman;
@@ -373,16 +374,18 @@ export function PlayerCardCompact({
         )}
 
         <div className="wc-player-card__meta min-h-[1.25rem] space-y-0.5">
-          {isReady && styleLabel && (
+          {isReady && basicInfoLabel && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
+              className="truncate"
+              title={basicInfoLabel}
             >
               <span className={cn(
                 "text-xs",
                 isSpeaking ? "text-[var(--color-gold)]" : "text-[var(--text-secondary)]"
-              )}>{styleLabel}</span>
+              )}>{basicInfoLabel}</span>
             </motion.div>
           )}
           {isReady && showModel && modelLabel && (

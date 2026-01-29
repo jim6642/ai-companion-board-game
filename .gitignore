@@ -23,8 +23,6 @@
 # misc
 .DS_Store
 *.pem
-# ai-logs.json
-
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -40,3 +38,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# logs
+ai-logs.json
+ai-logs.jsonl

@@ -52,16 +52,26 @@ export function PlayerDetailModal({ player, isOpen, onClose, humanPlayer, isGens
     }
   }, [player]);
 
-  if (!renderPlayer) return null;
-
-  const persona = renderPlayer.agentProfile?.persona;
-  const modelLabel = renderPlayer.agentProfile?.modelRef?.model;
-  const isMe = renderPlayer.isHuman;
+  const persona = renderPlayer?.agentProfile?.persona;
+  const modelLabel = renderPlayer?.agentProfile?.modelRef?.model;
+  const isMe = !!renderPlayer?.isHuman;
   const showPersona = !!persona && !isGenshinMode;
-  const isWolfTeammate = humanPlayer?.role === "Werewolf" && renderPlayer.role === "Werewolf" && !renderPlayer.isHuman;
-  const canSeeRole = isMe || isWolfTeammate || !renderPlayer.alive || isSpectatorMode;
-  const isIdentityReady = isMe ? !!renderPlayer.displayName?.trim() : !!persona;
-  const avatarSrc = getPlayerAvatarUrl(renderPlayer, isGenshinMode);
+  const isWolfTeammate = humanPlayer?.role === "Werewolf" && renderPlayer?.role === "Werewolf" && !renderPlayer?.isHuman;
+  const canSeeRole = isMe || !!isWolfTeammate || !renderPlayer?.alive || isSpectatorMode;
+  const isIdentityReady = isMe ? !!renderPlayer?.displayName?.trim() : !!persona;
+  const avatarSrc = renderPlayer ? getPlayerAvatarUrl(renderPlayer, isGenshinMode) : "";
+  const voiceRules = useMemo(() => {
+    if (!persona?.voiceRules || persona.voiceRules.length === 0) return [];
+    const seen = new Set<string>();
+    return persona.voiceRules
+      .map((rule) => String(rule || "").trim())
+      .filter((rule) => rule.length > 0)
+      .filter((rule) => {
+        if (seen.has(rule)) return false;
+        seen.add(rule);
+        return true;
+      });
+  }, [persona?.voiceRules]);
   const roleLabels = useMemo<Record<string, string>>(() => ({
     Werewolf: t("roles.werewolf"),
     Seer: t("roles.seer"),
@@ -80,7 +90,9 @@ export function PlayerDetailModal({ player, isOpen, onClose, humanPlayer, isGens
     if (!strategy) return strategyLabels.balanced;
     return strategyLabels[strategy] ?? strategyLabels.balanced;
   };
-  const showModelTag = !!modelLabel && isGenshinMode && !renderPlayer.isHuman;
+  const showModelTag = !!modelLabel && isGenshinMode && !renderPlayer?.isHuman;
+
+  if (!renderPlayer) return null;
 
   return (
     <AnimatePresence
@@ -193,9 +205,6 @@ export function PlayerDetailModal({ player, isOpen, onClose, humanPlayer, isGens
                       <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-medium">
                         {persona.mbti}
                       </span>
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">
-                        {persona.styleLabel}
-                      </span>
                       {persona.logicStyle && (
                         <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
                           {persona.logicStyle}
@@ -203,14 +212,26 @@ export function PlayerDetailModal({ player, isOpen, onClose, humanPlayer, isGens
                       )}
                     </div>
 
+                    {/* 背景介绍 */}
+                    {persona.basicInfo?.trim() ? (
+                      <div>
+                        <h4 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
+                          {t("playerDetail.background")}
+                        </h4>
+                        <p className="text-sm text-[var(--text-secondary)]">
+                          {persona.basicInfo}
+                        </p>
+                      </div>
+                    ) : null}
+
                     {/* 说话风格 */}
-                    {persona.voiceRules && persona.voiceRules.length > 0 && (
+                    {voiceRules.length > 0 && (
                       <div>
                         <h4 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
                           {t("playerDetail.voiceStyle")}
                         </h4>
                         <ul className="text-sm text-[var(--text-secondary)] space-y-1">
-                          {persona.voiceRules.map((rule, i) => (
+                          {voiceRules.map((rule, i) => (
                             <li key={i} className="flex items-start gap-2">
                               <span className="text-[var(--color-accent)] mt-1">•</span>
                               <span>{rule}</span>

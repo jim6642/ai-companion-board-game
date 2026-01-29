@@ -102,7 +102,6 @@ export const buildPersonaSection = (player: Player, isGenshinMode: boolean = fal
   const separator = t("promptUtils.gameContext.listSeparator");
 
   const base = t("promptUtils.persona.section", {
-    styleLabel: persona.styleLabel,
     voiceRules: persona.voiceRules.join(separator),
     riskLabel: t("promptUtils.persona.riskBalanced")
   });

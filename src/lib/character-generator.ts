@@ -324,7 +324,8 @@ const normalizeGeneratedCharacters = (
 
 const isValidPersona = (p: any): p is Persona => {
   if (!p || typeof p !== "object") return false;
-  if (typeof p.styleLabel !== "string") return false;
+  // styleLabel is now optional
+  if (p.styleLabel !== undefined && typeof p.styleLabel !== "string") return false;
   if (!Array.isArray(p.voiceRules) || p.voiceRules.filter((x: any) => typeof x === "string" && x.trim()).length === 0) return false;
   if (!isValidMbti(p.mbti)) return false;
   if (!isValidGender(p.gender)) return false;
@@ -390,8 +391,9 @@ const buildFullPersonasPrompt = (scenario: GameScenario, allProfiles: BaseProfil
     )
     .join("\n");
 
+  // Removed styleLabel from schema - only voiceRules needed for speech style
   const schema = allProfiles
-    .map((p) => `  { "displayName": "${p.displayName}", "persona": { "styleLabel": string, "voiceRules": string[], "mbti": "${p.mbti}", "gender": "${p.gender}", "age": ${p.age} } }`)
+    .map((p) => `  { "displayName": "${p.displayName}", "persona": { "voiceRules": string[], "mbti": "${p.mbti}", "gender": "${p.gender}", "age": ${p.age} } }`)
     .join(",\n");
 
   return t("characterGenerator.fullPersonasPrompt", {
@@ -442,8 +444,9 @@ const buildRepairFullPersonasPrompt = (scenario: GameScenario, allProfiles: Base
     )
     .join("\n");
 
+  // Removed styleLabel from schema - only voiceRules needed for speech style
   const schema = allProfiles
-    .map((p) => `  { "displayName": "${p.displayName}", "persona": { "styleLabel": string, "voiceRules": string[], "mbti": "${p.mbti}", "gender": "${p.gender}", "age": ${p.age} } }`)
+    .map((p) => `  { "displayName": "${p.displayName}", "persona": { "voiceRules": string[], "mbti": "${p.mbti}", "gender": "${p.gender}", "age": ${p.age} } }`)
     .join(",\n");
 
   return t("characterGenerator.repairFullPersonasPrompt", {
@@ -555,6 +558,7 @@ export async function generateCharacters(
                 displayName: profile.displayName,
                 persona: {
                   ...c.persona,
+                  basicInfo: profile.basicInfo, // Carry over basicInfo from BaseProfile
                   voiceId,
                   relationships: undefined,
                 },
@@ -619,6 +623,7 @@ export async function generateCharacters(
           displayName: profile.displayName,
           persona: {
             ...c.persona,
+            basicInfo: profile.basicInfo, // Carry over basicInfo from BaseProfile
             voiceId,
             relationships: undefined,
           },

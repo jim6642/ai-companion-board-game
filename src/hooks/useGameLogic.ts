@@ -1048,8 +1048,8 @@ export function useGameLogic() {
       const customGeneratedCharacters: GeneratedCharacter[] = customCharsToUse.map((cc) => ({
         displayName: cc.display_name,
         persona: {
-          styleLabel: cc.style_label || "",
-          voiceRules: cc.style_label?.trim() ? [cc.style_label.trim()] : ["concise"],
+          styleLabel: "",
+          voiceRules: cc.style_label?.trim() ? [cc.style_label.trim()] : [],
           mbti: cc.mbti || "",
           gender: cc.gender,
           age: cc.age,
