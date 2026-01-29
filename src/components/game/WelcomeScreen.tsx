@@ -1067,9 +1067,6 @@ export function WelcomeScreen({
             </div>
 
             <div className="mt-2 text-center">
-              <div className="mx-auto mb-4 h-12 w-12 items-center justify-center text-[var(--color-wolf)] opacity-90 hidden sm:flex">
-                <PawPrint weight="fill" size={42} />
-              </div>
               <div className="wc-contract-title">WOLFCHA</div>
               <div className="wc-contract-subtitle">{t("welcome.subtitle")}</div>
             </div>
@@ -1130,7 +1127,7 @@ export function WelcomeScreen({
                 {t("welcome.oath.line3")}
               </div>
 
-              <div className="mt-8">
+              <div className="mt-4">
                 <div className="wc-contract-label">{t("welcome.signature.label")}</div>
                 <div className="relative mt-2">
                   <input
@@ -1189,7 +1186,7 @@ export function WelcomeScreen({
               </button>
             )}
 
-            <div className="mt-8 flex flex-col items-center gap-3">
+            <div className="mt-4 flex flex-col items-center gap-3">
               <div className="wc-seal-hint">
                 {canConfirm ? t("welcome.sealHint.ready") : t("welcome.sealHint.waiting")}
               </div>

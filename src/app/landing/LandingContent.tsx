@@ -645,7 +645,7 @@ export function LandingContent() {
             </Link>
           </div>
 
-          <div className="mt-8 flex justify-center">
+          <div className="mt-4 flex justify-center">
             <a
               href="https://www.producthunt.com/products/wolfcha?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-wolfcha"
               target="_blank"
