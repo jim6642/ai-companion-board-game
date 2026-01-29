@@ -474,11 +474,26 @@ export class DaySpeechPhase extends GamePhase {
         return;
       }
 
-      // Build a set of players who have already spoken today (for DAY_SPEECH phase)
+      // Build a set of players who have already spoken in DAY_SPEECH phase only
+      // (excludes badge election speeches which happen before "开始自由发言")
       const getTodaySpeakers = (): Set<number> => {
-        const dayStartIndex = getDayStartIndex(state);
+        const systemMessages = getSystemMessages();
+        // Find the index of "开始自由发言" (dayDiscussion) message
+        let daySpeechStartIndex = -1;
+        for (let i = state.messages.length - 1; i >= 0; i--) {
+          const m = state.messages[i];
+          if (m.isSystem && (m.content === "开始自由发言" || m.content === "Free discussion begins" || m.content === systemMessages.dayDiscussion)) {
+            daySpeechStartIndex = i;
+            break;
+          }
+        }
+        // If no dayDiscussion message found, fall back to dayStartIndex
+        if (daySpeechStartIndex === -1) {
+          daySpeechStartIndex = getDayStartIndex(state);
+        }
+        
         const spokenSeats = new Set<number>();
-        for (let i = dayStartIndex; i < state.messages.length; i++) {
+        for (let i = daySpeechStartIndex; i < state.messages.length; i++) {
           const m = state.messages[i];
           if (!m.isSystem && m.playerId) {
             const player = state.players.find((p) => p.playerId === m.playerId);
