@@ -325,8 +325,8 @@ export function CustomCharacterModal({
       "  - gender: \"male\" | \"female\" | \"nonbinary\"",
       "  - age: number（16-70）",
       "  - mbti: string（可为空，或 4 位大写，例如 \"INTJ\"）",
-      "  - basic_info: string（可为空，<=200 字，适合狼人杀对局身份/背景）",
-      "  - style_label: string（可为空，<=50 字，用于说话风格/口吻，例如“冷静、短句、少废话”）",
+      "  - basic_info: string（可为空，<=400 字，适合狼人杀对局身份/背景）",
+      "  - style_label: string（可为空，<=400 字，用于说话风格/口吻，例如“冷静、短句、少废话”）",
       "  - avatar_seed: string（可为空；如不填我会自动生成）",
       "",
       "补充要求：这个角色要适合狼人杀对局发言（会分析、会站边、会投票），不要太中二。",
@@ -472,7 +472,7 @@ export function CustomCharacterModal({
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setDetailCharacter(char); }}
-                      className="mt-2 w-full h-8 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[11px] font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-center gap-1.5"
+                      className="mt-2 w-full h-8 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[11px] font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap"
                     >
                       <Eye size={14} />
                       {t("customCharacter.actions.viewDetail")}
@@ -625,14 +625,17 @@ export function CustomCharacterModal({
                 <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
                   {t("customCharacter.fields.styleLabel")}
                 </label>
-                <input
-                  type="text"
+                <textarea
                   value={formData.style_label}
                   onChange={(e) => setFormData(prev => ({ ...prev, style_label: e.target.value }))}
                   maxLength={FIELD_LIMITS.style_label.max}
                   placeholder={t("customCharacter.placeholders.styleLabel")}
-                  className="w-full px-3 py-2 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--color-accent)] resize-none"
                 />
+                <div className="text-xs text-[var(--text-muted)] text-right mt-1">
+                  {formData.style_label?.length || 0}/{FIELD_LIMITS.style_label.max}
+                </div>
               </div>
             </div>
 

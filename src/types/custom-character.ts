@@ -43,6 +43,6 @@ export const GENDER_OPTIONS: Gender[] = ["male", "female", "nonbinary"];
 export const FIELD_LIMITS = {
   display_name: { min: 1, max: 20 },
   age: { min: 16, max: 70 },
-  basic_info: { max: 200 },
-  style_label: { max: 50 },
+  basic_info: { max: 400 },
+  style_label: { max: 400 },
 } as const;

@@ -5,7 +5,7 @@ import { FingerprintSimple, PawPrint, Sparkle, Wrench, GearSix, UserCircle, Gith
 import { WerewolfIcon } from "@/components/icons/FlatIcons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -38,6 +38,8 @@ type SponsorCardProps = {
   note?: string;
   children?: React.ReactNode;
 };
+
+const CUSTOM_CHARACTER_SELECTION_STORAGE_KEY = "wolfcha_custom_character_selection";
 
 // Track sponsor click
 async function trackSponsorClick(sponsorId: string) {
@@ -261,7 +263,29 @@ export function WelcomeScreen({
   const [groupImgOk, setGroupImgOk] = useState<boolean | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCustomCharacterOpen, setIsCustomCharacterOpen] = useState(false);
-  const [selectedCharacterIds, setSelectedCharacterIds] = useState<Set<string>>(new Set());
+  const selectionStorageKey = useMemo(() => {
+    return user?.id
+      ? `${CUSTOM_CHARACTER_SELECTION_STORAGE_KEY}:${user.id}`
+      : CUSTOM_CHARACTER_SELECTION_STORAGE_KEY;
+  }, [user?.id]);
+
+  const readSelectionFromStorage = useCallback(() => {
+    if (typeof window === "undefined") return new Set<string>();
+    try {
+      const raw = window.localStorage.getItem(selectionStorageKey);
+      if (!raw) return new Set<string>();
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return new Set<string>();
+      return new Set(parsed.filter((item): item is string => typeof item === "string"));
+    } catch {
+      return new Set<string>();
+    }
+  }, [selectionStorageKey]);
+
+  const selectionStorageKeyRef = useRef<string | null>(null);
+  const [selectedCharacterIds, setSelectedCharacterIds] = useState<Set<string>>(() =>
+    readSelectionFromStorage()
+  );
   
   const customCharacters = useCustomCharacters(user);
   const [difficulty, setDifficulty] = useAtom(difficultyAtom);
@@ -271,6 +295,29 @@ export function WelcomeScreen({
   useEffect(() => {
     if (locale === "en") setIsGroupOpen(false);
   }, [locale]);
+
+  useEffect(() => {
+    selectionStorageKeyRef.current = selectionStorageKey;
+    setSelectedCharacterIds(readSelectionFromStorage());
+  }, [readSelectionFromStorage, selectionStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (selectionStorageKeyRef.current !== selectionStorageKey) return;
+    const ids = Array.from(selectedCharacterIds);
+    window.localStorage.setItem(selectionStorageKey, JSON.stringify(ids));
+  }, [selectedCharacterIds, selectionStorageKey]);
+
+  useEffect(() => {
+    if (customCharacters.loading) return;
+    const validIds = new Set(customCharacters.characters.map((char) => char.id));
+    const filtered = new Set(
+      Array.from(selectedCharacterIds).filter((id) => validIds.has(id))
+    );
+    if (filtered.size !== selectedCharacterIds.size) {
+      setSelectedCharacterIds(filtered);
+    }
+  }, [customCharacters.characters, customCharacters.loading, selectedCharacterIds]);
 
   const [customKeyEnabled, setCustomKeyEnabled] = useState(() => isCustomKeyEnabled());
 
