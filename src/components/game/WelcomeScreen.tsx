@@ -68,7 +68,7 @@ function SponsorCard({
   children,
 }: SponsorCardProps) {
   const ariaLabel = [label, name, note].filter(Boolean).join(" · ");
-  
+
   const handleClick = () => {
     void trackSponsorClick(sponsorId);
   };
@@ -286,7 +286,7 @@ export function WelcomeScreen({
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<Set<string>>(() =>
     readSelectionFromStorage()
   );
-  
+
   const customCharacters = useCustomCharacters(user);
   const [difficulty, setDifficulty] = useAtom(difficultyAtom);
   const [playerCount, setPlayerCount] = useAtom(playerCountAtom);
@@ -555,7 +555,7 @@ export function WelcomeScreen({
       // 传递开发模式配置
       const roles = devTab === "roles" && roleConfigValid ? (fixedRoles as Role[]) : undefined;
       const preset = devTab === "preset" && devPreset ? (devPreset as DevPreset) : undefined;
-      
+
       // Get selected custom characters
       const selectedCustomChars = customCharacters.characters
         .filter(c => selectedCharacterIds.has(c.id))
@@ -569,11 +569,11 @@ export function WelcomeScreen({
           style_label: c.style_label,
           avatar_seed: c.avatar_seed,
         }));
-      
-      void onStart({ 
-        fixedRoles: roles, 
-        devPreset: preset, 
-        difficulty, 
+
+      void onStart({
+        fixedRoles: roles,
+        devPreset: preset,
+        difficulty,
         playerCount,
         customCharacters: selectedCustomChars,
       });
@@ -628,161 +628,285 @@ export function WelcomeScreen({
 
   return (
     <>
-    <div className="wc-contract-screen selection:bg-[var(--color-accent)] selection:text-white">
-      <div className="wc-contract-fog" aria-hidden="true" />
-      <div className="wc-contract-vignette" aria-hidden="true" />
+      <div className="wc-contract-screen selection:bg-[var(--color-accent)] selection:text-white">
+        <div className="wc-contract-fog" aria-hidden="true" />
+        <div className="wc-contract-vignette" aria-hidden="true" />
 
-      <GameSetupModal
-        open={isSetupOpen}
-        onOpenChange={setIsSetupOpen}
-        difficulty={difficulty}
-        onDifficultyChange={setDifficulty}
-        playerCount={playerCount}
-        onPlayerCountChange={setPlayerCount}
-        isGenshinMode={isGenshinMode}
-        onGenshinModeChange={onGenshinModeChange}
-        isSpectatorMode={isSpectatorMode}
-        onSpectatorModeChange={onSpectatorModeChange}
-        bgmVolume={bgmVolume}
-        isSoundEnabled={isSoundEnabled}
-        isAiVoiceEnabled={isAiVoiceEnabled}
-        isAutoAdvanceDialogueEnabled={isAutoAdvanceDialogueEnabled}
-        onBgmVolumeChange={onBgmVolumeChange}
-        onSoundEnabledChange={onSoundEnabledChange}
-        onAiVoiceEnabledChange={onAiVoiceEnabledChange}
-        onAutoAdvanceDialogueEnabledChange={onAutoAdvanceDialogueEnabledChange}
-      />
-      <AuthModal open={isAuthOpen} onOpenChange={setIsAuthOpen} />
-      <AccountModal open={isAccountOpen} onOpenChange={setIsAccountOpen} />
-      <UserProfileModal
-        open={isUserProfileOpen}
-        onOpenChange={setIsUserProfileOpen}
-        email={user?.email}
-        credits={credits ?? undefined}
-        referralCode={referralCode}
-        totalReferrals={totalReferrals}
-        onChangePassword={() => setIsAccountOpen(true)}
-        onShareInvite={() => setIsShareOpen(true)}
-        onSignOut={signOut}
-        onCustomKeyEnabledChange={setCustomKeyEnabled}
-        accessToken={session?.access_token}
-        onCreditsChange={fetchCredits}
-      />
-      <ResetPasswordModal 
-        open={isPasswordRecovery} 
-        onOpenChange={(open) => !open && clearPasswordRecovery()}
-        onSuccess={clearPasswordRecovery}
-      />
-      <SharePanel
-        open={isShareOpen}
-        onOpenChange={setIsShareOpen}
-        referralCode={referralCode}
-        totalReferrals={totalReferrals}
-      />
-      <CustomCharacterModal
-        open={isCustomCharacterOpen}
-        onOpenChange={setIsCustomCharacterOpen}
-        characters={customCharacters.characters}
-        loading={customCharacters.loading}
-        canAddMore={customCharacters.canAddMore}
-        remainingSlots={customCharacters.remainingSlots}
-        selectedIds={selectedCharacterIds}
-        onSelectionChange={setSelectedCharacterIds}
-        onCreateCharacter={customCharacters.createCharacter}
-        onUpdateCharacter={customCharacters.updateCharacter}
-        onDeleteCharacter={customCharacters.deleteCharacter}
-      />
+        <GameSetupModal
+          open={isSetupOpen}
+          onOpenChange={setIsSetupOpen}
+          difficulty={difficulty}
+          onDifficultyChange={setDifficulty}
+          playerCount={playerCount}
+          onPlayerCountChange={setPlayerCount}
+          isGenshinMode={isGenshinMode}
+          onGenshinModeChange={onGenshinModeChange}
+          isSpectatorMode={isSpectatorMode}
+          onSpectatorModeChange={onSpectatorModeChange}
+          bgmVolume={bgmVolume}
+          isSoundEnabled={isSoundEnabled}
+          isAiVoiceEnabled={isAiVoiceEnabled}
+          isAutoAdvanceDialogueEnabled={isAutoAdvanceDialogueEnabled}
+          onBgmVolumeChange={onBgmVolumeChange}
+          onSoundEnabledChange={onSoundEnabledChange}
+          onAiVoiceEnabledChange={onAiVoiceEnabledChange}
+          onAutoAdvanceDialogueEnabledChange={onAutoAdvanceDialogueEnabledChange}
+        />
+        <AuthModal open={isAuthOpen} onOpenChange={setIsAuthOpen} />
+        <AccountModal open={isAccountOpen} onOpenChange={setIsAccountOpen} />
+        <UserProfileModal
+          open={isUserProfileOpen}
+          onOpenChange={setIsUserProfileOpen}
+          email={user?.email}
+          credits={credits ?? undefined}
+          referralCode={referralCode}
+          totalReferrals={totalReferrals}
+          onChangePassword={() => setIsAccountOpen(true)}
+          onShareInvite={() => setIsShareOpen(true)}
+          onSignOut={signOut}
+          onCustomKeyEnabledChange={setCustomKeyEnabled}
+          accessToken={session?.access_token}
+          onCreditsChange={fetchCredits}
+        />
+        <ResetPasswordModal
+          open={isPasswordRecovery}
+          onOpenChange={(open) => !open && clearPasswordRecovery()}
+          onSuccess={clearPasswordRecovery}
+        />
+        <SharePanel
+          open={isShareOpen}
+          onOpenChange={setIsShareOpen}
+          referralCode={referralCode}
+          totalReferrals={totalReferrals}
+        />
+        <CustomCharacterModal
+          open={isCustomCharacterOpen}
+          onOpenChange={setIsCustomCharacterOpen}
+          characters={customCharacters.characters}
+          loading={customCharacters.loading}
+          canAddMore={customCharacters.canAddMore}
+          remainingSlots={customCharacters.remainingSlots}
+          selectedIds={selectedCharacterIds}
+          onSelectionChange={setSelectedCharacterIds}
+          onCreateCharacter={customCharacters.createCharacter}
+          onUpdateCharacter={customCharacters.updateCharacter}
+          onDeleteCharacter={customCharacters.deleteCharacter}
+        />
 
-      <Dialog
-        open={locale === "en" ? false : isGroupOpen}
-        onOpenChange={(open) => {
-          if (locale === "en") return;
-          setIsGroupOpen(open);
-        }}
-      >
-        <DialogContent className="max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users size={18} weight="duotone" />
-              {t("welcome.group.title")}
-            </DialogTitle>
-            <DialogDescription>{t("welcome.group.description")}</DialogDescription>
-          </DialogHeader>
+        <Dialog
+          open={locale === "en" ? false : isGroupOpen}
+          onOpenChange={(open) => {
+            if (locale === "en") return;
+            setIsGroupOpen(open);
+          }}
+        >
+          <DialogContent className="max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users size={18} weight="duotone" />
+                {t("welcome.group.title")}
+              </DialogTitle>
+              <DialogDescription>{t("welcome.group.description")}</DialogDescription>
+            </DialogHeader>
 
-          <div className="mt-2 flex items-center justify-center">
-            {groupImgOk !== false && (
-              <img
-                src="/group.png"
-                alt={t("settings.about.group.alt")}
-                className="w-full max-w-[280px] max-h-[50vh] rounded-md border-2 border-[var(--border-color)] bg-white object-contain"
-                onLoad={() => setGroupImgOk(true)}
-                onError={() => setGroupImgOk(false)}
-              />
-            )}
-            {groupImgOk === false && (
-              <div className="text-xs text-[var(--text-muted)]">{t("settings.about.group.missing")}</div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+            <div className="mt-2 flex items-center justify-center">
+              {groupImgOk !== false && (
+                <img
+                  src="/group.png"
+                  alt={t("settings.about.group.alt")}
+                  className="w-full max-w-[280px] max-h-[50vh] rounded-md border-2 border-[var(--border-color)] bg-white object-contain"
+                  onLoad={() => setGroupImgOk(true)}
+                  onError={() => setGroupImgOk(false)}
+                />
+              )}
+              {groupImgOk === false && (
+                <div className="text-xs text-[var(--text-muted)]">{t("settings.about.group.missing")}</div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
-      <Dialog open={isSponsorOpen} onOpenChange={setIsSponsorOpen}>
-        <DialogContent className="max-w-[560px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Handshake size={18} weight="duotone" />
-              {t("welcome.sponsor.title")}
-            </DialogTitle>
-            <DialogDescription>
-              {t("welcome.sponsor.subtitle")}
-            </DialogDescription>
-          </DialogHeader>
+        <Dialog open={isSponsorOpen} onOpenChange={setIsSponsorOpen}>
+          <DialogContent className="max-w-[560px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Handshake size={18} weight="duotone" />
+                {t("welcome.sponsor.title")}
+              </DialogTitle>
+              <DialogDescription>
+                {t("welcome.sponsor.subtitle")}
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="space-y-3 text-sm leading-relaxed text-[var(--text-primary)]">
-            <p>
-              {t("welcome.sponsor.description")}
-            </p>
-            <ul className="list-disc pl-5 space-y-1 text-[var(--text-secondary)]">
-              <li>{t("welcome.sponsor.items.credits")}</li>
-              <li>{t("welcome.sponsor.items.media")}</li>
-              <li>{t("welcome.sponsor.items.collaboration")}</li>
-              <li>{t("welcome.sponsor.items.community")}</li>
-            </ul>
-            <p className="text-[var(--text-secondary)]">
-              {t("welcome.sponsor.note")}
-            </p>
-          </div>
+            <div className="space-y-3 text-sm leading-relaxed text-[var(--text-primary)]">
+              <p>
+                {t("welcome.sponsor.description")}
+              </p>
+              <ul className="list-disc pl-5 space-y-1 text-[var(--text-secondary)]">
+                <li>{t("welcome.sponsor.items.credits")}</li>
+                <li>{t("welcome.sponsor.items.media")}</li>
+                <li>{t("welcome.sponsor.items.collaboration")}</li>
+                <li>{t("welcome.sponsor.items.community")}</li>
+              </ul>
+              <p className="text-[var(--text-secondary)]">
+                {t("welcome.sponsor.note")}
+              </p>
+            </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-            <Button type="button" variant="outline" onClick={handleCopySponsorEmail} className="gap-2">
-              <EnvelopeSimple size={16} />
-              {t("welcome.sponsor.copyEmail")}
-            </Button>
-            <Button asChild className="gap-2">
-              <a href={sponsorMailto} target="_blank" rel="noopener noreferrer">
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              <Button type="button" variant="outline" onClick={handleCopySponsorEmail} className="gap-2">
                 <EnvelopeSimple size={16} />
-                {t("welcome.sponsor.sendEmail")}
-              </a>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+                {t("welcome.sponsor.copyEmail")}
+              </Button>
+              <Button asChild className="gap-2">
+                <a href={sponsorMailto} target="_blank" rel="noopener noreferrer">
+                  <EnvelopeSimple size={16} />
+                  {t("welcome.sponsor.sendEmail")}
+                </a>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-      <Dialog open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <DialogContent className="max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle>{t("welcome.mobileMenu.title")}</DialogTitle>
-            <DialogDescription>{t("welcome.mobileMenu.description")}</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-2">
+        <Dialog open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+          <DialogContent className="max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle>{t("welcome.mobileMenu.title")}</DialogTitle>
+              <DialogDescription>{t("welcome.mobileMenu.description")}</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="justify-start"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsSponsorOpen(true);
+                }}
+              >
+                <Handshake size={16} />
+                {t("welcome.sponsor.action")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="justify-start"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsSetupOpen(true);
+                }}
+              >
+                <GearSix size={16} />
+                {t("welcome.settings")}
+              </Button>
+              {user ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="justify-start"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsUserProfileOpen(true);
+                  }}
+                >
+                  <UserCircle size={16} />
+                  {t("welcome.account.info")}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="justify-start"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsAuthOpen(true);
+                  }}
+                >
+                  <UserCircle size={16} />
+                  {t("welcome.auth.signIn")}
+                </Button>
+              )}
+              <Button asChild variant="outline" className="justify-start">
+                <a
+                  href="https://github.com/oil-oil/wolfcha"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <GithubLogo size={16} />
+                  {t("welcome.github.title")}
+                </a>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Scattered sponsor cards */}
+        <div className="wc-sponsor-cards" aria-label={t("welcome.sponsor.showcaseLabel")}>
+          {/* Sponsor card - OpenCreator (左侧) */}
+          <SponsorCard
+            sponsorId="opencreator"
+            href="https://opencreator.io/"
+            className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--left-center wc-sponsor-card--featured"
+            rotate="-6deg"
+            delay={0.3}
+            logoSrc="/sponsor/opencreator.png"
+            logoAlt="OpenCreator"
+            name="OpenCreator"
+            note={t("welcome.sponsor.cards.openCreator")}
+          />
+
+          {/* Sponsor card - Bailian (左上) */}
+          <SponsorCard
+            sponsorId="bailian"
+            href="https://bailian.console.aliyun.com/"
+            className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--top-left"
+            rotate="4deg"
+            delay={0.15}
+            logoSrc="/sponsor/bailian.png"
+            logoAlt="Bailian"
+            name="Bailian"
+            note={t("welcome.sponsor.cards.bailian")}
+          />
+
+          {/* Sponsor card - ZenMux (右下) */}
+          <SponsorCard
+            sponsorId="zenmux"
+            href="https://zenmux.ai/aboutus"
+            className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--right-bottom"
+            rotate="-4deg"
+            delay={0.6}
+            logoSrc="/sponsor/zenmux.png"
+            logoAlt="ZenMux"
+            name="ZenMux"
+            note={t("welcome.sponsor.cards.zenmux")}
+          />
+        </div>
+
+        <div className="wc-welcome-actions absolute top-5 right-5 z-20 flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
+            <LocaleSwitcher className="shrink-0" />
+            <a
+              href="https://github.com/oil-oil/wolfcha"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center gap-1.5 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] px-2 py-1 text-[11px] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all group"
+              title="View on GitHub"
+            >
+              <GithubLogo size={15} className="group-hover:scale-110 transition-transform" />
+              <span className="hidden lg:inline">GitHub</span>
+              <span className="flex items-center gap-1 text-[var(--color-gold)]">
+                <Star size={12} weight="fill" className="group-hover:scale-110 transition-transform" />
+                <span className="font-serif text-xs font-bold tabular-nums tracking-tight" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                  {githubStars !== null ? githubStars.toLocaleString() : '···'}
+                </span>
+              </span>
+            </a>
             <Button
               type="button"
               variant="outline"
-              className="justify-start"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                setIsSponsorOpen(true);
-              }}
+              onClick={() => setIsSponsorOpen(true)}
+              className="h-8 text-xs gap-2"
             >
               <Handshake size={16} />
               {t("welcome.sponsor.action")}
@@ -790,551 +914,448 @@ export function WelcomeScreen({
             <Button
               type="button"
               variant="outline"
-              className="justify-start"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                setIsSetupOpen(true);
-              }}
+              onClick={handleOpenGroup}
+              className="h-8 text-xs gap-2"
             >
-              <GearSix size={16} />
-              {t("welcome.settings")}
+              {groupIcon}
+              {t("welcome.group.title")}
             </Button>
+
             {user ? (
-              <Button
+              <button
                 type="button"
-                variant="outline"
-                className="justify-start"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setIsUserProfileOpen(true);
-                }}
+                onClick={() => setIsUserProfileOpen(true)}
+                className="hidden md:flex items-center gap-2 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                title={t("welcome.account.viewInfo")}
               >
                 <UserCircle size={16} />
-                {t("welcome.account.info")}
-              </Button>
+                <span className="truncate max-w-[160px]">{user.email ?? t("userProfile.loggedIn")}</span>
+                {customKeyEnabled ? (
+                  <span className="opacity-70">{t("customKey.title")}</span>
+                ) : (
+                  <span className="opacity-70">{t("welcome.account.remaining", { count: creditsLoading ? "..." : (credits ?? 0) })}</span>
+                )}
+              </button>
             ) : (
               <Button
                 type="button"
                 variant="outline"
-                className="justify-start"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setIsAuthOpen(true);
-                }}
+                onClick={() => setIsAuthOpen(true)}
+                className="h-8 text-xs gap-2"
               >
                 <UserCircle size={16} />
                 {t("welcome.auth.signIn")}
               </Button>
             )}
-            <Button asChild variant="outline" className="justify-start">
-              <a
-                href="https://github.com/oil-oil/wolfcha"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setIsMobileMenuOpen(false)}
+
+            {user && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsUserProfileOpen(true)}
+                className="h-8 text-xs gap-2 md:hidden"
               >
-                <GithubLogo size={16} />
-                {t("welcome.github.title")}
-              </a>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+                <UserCircle size={16} />
+                {t("welcome.account.info")}
+              </Button>
+            )}
 
-      {/* Scattered sponsor cards */}
-      <div className="wc-sponsor-cards" aria-label={t("welcome.sponsor.showcaseLabel")}>
-        {/* Sponsor card - OpenCreator (左侧) */}
-        <SponsorCard
-          sponsorId="opencreator"
-          href="https://opencreator.io/"
-          className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--left-center wc-sponsor-card--featured"
-          rotate="-6deg"
-          delay={0.3}
-          logoSrc="/sponsor/opencreator.png"
-          logoAlt="OpenCreator"
-          name="OpenCreator"
-          note={t("welcome.sponsor.cards.openCreator")}
-        />
-
-        {/* Sponsor card - Bailian (左上) */}
-        <SponsorCard
-          sponsorId="bailian"
-          href="https://bailian.console.aliyun.com/"
-          className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--top-left"
-          rotate="4deg"
-          delay={0.15}
-          logoSrc="/sponsor/bailian.png"
-          logoAlt="Bailian"
-          name="Bailian"
-          note={t("welcome.sponsor.cards.bailian")}
-        />
-
-        {/* Sponsor card - Minimax (右上) */}
-        <SponsorCard
-          sponsorId="minimax"
-          href="https://minimaxi.com/"
-          className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--right-top"
-          rotate="5deg"
-          delay={0.45}
-          logoSrc="/sponsor/minimax.png"
-          logoAlt="Minimax"
-          name="Minimax"
-          note={t("welcome.sponsor.cards.minimax")}
-        />
-
-        {/* Sponsor card - ZenMux (右下) */}
-        <SponsorCard
-          sponsorId="zenmux"
-          href="https://zenmux.ai/aboutus"
-          className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--right-bottom"
-          rotate="-4deg"
-          delay={0.6}
-          logoSrc="/sponsor/zenmux.png"
-          logoAlt="ZenMux"
-          name="ZenMux"
-          note={t("welcome.sponsor.cards.zenmux")}
-        />
-      </div>
-
-      <div className="wc-welcome-actions absolute top-5 right-5 z-20 flex items-center gap-2">
-        <div className="hidden sm:flex items-center gap-2">
-          <LocaleSwitcher className="shrink-0" />
-          <a
-            href="https://github.com/oil-oil/wolfcha"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:flex items-center gap-1.5 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] px-2 py-1 text-[11px] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all group"
-            title="View on GitHub"
-          >
-            <GithubLogo size={15} className="group-hover:scale-110 transition-transform" />
-            <span className="hidden lg:inline">GitHub</span>
-            <span className="flex items-center gap-1 text-[var(--color-gold)]">
-              <Star size={12} weight="fill" className="group-hover:scale-110 transition-transform" />
-              <span className="font-serif text-xs font-bold tabular-nums tracking-tight" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
-                {githubStars !== null ? githubStars.toLocaleString() : '···'}
-              </span>
-            </span>
-          </a>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsSponsorOpen(true)}
-            className="h-8 text-xs gap-2"
-          >
-            <Handshake size={16} />
-            {t("welcome.sponsor.action")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleOpenGroup}
-            className="h-8 text-xs gap-2"
-          >
-            {groupIcon}
-            {t("welcome.group.title")}
-          </Button>
-
-          {user ? (
-            <button
-              type="button"
-              onClick={() => setIsUserProfileOpen(true)}
-              className="hidden md:flex items-center gap-2 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-              title={t("welcome.account.viewInfo")}
-            >
-              <UserCircle size={16} />
-              <span className="truncate max-w-[160px]">{user.email ?? t("userProfile.loggedIn")}</span>
-              {customKeyEnabled ? (
-                <span className="opacity-70">{t("customKey.title")}</span>
-              ) : (
-                <span className="opacity-70">{t("welcome.account.remaining", { count: creditsLoading ? "..." : (credits ?? 0) })}</span>
-              )}
-            </button>
-          ) : (
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsAuthOpen(true)}
+              onClick={() => setIsSetupOpen(true)}
               className="h-8 text-xs gap-2"
             >
-              <UserCircle size={16} />
-              {t("welcome.auth.signIn")}
+              <GearSix size={16} />
+              {t("welcome.settings")}
             </Button>
-          )}
+          </div>
 
-          {user && (
+          <div className="flex sm:hidden items-center gap-2">
+            <LocaleSwitcher className="shrink-0" />
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsUserProfileOpen(true)}
-              className="h-8 text-xs gap-2 md:hidden"
+              onClick={() => setIsSponsorOpen(true)}
+              className="h-8 text-xs gap-2"
             >
-              <UserCircle size={16} />
-              {t("welcome.account.info")}
+              <Handshake size={16} />
+              {t("welcome.sponsor.short")}
             </Button>
-          )}
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsSetupOpen(true)}
-            className="h-8 text-xs gap-2"
-          >
-            <GearSix size={16} />
-            {t("welcome.settings")}
-          </Button>
-        </div>
-
-        <div className="flex sm:hidden items-center gap-2">
-          <LocaleSwitcher className="shrink-0" />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsSponsorOpen(true)}
-            className="h-8 text-xs gap-2"
-          >
-            <Handshake size={16} />
-            {t("welcome.sponsor.short")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleOpenGroup}
-            className="h-8 text-xs gap-2"
-          >
-            {groupIcon}
-            {t("welcome.group.short")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="h-8 w-8 px-0"
-            aria-label={t("welcome.mobileMenu.more")}
-          >
-            <DotsThreeOutlineVertical size={18} />
-          </Button>
-        </div>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 14, scale: 0.99, filter: "blur(10px)" }}
-        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-        transition={{ duration: 0.65, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-[460px] px-6"
-      >
-        <div ref={paperRef} className="wc-contract-paper">
-          <div className="wc-contract-borders" aria-hidden="true" />
-
-          {locale === "zh" && (
-            <a
-              href="https://my.feishu.cn/share/base/form/shrcnqLuGo3qyh64vFp2JhCN9CF"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="wc-promo-tag-container"
-              aria-label="赠送次数"
-            >
-              <span className="wc-paper-clip" aria-hidden="true" />
-              <span className="wc-promo-ticket">
-                <span className="wc-shine-effect" aria-hidden="true" />
-                <span className="wc-promo-title">赠送次数</span>
-                <span className="wc-promo-subtitle">Free Rounds</span>
-              </span>
-            </a>
-          )}
-
-          {/* Mobile: inline sponsor stamps at top of paper */}
-          <div className="wc-paper-sponsors sm:hidden">
-            <a
-              href="https://opencreator.io?promo=wolfcha"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="wc-paper-stamp"
-              style={{ "--stamp-rotate": "-8deg" } as React.CSSProperties}
-              onClick={() => void trackSponsorClick("opencreator")}
-            >
-              <img src="/sponsor/opencreator.png" alt="OpenCreator" className="wc-paper-stamp__logo" />
-              <span className="wc-paper-stamp__name">OpenCreator</span>
-            </a>
-            <a
-              href="https://bailian.console.aliyun.com/?ref=wolfcha"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="wc-paper-stamp"
-              style={{ "--stamp-rotate": "4deg" } as React.CSSProperties}
-              onClick={() => void trackSponsorClick("bailian")}
-            >
-              <img src="/sponsor/bailian.png" alt="百炼" className="wc-paper-stamp__logo" />
-              <span className="wc-paper-stamp__name">百炼</span>
-            </a>
-            <a
-              href="https://minimaxi.com/?ref=wolfcha"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="wc-paper-stamp"
-              style={{ "--stamp-rotate": "6deg" } as React.CSSProperties}
-              onClick={() => void trackSponsorClick("minimax")}
-            >
-              <img src="/sponsor/minimax.png" alt="Minimax" className="wc-paper-stamp__logo" />
-              <span className="wc-paper-stamp__name">Minimax</span>
-            </a>
-            <a
-              href="https://zenmux.ai/aboutus?ref=wolfcha"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="wc-paper-stamp"
-              style={{ "--stamp-rotate": "-3deg" } as React.CSSProperties}
-              onClick={() => void trackSponsorClick("zenmux")}
-            >
-              <img src="/sponsor/zenmux.png" alt="ZenMux" className="wc-paper-stamp__logo" />
-              <span className="wc-paper-stamp__name">ZenMux</span>
-            </a>
-          </div>
-
-          <div className="mt-2 text-center">
-            <div className="mx-auto mb-4 h-12 w-12 items-center justify-center text-[var(--color-wolf)] opacity-90 hidden sm:flex">
-              <PawPrint weight="fill" size={42} />
-            </div>
-            <div className="wc-contract-title">WOLFCHA</div>
-            <div className="wc-contract-subtitle">{t("welcome.subtitle")}</div>
-          </div>
-
-          <div className="mt-7 text-center wc-contract-body">
-            <div className="wc-contract-oath">
-              {t("welcome.oath.line1")}
-              <br />
-              {t("welcome.oath.line2")}
-              <br />
-              {t("welcome.oath.line3")}
-            </div>
-
-            <div className="mt-8">
-              <div className="wc-contract-label">{t("welcome.signature.label")}</div>
-              <div className="relative mt-2">
-                <input
-                  type="text"
-                  value={mounted ? humanName : ""}
-                  onChange={(e) => setHumanName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key !== "Enter") return;
-                    if (e.nativeEvent.isComposing) return;
-                    if (isAnyModalOpen) return;
-                    e.preventDefault();
-                    void handleConfirm();
-                  }}
-                  placeholder={t("welcome.signature.placeholder")}
-                  className="wc-signature-input"
-                  autoComplete="off"
-                  autoFocus
-                  disabled={isLoading || isTransitioning}
-                />
-                <AnimatePresence>
-                  {mounted && !!humanName.trim() && (
-                    <motion.div
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      className="wc-signature-ok"
-                    >
-                      <Sparkle weight="fill" size={18} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          </div>
-
-
-          {/* Custom Character Entry */}
-          {user && (
-            <button
+            <Button
               type="button"
-              onClick={() => setIsCustomCharacterOpen(true)}
-              className="mt-6 mx-auto flex items-center gap-2 px-3 py-1.5 rounded-md border-2 border-dashed border-[var(--border-color)] text-xs text-[var(--text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors"
+              variant="outline"
+              onClick={handleOpenGroup}
+              className="h-8 text-xs gap-2"
             >
-              <UsersFour size={14} />
-              <span>{t("customCharacter.entryButton")}</span>
-              {selectedCharacterIds.size > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-[var(--color-accent)] text-white text-[10px] font-medium">
-                  {selectedCharacterIds.size}
+              {groupIcon}
+              {t("welcome.group.short")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="h-8 w-8 px-0"
+              aria-label={t("welcome.mobileMenu.more")}
+            >
+              <DotsThreeOutlineVertical size={18} />
+            </Button>
+          </div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 14, scale: 0.99, filter: "blur(10px)" }}
+          animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+          transition={{ duration: 0.65, ease: "easeOut" }}
+          className="relative z-10 w-full max-w-[460px] px-6"
+        >
+          <div ref={paperRef} className="wc-contract-paper">
+            <div className="wc-contract-borders" aria-hidden="true" />
+
+            {locale === "zh" && (
+              <a
+                href="https://my.feishu.cn/share/base/form/shrcnqLuGo3qyh64vFp2JhCN9CF"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="wc-promo-tag-container"
+                aria-label="赠送次数"
+              >
+                <span className="wc-paper-clip" aria-hidden="true" />
+                <span className="wc-promo-ticket">
+                  <span className="wc-shine-effect" aria-hidden="true" />
+                  <span className="wc-promo-title">赠送次数</span>
+                  <span className="wc-promo-subtitle">Free Rounds</span>
                 </span>
-              )}
-              {customCharacters.characters.length > 0 && selectedCharacterIds.size === 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-[var(--text-muted)]/20 text-[var(--text-muted)] text-[10px] font-medium">
-                  {customCharacters.characters.length}
-                </span>
-              )}
-            </button>
-          )}
-
-          <div className="mt-8 flex flex-col items-center gap-3">
-            <div className="wc-seal-hint">
-              {canConfirm ? t("welcome.sealHint.ready") : t("welcome.sealHint.waiting")}
-            </div>
-            <button
-              ref={sealButtonRef}
-              type="button"
-              className="wc-wax-seal"
-              onClick={handleConfirm}
-              disabled={!canConfirm}
-            >
-              <FingerprintSimple weight="fill" size={44} className="wc-wax-seal-icon" />
-            </button>
-          </div>
-
-          <div className="wc-corner-mark" aria-hidden="true">
-            <WerewolfIcon size={30} className="text-[var(--color-wolf)] opacity-30" />
-          </div>
-        </div>
-      </motion.div>
-
-      <AnimatePresence>
-        {isTransitioning && (
-          <motion.div
-            className="wc-transition-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          >
-            <motion.div
-              className="wc-transition-text"
-              initial={{ opacity: 0, y: 10, scale: 1.05, filter: "blur(10px)" }}
-              animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-              transition={{ delay: 0.18, duration: 0.55, ease: "easeOut" }}
-            >
-              <div className="wc-transition-title">{t("welcome.transition.title")}</div>
-              <div className="wc-transition-subtitle">{t("welcome.transition.subtitle")}</div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-
-    {showDevTools && (
-      <>
-        <DevModeButton
-          onClick={() => {
-            setIsDevModeEnabled(true);
-            setIsDevConsoleOpen(true);
-          }}
-        />
-
-        <AnimatePresence>
-          {isDevConsoleOpen && (
-            <motion.div
-              initial={{ opacity: 0, x: 300 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 300 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="wc-dev-console fixed right-0 top-0 bottom-0 w-[400px] z-[120] bg-gray-900/95 backdrop-blur-md border-l border-gray-700 shadow-2xl flex flex-col"
-            >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800/50">
-                <div className="flex items-center gap-2">
-                  <Wrench size={20} className="text-yellow-400" />
-                  <span className="font-bold text-white">{t("welcome.dev.title")}</span>
-                </div>
-                <button
-                  onClick={() => setIsDevConsoleOpen(false)}
-                  className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
-                  type="button"
-                >
-                  <span className="text-xl leading-none">×</span>
-                </button>
-              </div>
-
-          <div className="flex border-b border-gray-700">
-            <button
-              type="button"
-              onClick={() => setDevTab("preset")}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${
-                devTab === "preset"
-                  ? "text-yellow-400 border-b-2 border-yellow-400 bg-gray-800/50"
-                  : "text-gray-400 hover:text-white hover:bg-gray-800/30"
-              }`}
-            >
-              {t("welcome.dev.tabs.preset")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setDevTab("roles")}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${
-                devTab === "roles"
-                  ? "text-yellow-400 border-b-2 border-yellow-400 bg-gray-800/50"
-                  : "text-gray-400 hover:text-white hover:bg-gray-800/30"
-              }`}
-            >
-              {t("welcome.dev.tabs.roles")}
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {devTab === "preset" && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-semibold text-gray-300">{t("welcome.dev.preset.title")}</div>
-                  <button
-                    type="button"
-                    onClick={() => setDevPreset("")}
-                    className="text-xs text-gray-400 hover:text-white"
-                  >
-                    {t("welcome.dev.preset.clear")}
-                  </button>
-                </div>
-                <select
-                  value={devPreset}
-                  onChange={(e) => setDevPreset(e.target.value as DevPreset | "")}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400"
-                >
-                  <option value="">{t("welcome.dev.preset.none")}</option>
-                  <option value="MILK_POISON_TEST">{t("welcome.dev.preset.milkPoison")}</option>
-                  <option value="LAST_WORDS_TEST">{t("welcome.dev.preset.lastWords")}</option>
-                </select>
-              </div>
+              </a>
             )}
 
-            {devTab === "roles" && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-semibold text-gray-300">
-                    {t("welcome.dev.roles.title", { count: playerCount })}
-                  </div>
-                  <div className={`text-xs ${roleConfigValid ? "text-green-400" : "text-gray-400"}`}>
-                    {roleConfigValid ? t("welcome.dev.roles.ready") : roleConfigHint}
-                  </div>
-                </div>
+            {/* Mobile: inline sponsor stamps at top of paper */}
+            <div className="wc-paper-sponsors sm:hidden">
+              <a
+                href="https://opencreator.io?promo=wolfcha"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="wc-paper-stamp"
+                style={{ "--stamp-rotate": "-8deg" } as React.CSSProperties}
+                onClick={() => void trackSponsorClick("opencreator")}
+              >
+                <img src="/sponsor/opencreator.png" alt="OpenCreator" className="wc-paper-stamp__logo" />
+                <span className="wc-paper-stamp__name">OpenCreator</span>
+              </a>
+              <a
+                href="https://bailian.console.aliyun.com/?ref=wolfcha"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="wc-paper-stamp"
+                style={{ "--stamp-rotate": "4deg" } as React.CSSProperties}
+                onClick={() => void trackSponsorClick("bailian")}
+              >
+                <img src="/sponsor/bailian.png" alt="百炼" className="wc-paper-stamp__logo" />
+                <span className="wc-paper-stamp__name">百炼</span>
+              </a>
+              <a
+                href="https://zenmux.ai/aboutus?ref=wolfcha"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="wc-paper-stamp"
+                style={{ "--stamp-rotate": "-3deg" } as React.CSSProperties}
+                onClick={() => void trackSponsorClick("zenmux")}
+              >
+                <img src="/sponsor/zenmux.png" alt="ZenMux" className="wc-paper-stamp__logo" />
+                <span className="wc-paper-stamp__name">ZenMux</span>
+              </a>
+            </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  {fixedRoles.map((role, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className="w-10 text-xs text-gray-400">
-                        {t("welcome.dev.roles.seat", { seat: idx + 1 })}
-                      </span>
-                      <select
-                        value={role}
-                        onChange={(e) => {
-                          const next = [...fixedRoles];
-                          next[idx] = e.target.value as Role;
-                          setFixedRoles(next);
-                        }}
-                        className="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-yellow-400"
+            <div className="mt-2 text-center">
+              <div className="mx-auto mb-4 h-12 w-12 items-center justify-center text-[var(--color-wolf)] opacity-90 hidden sm:flex">
+                <PawPrint weight="fill" size={42} />
+              </div>
+              <div className="wc-contract-title">WOLFCHA</div>
+              <div className="wc-contract-subtitle">{t("welcome.subtitle")}</div>
+            </div>
+
+
+            <div className="mt-5">
+              <a
+                href="https://www.producthunt.com/products/wolfcha?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-wolfcha"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t("welcome.productHunt.ariaLabel")}
+                className="group mx-auto block w-full"
+              >
+                <div className="relative rotate-[-1deg]">
+                  <div
+                    className="pointer-events-none absolute -top-2 left-6 h-4 w-20 rotate-[-6deg] rounded-sm border border-black/10 bg-white/60 shadow-sm"
+                    aria-hidden="true"
+                  />
+                  <div className="flex items-center gap-3 rounded-xl border border-[var(--border-color)] bg-white/55 px-3 py-2.5 shadow-[0_10px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm transition-transform group-hover:-translate-y-0.5 group-hover:rotate-[0.5deg]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ff6154]">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 40 40"
+                        className="h-7 w-7"
+                        aria-hidden="true"
                       >
-                        {roleOptions.map((r) => (
-                          <option key={r} value={r}>
-                            {roleLabels[r]}
-                          </option>
-                        ))}
-                      </select>
+                        <path
+                          fill="#fff"
+                          d="M22.667 20H17v-6.667h5.667a3.333 3.333 0 0 1 0 6.667m0-10H13.333v20H17v-6.667h5.667a6.667 6.667 0 0 0 0-13.333"
+                        />
+                      </svg>
                     </div>
-                  ))}
+                    {/* Text */}
+                    <div className="min-w-0 flex-1">
+
+                      <div className="flex items-center gap-2">
+                        {/* Product Hunt logo */}
+
+                        <span className="text-sm font-semibold text-[var(--text-primary)]">
+                          {t("welcome.productHunt.title")}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-xs leading-snug text-[var(--text-secondary)]">
+                        {t("welcome.productHunt.description")}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </a>
+            </div>
+            <div className="mt-7 text-center wc-contract-body">
+              <div className="wc-contract-oath">
+                {t("welcome.oath.line1")}
+                <br />
+                {t("welcome.oath.line2")}
+                <br />
+                {t("welcome.oath.line3")}
+              </div>
+
+              <div className="mt-8">
+                <div className="wc-contract-label">{t("welcome.signature.label")}</div>
+                <div className="relative mt-2">
+                  <input
+                    type="text"
+                    value={mounted ? humanName : ""}
+                    onChange={(e) => setHumanName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      if (e.nativeEvent.isComposing) return;
+                      if (isAnyModalOpen) return;
+                      e.preventDefault();
+                      void handleConfirm();
+                    }}
+                    placeholder={t("welcome.signature.placeholder")}
+                    className="wc-signature-input"
+                    autoComplete="off"
+                    autoFocus
+                    disabled={isLoading || isTransitioning}
+                  />
+                  <AnimatePresence>
+                    {mounted && !!humanName.trim() && (
+                      <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        className="wc-signature-ok"
+                      >
+                        <Sparkle weight="fill" size={18} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
+            </div>
+
+
+            {/* Custom Character Entry */}
+            {user && (
+              <button
+                type="button"
+                onClick={() => setIsCustomCharacterOpen(true)}
+                className="mt-6 mx-auto flex items-center gap-2 px-3 py-1.5 rounded-md border-2 border-dashed border-[var(--border-color)] text-xs text-[var(--text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors"
+              >
+                <UsersFour size={14} />
+                <span>{t("customCharacter.entryButton")}</span>
+                {selectedCharacterIds.size > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-[var(--color-accent)] text-white text-[10px] font-medium">
+                    {selectedCharacterIds.size}
+                  </span>
+                )}
+                {customCharacters.characters.length > 0 && selectedCharacterIds.size === 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-[var(--text-muted)]/20 text-[var(--text-muted)] text-[10px] font-medium">
+                    {customCharacters.characters.length}
+                  </span>
+                )}
+              </button>
             )}
+
+            <div className="mt-8 flex flex-col items-center gap-3">
+              <div className="wc-seal-hint">
+                {canConfirm ? t("welcome.sealHint.ready") : t("welcome.sealHint.waiting")}
+              </div>
+              <button
+                ref={sealButtonRef}
+                type="button"
+                className="wc-wax-seal"
+                onClick={handleConfirm}
+                disabled={!canConfirm}
+              >
+                <FingerprintSimple weight="fill" size={44} className="wc-wax-seal-icon" />
+              </button>
+            </div>
+
+            <div className="wc-corner-mark" aria-hidden="true">
+              <WerewolfIcon size={30} className="text-[var(--color-wolf)] opacity-30" />
+            </div>
           </div>
         </motion.div>
+
+        <AnimatePresence>
+          {isTransitioning && (
+            <motion.div
+              className="wc-transition-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              <motion.div
+                className="wc-transition-text"
+                initial={{ opacity: 0, y: 10, scale: 1.05, filter: "blur(10px)" }}
+                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                transition={{ delay: 0.18, duration: 0.55, ease: "easeOut" }}
+              >
+                <div className="wc-transition-title">{t("welcome.transition.title")}</div>
+                <div className="wc-transition-subtitle">{t("welcome.transition.subtitle")}</div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {showDevTools && (
+        <>
+          <DevModeButton
+            onClick={() => {
+              setIsDevModeEnabled(true);
+              setIsDevConsoleOpen(true);
+            }}
+          />
+
+          <AnimatePresence>
+            {isDevConsoleOpen && (
+              <motion.div
+                initial={{ opacity: 0, x: 300 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 300 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="wc-dev-console fixed right-0 top-0 bottom-0 w-[400px] z-[120] bg-gray-900/95 backdrop-blur-md border-l border-gray-700 shadow-2xl flex flex-col"
+              >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800/50">
+                  <div className="flex items-center gap-2">
+                    <Wrench size={20} className="text-yellow-400" />
+                    <span className="font-bold text-white">{t("welcome.dev.title")}</span>
+                  </div>
+                  <button
+                    onClick={() => setIsDevConsoleOpen(false)}
+                    className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                    type="button"
+                  >
+                    <span className="text-xl leading-none">×</span>
+                  </button>
+                </div>
+
+                <div className="flex border-b border-gray-700">
+                  <button
+                    type="button"
+                    onClick={() => setDevTab("preset")}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${devTab === "preset"
+                        ? "text-yellow-400 border-b-2 border-yellow-400 bg-gray-800/50"
+                        : "text-gray-400 hover:text-white hover:bg-gray-800/30"
+                      }`}
+                  >
+                    {t("welcome.dev.tabs.preset")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDevTab("roles")}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${devTab === "roles"
+                        ? "text-yellow-400 border-b-2 border-yellow-400 bg-gray-800/50"
+                        : "text-gray-400 hover:text-white hover:bg-gray-800/30"
+                      }`}
+                  >
+                    {t("welcome.dev.tabs.roles")}
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {devTab === "preset" && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs font-semibold text-gray-300">{t("welcome.dev.preset.title")}</div>
+                        <button
+                          type="button"
+                          onClick={() => setDevPreset("")}
+                          className="text-xs text-gray-400 hover:text-white"
+                        >
+                          {t("welcome.dev.preset.clear")}
+                        </button>
+                      </div>
+                      <select
+                        value={devPreset}
+                        onChange={(e) => setDevPreset(e.target.value as DevPreset | "")}
+                        className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400"
+                      >
+                        <option value="">{t("welcome.dev.preset.none")}</option>
+                        <option value="MILK_POISON_TEST">{t("welcome.dev.preset.milkPoison")}</option>
+                        <option value="LAST_WORDS_TEST">{t("welcome.dev.preset.lastWords")}</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {devTab === "roles" && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs font-semibold text-gray-300">
+                          {t("welcome.dev.roles.title", { count: playerCount })}
+                        </div>
+                        <div className={`text-xs ${roleConfigValid ? "text-green-400" : "text-gray-400"}`}>
+                          {roleConfigValid ? t("welcome.dev.roles.ready") : roleConfigHint}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        {fixedRoles.map((role, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="w-10 text-xs text-gray-400">
+                              {t("welcome.dev.roles.seat", { seat: idx + 1 })}
+                            </span>
+                            <select
+                              value={role}
+                              onChange={(e) => {
+                                const next = [...fixedRoles];
+                                next[idx] = e.target.value as Role;
+                                setFixedRoles(next);
+                              }}
+                              className="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-yellow-400"
+                            >
+                              {roleOptions.map((r) => (
+                                <option key={r} value={r}>
+                                  {roleLabels[r]}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
       )}
-    </AnimatePresence>
-    </>
-    )}
     </>
   );
 }

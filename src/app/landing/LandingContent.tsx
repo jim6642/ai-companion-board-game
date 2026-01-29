@@ -644,6 +644,21 @@ export function LandingContent() {
               <span>{t("seo.hero.howToPlay")}</span>
             </Link>
           </div>
+
+          <div className="mt-8 flex justify-center">
+            <a
+              href="https://www.producthunt.com/products/wolfcha?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-wolfcha"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                alt="Wolfcha - Single-player Werewolf where AI models battle it out | Product Hunt"
+                width="250"
+                height="54"
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1069557&theme=light&t=1769674895697"
+              />
+            </a>
+          </div>
         </div>
 
         {/* Bottom Gradient Fade */}

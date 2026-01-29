@@ -51,6 +51,13 @@
     "github": {
       "title": "GitHub Project"
     },
+    "productHunt": {
+      "title": "Vote for Wolfcha on Product Hunt",
+      "description": "If you enjoyed this game, an upvote helps a lot and takes only a moment.",
+      "hint": "~10s",
+      "cta": "UPVOTE",
+      "ariaLabel": "Open Wolfcha on Product Hunt (vote)"
+    },
     "sponsor": {
       "title": "Become a sponsor",
       "subtitle": "Your support keeps Wolfcha running smoothly and free for everyone.",
@@ -70,7 +77,6 @@
       "cards": {
         "openCreator": "OpenCreator helps us generate all night-time character art",
         "bailian": "Dashscope provides us with AI model capabilities",
-        "minimax": "Minimax helps us generate transition SFX and daytime voice",
         "zenmux": "Aggregating top global AI models to power every strategic showdown."
       },
       "copySuccess": "Email copied",

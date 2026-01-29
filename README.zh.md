@@ -14,13 +14,10 @@
 
 ![ZenMux Banner](public/sponsor/zenmux-banner.png)
 
-![Minimax Banner](public/sponsor/minimax-banner.jpg)
-
 现有赞助商：
 
 *   [ZenMux](https://zenmux.ai/invite/DMMBVZ) - 提供游戏核心流程、角色扮演、总结记录等 AI 模型能力支持
 *   [Bailian](https://bailian.console.aliyun.com/) - 提供部分 AI 模型能力支持
-*   [Minimax](https://platform.minimaxi.com/subscribe/coding-plan?code=I6GrZd4xLt&source=link) - 提供编程、游戏语音与过场音效能力支持
 *   [OpenCreator](https://opencreator.io?promo=wolfcha) - 提供角色 AI 立绘生成支持
 
 ---
@@ -71,7 +68,6 @@
     *   天黑/天亮时的眨眼转场效果。
     *   角色发言时，嘴巴会随语音节奏张合。
     *   神职角色发言时配有专属立绘。
-*   **多模态体验**：利用 **Minimax** 实时生成不同音色的语音，让每个角色都“活”起来。
 
 ## 🧭 后续计划
 
@@ -97,7 +93,6 @@
 *   **Animations**: [Framer Motion](https://www.framer.com/motion/)
 *   **Avatar Generation**: [DiceBear](https://www.dicebear.com/) (Notionists style)
 *   **AI Integration**: [ZenMux](https://zenmux.ai/invite/DMMBVZ) (Unified interface for LLMs)
-*   **TTS**: [Minimax](https://platform.minimaxi.com/subscribe/coding-plan?code=I6GrZd4xLt&source=link)
 
 ## 🚀 本地运行
 
@@ -122,7 +117,7 @@ npm install
 
 3.  **配置环境变量**
 
-你需要配置相应的 API Keys (ZenMux, Minimax 等) 才能运行完整功能。请参考 `.env.example` 并创建 `.env.local`。
+你需要配置相应的 API Keys (ZenMux 等) 才能运行完整功能。请参考 `.env.example` 并创建 `.env.local`。
 
 4.  **启动开发服务器**
 

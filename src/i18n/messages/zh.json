@@ -51,6 +51,13 @@
     "github": {
       "title": "GitHub 项目"
     },
+    "productHunt": {
+      "title": "来 Product Hunt 给 Wolfcha 投一票",
+      "description": "如果你玩得开心，帮忙点个 Upvote，让更多人看见我们~",
+      "hint": "约10s",
+      "cta": "去投票",
+      "ariaLabel": "打开 Wolfcha 的 Product Hunt 页面（投票）"
+    },
     "sponsor": {
       "title": "成为赞助商",
       "subtitle": "你的支持会直接帮助 Wolfcha 跑得更稳、让更多人可以免费玩到。",
@@ -70,7 +77,6 @@
       "cards": {
         "openCreator": "OpenCreator 帮助我们生成夜晚所有的角色立绘",
         "bailian": "百炼为我们提供部分 AI 模型能力支持",
-        "minimax": "Minimax 帮助我们生成过场音效与白天语音",
         "zenmux": "聚合全球顶尖大模型，为每一场逻辑博弈注入敏锐灵魂。"
       },
       "copySuccess": "已复制邮箱",

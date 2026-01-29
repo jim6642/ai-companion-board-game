@@ -14,13 +14,10 @@
 
 ![ZenMux Banner](public/sponsor/zenmux-banner.png)
 
-![Minimax Banner](public/sponsor/minimax-banner.jpg)
-
 Current sponsors:
 
 *   [ZenMux](https://zenmux.ai/invite/DMMBVZ) - Powers the core game flow, roleplay, and summary features with AI models
 *   [Dashscope](https://bailian.console.aliyun.com/) - Provides additional AI model support
-*   [Minimax](https://platform.minimaxi.com/subscribe/coding-plan?code=I6GrZd4xLt&source=link) - Powers voice synthesis and transition sound effects
 *   [OpenCreator](https://opencreator.io?promo=wolfcha) - Generates AI character portraits
 
 ---
@@ -71,7 +68,6 @@ While we don't have a professional art team, we've crafted a polished UI/UX:
     *   Eye-blink transitions for day/night changes.
     *   Character lip-sync animations during speech.
     *   Unique character portraits for special roles during night actions.
-*   **Multimodal Experience**: Real-time voice generation via **Minimax** gives each character a distinct voice.
 
 ## 🧭 Roadmap
 
@@ -97,7 +93,6 @@ Built with modern web technologies:
 *   **Animations**: [Framer Motion](https://www.framer.com/motion/)
 *   **Avatar Generation**: [DiceBear](https://www.dicebear.com/) (Notionists style)
 *   **AI Integration**: [ZenMux](https://zenmux.ai/invite/DMMBVZ) (Unified interface for LLMs)
-*   **TTS**: [Minimax](https://platform.minimaxi.com/subscribe/coding-plan?code=I6GrZd4xLt&source=link)
 
 ## 🚀 Local Development
 
@@ -122,7 +117,7 @@ npm install
 
 3.  **Configure environment variables**
 
-You'll need to set up API keys (ZenMux, Minimax, etc.) for full functionality. Refer to `.env.example` and create your `.env.local`.
+You'll need to set up API keys (ZenMux, etc.) for full functionality. Refer to `.env.example` and create your `.env.local`.
 
 4.  **Start the development server**
 

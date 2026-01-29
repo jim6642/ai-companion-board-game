@@ -771,14 +771,6 @@ import {
                       <h3 className="text-sm font-medium text-[var(--text-primary)]">{t("customKey.voice.title")}</h3>
                       <p className="text-xs text-[var(--text-muted)] mt-1">{t("customKey.voice.description")}</p>
                     </div>
-                    <a href="https://platform.minimaxi.com/subscribe/coding-plan?code=I6GrZd4xLt&source=link" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] px-2.5 py-2 transition-colors hover:bg-[var(--bg-hover)]">
-                      <img src="/sponsor/minimax.png" alt="" className="h-6 w-6 shrink-0 rounded object-contain" />
-                      <div className="min-w-0 flex-1">
-                        <span className="text-xs font-medium text-[var(--text-primary)]">{t("customKey.minimax.get")}</span>
-                        <span className="text-[11px] text-[var(--text-muted)] ml-1.5">{t("customKey.minimax.note")}</span>
-                      </div>
-                      <ArrowRight size={14} className="shrink-0 text-[var(--text-muted)]" />
-                    </a>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1.5">
                         <Label htmlFor="minimax-key" className="text-xs">{t("customKey.minimax.keyLabel")}</Label>
