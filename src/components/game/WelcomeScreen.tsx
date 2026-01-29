@@ -1,11 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { FingerprintSimple, PawPrint, Sparkle, Wrench, GearSix, UserCircle, GithubLogo, Star, EnvelopeSimple, Handshake, DotsThreeOutlineVertical, Users } from "@phosphor-icons/react";
+import { FingerprintSimple, PawPrint, Sparkle, Wrench, GearSix, UserCircle, GithubLogo, Star, EnvelopeSimple, Handshake, DotsThreeOutlineVertical, Users, UsersFour } from "@phosphor-icons/react";
 import { WerewolfIcon } from "@/components/icons/FlatIcons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -18,6 +18,8 @@ import { AccountModal } from "@/components/game/AccountModal";
 import { ResetPasswordModal } from "@/components/game/ResetPasswordModal";
 import { UserProfileModal } from "@/components/game/UserProfileModal";
 import { LocaleSwitcher } from "@/components/game/LocaleSwitcher";
+import { CustomCharacterModal } from "@/components/game/CustomCharacterModal";
+import { useCustomCharacters } from "@/hooks/useCustomCharacters";
 import { useCredits } from "@/hooks/useCredits";
 import { difficultyAtom, playerCountAtom } from "@/store/settings";
 import { hasDashscopeKey, hasZenmuxKey, isCustomKeyEnabled } from "@/lib/api-keys";
@@ -36,6 +38,8 @@ type SponsorCardProps = {
   note?: string;
   children?: React.ReactNode;
 };
+
+const CUSTOM_CHARACTER_SELECTION_STORAGE_KEY = "wolfcha_custom_character_selection";
 
 // Track sponsor click
 async function trackSponsorClick(sponsorId: string) {
@@ -258,6 +262,32 @@ export function WelcomeScreen({
   const [isGroupOpen, setIsGroupOpen] = useState(false);
   const [groupImgOk, setGroupImgOk] = useState<boolean | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCustomCharacterOpen, setIsCustomCharacterOpen] = useState(false);
+  const selectionStorageKey = useMemo(() => {
+    return user?.id
+      ? `${CUSTOM_CHARACTER_SELECTION_STORAGE_KEY}:${user.id}`
+      : CUSTOM_CHARACTER_SELECTION_STORAGE_KEY;
+  }, [user?.id]);
+
+  const readSelectionFromStorage = useCallback(() => {
+    if (typeof window === "undefined") return new Set<string>();
+    try {
+      const raw = window.localStorage.getItem(selectionStorageKey);
+      if (!raw) return new Set<string>();
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return new Set<string>();
+      return new Set(parsed.filter((item): item is string => typeof item === "string"));
+    } catch {
+      return new Set<string>();
+    }
+  }, [selectionStorageKey]);
+
+  const selectionStorageKeyRef = useRef<string | null>(null);
+  const [selectedCharacterIds, setSelectedCharacterIds] = useState<Set<string>>(() =>
+    readSelectionFromStorage()
+  );
+  
+  const customCharacters = useCustomCharacters(user);
   const [difficulty, setDifficulty] = useAtom(difficultyAtom);
   const [playerCount, setPlayerCount] = useAtom(playerCountAtom);
   const [githubStars, setGithubStars] = useState<number | null>(null);
@@ -265,6 +295,29 @@ export function WelcomeScreen({
   useEffect(() => {
     if (locale === "en") setIsGroupOpen(false);
   }, [locale]);
+
+  useEffect(() => {
+    selectionStorageKeyRef.current = selectionStorageKey;
+    setSelectedCharacterIds(readSelectionFromStorage());
+  }, [readSelectionFromStorage, selectionStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (selectionStorageKeyRef.current !== selectionStorageKey) return;
+    const ids = Array.from(selectedCharacterIds);
+    window.localStorage.setItem(selectionStorageKey, JSON.stringify(ids));
+  }, [selectedCharacterIds, selectionStorageKey]);
+
+  useEffect(() => {
+    if (customCharacters.loading) return;
+    const validIds = new Set(customCharacters.characters.map((char) => char.id));
+    const filtered = new Set(
+      Array.from(selectedCharacterIds).filter((id) => validIds.has(id))
+    );
+    if (filtered.size !== selectedCharacterIds.size) {
+      setSelectedCharacterIds(filtered);
+    }
+  }, [customCharacters.characters, customCharacters.loading, selectedCharacterIds]);
 
   const [customKeyEnabled, setCustomKeyEnabled] = useState(() => isCustomKeyEnabled());
 
@@ -375,6 +428,7 @@ export function WelcomeScreen({
     isSponsorOpen ||
     isGroupOpen ||
     isMobileMenuOpen ||
+    isCustomCharacterOpen ||
     isDevConsoleOpen;
 
   const difficultyLabel = useMemo(() => {
@@ -501,7 +555,28 @@ export function WelcomeScreen({
       // 传递开发模式配置
       const roles = devTab === "roles" && roleConfigValid ? (fixedRoles as Role[]) : undefined;
       const preset = devTab === "preset" && devPreset ? (devPreset as DevPreset) : undefined;
-      void onStart({ fixedRoles: roles, devPreset: preset, difficulty, playerCount });
+      
+      // Get selected custom characters
+      const selectedCustomChars = customCharacters.characters
+        .filter(c => selectedCharacterIds.has(c.id))
+        .map(c => ({
+          id: c.id,
+          display_name: c.display_name,
+          gender: c.gender,
+          age: c.age,
+          mbti: c.mbti,
+          basic_info: c.basic_info,
+          style_label: c.style_label,
+          avatar_seed: c.avatar_seed,
+        }));
+      
+      void onStart({ 
+        fixedRoles: roles, 
+        devPreset: preset, 
+        difficulty, 
+        playerCount,
+        customCharacters: selectedCustomChars,
+      });
     }, 800);
 
     if (hasUserKey) {
@@ -603,6 +678,19 @@ export function WelcomeScreen({
         onOpenChange={setIsShareOpen}
         referralCode={referralCode}
         totalReferrals={totalReferrals}
+      />
+      <CustomCharacterModal
+        open={isCustomCharacterOpen}
+        onOpenChange={setIsCustomCharacterOpen}
+        characters={customCharacters.characters}
+        loading={customCharacters.loading}
+        canAddMore={customCharacters.canAddMore}
+        remainingSlots={customCharacters.remainingSlots}
+        selectedIds={selectedCharacterIds}
+        onSelectionChange={setSelectedCharacterIds}
+        onCreateCharacter={customCharacters.createCharacter}
+        onUpdateCharacter={customCharacters.updateCharacter}
+        onDeleteCharacter={customCharacters.deleteCharacter}
       />
 
       <Dialog
@@ -1054,6 +1142,29 @@ export function WelcomeScreen({
               </div>
             </div>
           </div>
+
+
+          {/* Custom Character Entry */}
+          {user && (
+            <button
+              type="button"
+              onClick={() => setIsCustomCharacterOpen(true)}
+              className="mt-6 mx-auto flex items-center gap-2 px-3 py-1.5 rounded-md border-2 border-dashed border-[var(--border-color)] text-xs text-[var(--text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors"
+            >
+              <UsersFour size={14} />
+              <span>{t("customCharacter.entryButton")}</span>
+              {selectedCharacterIds.size > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-[var(--color-accent)] text-white text-[10px] font-medium">
+                  {selectedCharacterIds.size}
+                </span>
+              )}
+              {customCharacters.characters.length > 0 && selectedCharacterIds.size === 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-[var(--text-muted)]/20 text-[var(--text-muted)] text-[10px] font-medium">
+                  {customCharacters.characters.length}
+                </span>
+              )}
+            </button>
+          )}
 
           <div className="mt-8 flex flex-col items-center gap-3">
             <div className="wc-seal-hint">

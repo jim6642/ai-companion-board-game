@@ -47,6 +47,18 @@ function getRandomModelRef(): ModelRef {
 
 const phaseManager = new PhaseManager();
 
+function sanitizeModelArtifacts(text: string): string {
+  const raw = String(text ?? "");
+  if (!raw) return raw;
+
+  return raw
+    .replace(/<\|begin▁of▁sentence\|>/g, "")
+    .replace(/<\|end▁of▁sentence\|>/g, "")
+    .replace(/<｜begin▁of▁sentence｜>/g, "")
+    .replace(/<｜end▁of▁sentence｜>/g, "")
+    .trim();
+}
+
 function sanitizeSeatMentions(text: string, totalSeats: number): string {
   if (!text) return text;
   if (!Number.isFinite(totalSeats) || totalSeats <= 0) return text;
@@ -235,12 +247,14 @@ export function setupPlayers(
   for (let seat = 0; seat < totalPlayers; seat++) {
     const role = assignedRoles[seat];
     const alignment: Alignment = role === "Werewolf" ? "wolf" : "village";
+    const playerId = getPlayerIdForSeat(seat);
 
     if (seat === humanSeat) {
       players.push({
-        playerId: getPlayerIdForSeat(seat),
+        playerId,
         seat,
         displayName: humanName.trim() || fallbackHumanName,
+        avatarSeed: playerId,
         alive: true,
         role,
         alignment,
@@ -257,9 +271,10 @@ export function setupPlayers(
       const modelRef = modelRefs?.[safeCharIndex] ?? getRandomModelRef();
 
       players.push({
-        playerId: getPlayerIdForSeat(seat),
+        playerId,
         seat,
         displayName: character.displayName,
+        avatarSeed: character.avatarSeed ?? playerId,
         alive: true,
         role,
         alignment,
@@ -613,7 +628,7 @@ export async function* generateAISpeechStream(
       yield chunk;
     }
 
-    const sanitizedSpeech = sanitizeSeatMentions(fullResponse, state.players.length);
+    const sanitizedSpeech = sanitizeSeatMentions(sanitizeModelArtifacts(fullResponse), state.players.length);
     await aiLogger.log({
       type: "speech",
       request: { 
@@ -629,7 +644,7 @@ export async function* generateAISpeechStream(
       },
     });
   } catch (error) {
-    const sanitizedSpeech = sanitizeSeatMentions(fullResponse, state.players.length);
+    const sanitizedSpeech = sanitizeSeatMentions(sanitizeModelArtifacts(fullResponse), state.players.length);
     await aiLogger.log({
       type: "speech",
       request: { 
@@ -729,7 +744,7 @@ export async function generateAISpeechSegments(
       temperature: GAME_TEMPERATURE.SPEECH,
     }));
 
-    const cleanedSpeech = stripMarkdownCodeFences(result.content);
+    const cleanedSpeech = sanitizeModelArtifacts(stripMarkdownCodeFences(result.content));
     const sanitizedSpeech = sanitizeSeatMentions(cleanedSpeech, state.players.length);
 
     await aiLogger.log({
@@ -853,7 +868,7 @@ export async function generateAISpeechSegmentsStream(
 
   const parser = new StreamingSpeechParser({
     onSegmentReceived: (segment, index) => {
-      const sanitized = sanitizeSeatMentions(segment, state.players.length);
+      const sanitized = sanitizeSeatMentions(sanitizeModelArtifacts(segment), state.players.length);
       if (!emittedSegments.has(sanitized)) {
         emittedSegments.add(sanitized);
         options.onSegmentReceived?.(sanitized, emittedCount++);
@@ -892,7 +907,7 @@ export async function generateAISpeechSegmentsStream(
     // 如果流式解析没有产生结果，回退到传统解析
     // 注意：只有当 emittedSegments 也为空时才进行回退，避免重复发射
     if (segments.length === 0 && emittedSegments.size === 0) {
-      const cleanedSpeech = stripMarkdownCodeFences(accumulatedContent);
+      const cleanedSpeech = sanitizeModelArtifacts(stripMarkdownCodeFences(accumulatedContent));
       const sanitizedSpeech = sanitizeSeatMentions(cleanedSpeech, state.players.length);
 
       // 尝试解析 JSON 数组
@@ -979,7 +994,7 @@ export async function generateAISpeechSegmentsStream(
 
     // Sanitize all segments
     const sanitizedSegments = segments.map((s) =>
-      sanitizeSeatMentions(s, state.players.length)
+      sanitizeSeatMentions(sanitizeModelArtifacts(s), state.players.length)
     );
 
     await aiLogger.log({
