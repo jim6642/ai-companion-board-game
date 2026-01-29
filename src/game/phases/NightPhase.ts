@@ -115,6 +115,11 @@ export class NightPhase extends GamePhase {
     const systemMessages = getSystemMessages();
     const uiText = getUiText();
     const guard = state.players.find((p) => p.role === "Guard" && p.alive);
+
+    if (!guard) {
+      return state;
+    }
+
     let currentState = this.transitionPhase(state, "NIGHT_GUARD_ACTION");
     currentState = addSystemMessage(currentState, systemMessages.guardActionStart);
     runtime.setGameState(currentState);
@@ -122,15 +127,6 @@ export class NightPhase extends GamePhase {
     runtime.setIsWaitingForAI(true);
     runtime.setDialogue(speakerSystem, uiText.guardActing, false);
     await playNarrator("guardWake");
-
-    if (!guard) {
-      await delay(randomFakeActionDelay());
-      await runtime.waitForUnpause();
-      if (!runtime.isTokenValid(runtime.token)) return currentState;
-      runtime.setIsWaitingForAI(false);
-      await playNarrator("guardClose");
-      return currentState;
-    }
 
     if (guard.isHuman) {
       runtime.setIsWaitingForAI(false);
@@ -333,17 +329,20 @@ export class NightPhase extends GamePhase {
   private async runNightPhase(state: GameState, runtime: NightPhaseRuntime): Promise<void> {
     let currentState = state;
 
-    currentState = await this.runGuardAction(currentState, runtime);
-    if (!runtime.isTokenValid(runtime.token)) return;
+    const hasAliveGuard = currentState.players.some((p) => p.role === "Guard" && p.alive);
+    if (hasAliveGuard) {
+      currentState = await this.runGuardAction(currentState, runtime);
+      if (!runtime.isTokenValid(runtime.token)) return;
 
-    const guard = currentState.players.find((p) => p.role === "Guard" && p.alive);
-    if (guard?.isHuman && currentState.nightActions.guardTarget === undefined) {
-      return;
+      const guard = currentState.players.find((p) => p.role === "Guard" && p.alive);
+      if (guard?.isHuman && currentState.nightActions.guardTarget === undefined) {
+        return;
+      }
+
+      await delay(2000);
+      await runtime.waitForUnpause();
+      if (!runtime.isTokenValid(runtime.token)) return;
     }
-
-    await delay(2000);
-    await runtime.waitForUnpause();
-    if (!runtime.isTokenValid(runtime.token)) return;
 
     currentState = await this.runWolfAction(currentState, runtime);
     if (!runtime.isTokenValid(runtime.token)) return;
