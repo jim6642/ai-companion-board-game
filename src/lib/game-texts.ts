@@ -78,6 +78,7 @@ export const getSystemPatterns = (locale?: AppLocale) => {
   return {
     nightFall: new RegExp(t("system.patterns.nightFall")),
     playerKilled: new RegExp(t("system.patterns.playerKilled")),
+    playerMilkKilled: new RegExp(t("system.patterns.playerMilkKilled")),
     playerPoisoned: new RegExp(t("system.patterns.playerPoisoned")),
     badgeElected: new RegExp(t("system.patterns.badgeElected")),
     badgeTransferred: new RegExp(t("system.patterns.badgeTransferred")),
