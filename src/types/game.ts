@@ -235,7 +235,6 @@ export const SUMMARY_MODEL = "google/gemini-2.5-flash-lite";
 // Note: SUMMARY_MODEL and GENERATOR_MODEL are included here for server-side validation.
 export const AVAILABLE_MODELS: ModelRef[] = [
   { provider: "dashscope", model: "deepseek-v3.2" },
-  { provider: "dashscope", model: "qwen-plus" },
   { provider: "dashscope", model: "qwen3-max" },
 
   { provider: "zenmux", model: "deepseek/deepseek-v3.2" },

@@ -431,15 +431,6 @@ export function WelcomeScreen({
     isCustomCharacterOpen ||
     isDevConsoleOpen;
 
-  const difficultyLabel = useMemo(() => {
-    const labels: Record<DifficultyLevel, string> = {
-      easy: t("difficulty.easy"),
-      normal: t("difficulty.normal"),
-      hard: t("difficulty.hard"),
-    };
-    return labels[difficulty];
-  }, [difficulty, t]);
-
   useEffect(() => {
     const paper = paperRef.current;
     if (!paper) return;
@@ -635,8 +626,6 @@ export function WelcomeScreen({
         <GameSetupModal
           open={isSetupOpen}
           onOpenChange={setIsSetupOpen}
-          difficulty={difficulty}
-          onDifficultyChange={setDifficulty}
           playerCount={playerCount}
           onPlayerCountChange={setPlayerCount}
           isGenshinMode={isGenshinMode}

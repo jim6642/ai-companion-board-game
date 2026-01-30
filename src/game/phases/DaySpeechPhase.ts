@@ -12,6 +12,7 @@ import {
   getRoleKnowHow,
   buildSystemTextFromParts,
   getDayStartIndex,
+  buildSituationalStrategy,
 } from "@/lib/prompt-utils";
 import type { FlowToken } from "@/lib/game-flow-controller";
 import {
@@ -172,6 +173,9 @@ export class DaySpeechPhase extends GamePhase {
 
     // Get role-specific strategy tips
     const roleKnowHow = getRoleKnowHow(player.role);
+    
+    // Get situational strategy based on current game state
+    const situationalStrategy = buildSituationalStrategy(state, player);
 
     const baseCacheable = t("prompts.daySpeech.base", {
       seat: player.seat + 1,
@@ -201,6 +205,7 @@ export class DaySpeechPhase extends GamePhase {
       { text: baseCacheable, cacheable: true, ttl: "1h" },
       { text: taskSection },
       { text: roleKnowHow },
+      ...(situationalStrategy ? [{ text: situationalStrategy }] : []),
       { text: guidelinesSection, cacheable: true, ttl: "1h" },
     ];
     const system = buildSystemTextFromParts(systemParts);

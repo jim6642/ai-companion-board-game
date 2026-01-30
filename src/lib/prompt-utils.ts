@@ -66,33 +66,116 @@ export const getRoleKnowHow = (role: string): string => {
   }
 };
 
-export const buildDifficultySpeechHint = (difficulty: DifficultyLevel): string => {
-  const { t } = getI18n();
-  switch (difficulty) {
-    case "easy":
-      return t("promptUtils.difficultySpeech.easy");
-    case "hard":
-      return t("promptUtils.difficultySpeech.hard");
-    default:
-      return t("promptUtils.difficultySpeech.normal");
+/**
+ * Build situational strategy based on current game state.
+ * Provides context-aware tactical suggestions without being overly restrictive.
+ */
+export const buildSituationalStrategy = (state: GameState, player: Player): string => {
+  const lines: string[] = [];
+  
+  if (player.role === "Seer") {
+    const checks = state.nightActions.seerHistory || [];
+    if (checks.length === 0) {
+      return "";
+    }
+    
+    const hasWolfCheck = checks.some(c => c.isWolf);
+    const hasGoodCheck = checks.some(c => !c.isWolf);
+    const latestCheck = checks[checks.length - 1];
+    const latestTarget = state.players.find(p => p.seat === latestCheck.targetSeat);
+    
+    lines.push("<situational_tips>");
+    if (hasWolfCheck && state.day === 1) {
+      lines.push("【当前情境】你首验查杀！这是强信息。");
+      lines.push("【可选策略】");
+      lines.push("- 跳身份带节奏，报出查杀的座位号");
+      lines.push("- 给出今日归票建议");
+      lines.push("- 准备好应对可能的狼人对跳");
+    } else if (hasGoodCheck && !hasWolfCheck) {
+      lines.push("【当前情境】你目前只有金水（好人验），信息量有限。");
+      lines.push("【可选策略】");
+      lines.push("- 潜水观察，等待更多信息后再跳");
+      lines.push("- 或跳身份报金水，争取话语权");
+      lines.push("- 观察是否有人对跳，判断真假预言家");
+    } else if (hasWolfCheck && state.day > 1) {
+      lines.push("【当前情境】你有查杀记录。");
+      lines.push("【可选策略】");
+      lines.push("- 继续推进查杀目标出局");
+      lines.push("- 结合新的查验结果分析局势");
+    }
+    lines.push("</situational_tips>");
   }
+  
+  if (player.role === "Werewolf") {
+    const aliveWolves = state.players.filter(p => p.role === "Werewolf" && p.alive);
+    const isLastWolf = aliveWolves.length === 1;
+    
+    lines.push("<situational_tips>");
+    if (isLastWolf) {
+      lines.push("【当前情境】你是最后一只狼！");
+      lines.push("【可选策略】");
+      lines.push("- 低调发言，避免被集火");
+      lines.push("- 引导好人内斗");
+      lines.push("- 寻找机会翻盘");
+    } else if (state.day === 1) {
+      lines.push("【当前情境】首日发言，建立信任很关键。");
+      lines.push("【可选策略】");
+      lines.push("- 像好人一样分析局势");
+      lines.push("- 不要过早站边或暴露狼视角");
+      lines.push("- 可以适当质疑可疑发言");
+    }
+    lines.push("</situational_tips>");
+  }
+  
+  if (player.role === "Witch") {
+    const hasHeal = !state.roleAbilities.witchHealUsed;
+    const hasPoison = !state.roleAbilities.witchPoisonUsed;
+    
+    if (!hasHeal && !hasPoison) {
+      return "";
+    }
+    
+    lines.push("<situational_tips>");
+    lines.push("【当前情境】你是女巫。");
+    if (hasHeal && hasPoison) {
+      lines.push("- 解药和毒药都还在，谨慎使用");
+    } else if (hasHeal) {
+      lines.push("- 解药还在，留给关键好人");
+    } else if (hasPoison) {
+      lines.push("- 毒药还在，留给确认的狼人");
+    }
+    lines.push("- 你知道谁被刀了，这是重要信息");
+    lines.push("</situational_tips>");
+  }
+  
+  return lines.join("\n");
 };
 
-export const buildDifficultyDecisionHint = (difficulty: DifficultyLevel, role: string): string => {
+/**
+ * Build difficulty hint for speech generation.
+ * Now always uses "hard" level strategy for better AI performance.
+ * The difficulty parameter is kept for backward compatibility but ignored.
+ */
+export const buildDifficultySpeechHint = (_difficulty?: DifficultyLevel): string => {
+  const { t } = getI18n();
+  // Always use hard difficulty for better strategic depth
+  return t("promptUtils.difficultySpeech.hard");
+};
+
+/**
+ * Build difficulty hint for decision making.
+ * Now always uses "hard" level strategy for better AI performance.
+ * The difficulty parameter is kept for backward compatibility but ignored.
+ */
+export const buildDifficultyDecisionHint = (_difficulty?: DifficultyLevel, role?: string): string => {
   const { t } = getI18n();
   const roleNote =
     role === "Werewolf"
       ? t("promptUtils.difficultyDecision.roleNoteWerewolf")
       : t("promptUtils.difficultyDecision.roleNoteGood");
 
-  switch (difficulty) {
-    case "easy":
-      return t("promptUtils.difficultyDecision.easy", { roleNote });
-    case "hard":
-      return t("promptUtils.difficultyDecision.hard", { roleNote });
-    default:
-      return t("promptUtils.difficultyDecision.normal", { roleNote });
-  }
+  // Always use hard difficulty for better strategic depth
+  return t("promptUtils.difficultyDecision.hard", { roleNote });
 };
 
 export const buildPersonaSection = (player: Player, isGenshinMode: boolean = false): string => {
@@ -372,6 +455,102 @@ export const buildSystemAnnouncementsSinceDawn = (state: GameState, maxLines: nu
   return recentLines.join("\n");
 };
 
+/**
+ * Build role-specific private information section.
+ * This is placed at the TOP of the context to ensure AI sees it first.
+ */
+const buildRolePrivateInfo = (state: GameState, player: Player): string | null => {
+  const { t } = getI18n();
+  
+  if (player.role === "Seer") {
+    const history = state.nightActions.seerHistory || [];
+    if (history.length === 0) return null;
+    
+    const checks = history.map((record) => {
+      const target = state.players.find((p) => p.seat === record.targetSeat);
+      const resultEmoji = record.isWolf ? "🐺 狼人" : "✓ 好人";
+      return `  第${record.day}夜 → ${record.targetSeat + 1}号${target?.displayName || ""} = ${resultEmoji}`;
+    });
+    
+    return `<your_seer_checks>
+【你的查验记录】
+${checks.join("\n")}
+</your_seer_checks>`;
+  }
+  
+  if (player.role === "Witch") {
+    const healStatus = state.roleAbilities.witchHealUsed ? "已用" : "可用";
+    const poisonStatus = state.roleAbilities.witchPoisonUsed ? "已用" : "可用";
+    const witchActions: string[] = [];
+    if (state.nightHistory) {
+      Object.entries(state.nightHistory).forEach(([day, history]) => {
+        if (history.witchSave && history.wolfTarget !== undefined) {
+          const savedPlayer = state.players.find(p => p.seat === history.wolfTarget);
+          if (savedPlayer) {
+            witchActions.push(`  第${day}夜：救了 ${history.wolfTarget + 1}号${savedPlayer.displayName}`);
+          }
+        }
+        if (history.witchPoison !== undefined) {
+          const poisonedPlayer = state.players.find(p => p.seat === history.witchPoison);
+          if (poisonedPlayer) {
+            witchActions.push(`  第${day}夜：毒了 ${history.witchPoison + 1}号${poisonedPlayer.displayName}`);
+          }
+        }
+      });
+    }
+    let witchInfo = `<your_potions>
+【你的药水状态】解药: ${healStatus} | 毒药: ${poisonStatus}`;
+    if (witchActions.length > 0) {
+      witchInfo += `\n【用药记录】\n${witchActions.join("\n")}`;
+    }
+    witchInfo += `\n</your_potions>`;
+    return witchInfo;
+  }
+  
+  if (player.role === "Guard") {
+    const lastTarget = state.nightActions.lastGuardTarget !== undefined 
+      ? state.players.find((p) => p.seat === state.nightActions.lastGuardTarget)
+      : null;
+    const guardedSeat = state.nightActions.lastGuardTarget;
+    
+    if (guardedSeat !== undefined && lastTarget) {
+      const wasProtectionEffective = lastTarget.alive;
+      const protectionResult = wasProtectionEffective 
+        ? `${guardedSeat + 1}号${lastTarget.displayName} 今天仍然存活`
+        : `${guardedSeat + 1}号${lastTarget.displayName} 已出局`;
+      
+      return `<your_guard_info>
+【昨晚守护】${guardedSeat + 1}号${lastTarget.displayName}
+【守护结果】${protectionResult}
+【今晚限制】不能连续守护 ${guardedSeat + 1}号
+</your_guard_info>`;
+    } else {
+      return `<your_guard_info>
+【首次行动】你之前没有守护过任何人
+【今晚限制】无，可以守护任何存活玩家
+</your_guard_info>`;
+    }
+  }
+  
+  if (player.role === "Werewolf") {
+    const teammates = state.players.filter(
+      (p) => p.role === "Werewolf" && p.alive && p.playerId !== player.playerId
+    );
+    const allWolves = state.players.filter((p) => p.role === "Werewolf");
+    const aliveWolves = allWolves.filter((p) => p.alive);
+    const teammateList = teammates.length > 0 
+      ? teammates.map((tm) => `${tm.seat + 1}号${tm.displayName}`).join("、")
+      : "无存活队友";
+    
+    return `<your_wolf_team>
+【狼队友】${teammateList}
+【狼人存活】${aliveWolves.length}/${allWolves.length}
+</your_wolf_team>`;
+  }
+  
+  return null;
+};
+
 export const buildGameContext = (
   state: GameState,
   player: Player,
@@ -381,6 +560,10 @@ export const buildGameContext = (
   const alivePlayers = state.players.filter((p) => p.alive);
   const deadPlayers = state.players.filter((p) => !p.alive);
   const totalSeats = state.players.length;
+
+  // === 第一优先级：角色私有信息（放在最前面） ===
+  const privateInfo = buildRolePrivateInfo(state, player);
+  let context = privateInfo ? `${privateInfo}\n\n` : "";
 
   // Build YAML-formatted game state
   const aliveSeats = alivePlayers.map((p) => p.seat + 1);
@@ -425,7 +608,7 @@ export const buildGameContext = (
     name: player.displayName 
   });
 
-  let context = `<current_status>\n${timeReminder}\n</current_status>
+  context += `<current_status>\n${timeReminder}\n</current_status>
 
 <game_state>
 day: ${state.day}
@@ -591,85 +774,8 @@ alive_count: ${alivePlayers.length}
     context += `\n</votes>`;
   }
 
-  // Role-specific private information
-  if (player.role === "Seer") {
-    const history = state.nightActions.seerHistory || [];
-    if (history.length > 0) {
-      const checks = history.map((record) => {
-        const target = state.players.find((p) => p.seat === record.targetSeat);
-        return `  - {day: ${record.day}, target: ${t("promptUtils.gameContext.seatLabel", { seat: record.targetSeat + 1 })}${target?.displayName || ''}, result: ${record.isWolf ? t("promptUtils.gameContext.seerResultWolf") : t("promptUtils.gameContext.seerResultGood")}}`;
-      });
-      context += `\n\n<your_checks>\n${checks.join("\n")}\n</your_checks>`;
-    }
-  }
-
-  if (player.role === "Witch") {
-    const potionStatus = `heal: ${state.roleAbilities.witchHealUsed ? t("promptUtils.gameContext.used") : t("promptUtils.gameContext.available")}, poison: ${state.roleAbilities.witchPoisonUsed ? t("promptUtils.gameContext.used") : t("promptUtils.gameContext.available")}`;
-    const witchActions: string[] = [];
-    if (state.nightHistory) {
-      Object.entries(state.nightHistory).forEach(([day, history]) => {
-        if (history.witchSave && history.wolfTarget !== undefined) {
-          const savedPlayer = state.players.find(p => p.seat === history.wolfTarget);
-          if (savedPlayer) {
-            witchActions.push(`  - {day: ${day}, action: heal, target: ${t("promptUtils.gameContext.seatLabel", { seat: history.wolfTarget + 1 })}${savedPlayer.displayName}}`);
-          }
-        }
-        if (history.witchPoison !== undefined) {
-          const poisonedPlayer = state.players.find(p => p.seat === history.witchPoison);
-          if (poisonedPlayer) {
-            witchActions.push(`  - {day: ${day}, action: poison, target: ${t("promptUtils.gameContext.seatLabel", { seat: history.witchPoison + 1 })}${poisonedPlayer.displayName}}`);
-          }
-        }
-      });
-    }
-    context += `\n\n<your_potions>\nstatus: {${potionStatus}}`;
-    if (witchActions.length > 0) {
-      context += `\nhistory:\n${witchActions.join("\n")}`;
-    }
-    context += `\n</your_potions>`;
-  }
-
-  if (player.role === "Guard") {
-    const lastTarget = state.nightActions.lastGuardTarget !== undefined 
-      ? state.players.find((p) => p.seat === state.nightActions.lastGuardTarget)
-      : null;
-    const guardedSeat = state.nightActions.lastGuardTarget;
-    
-    // 叙事化呈现守卫信息，区分"回忆"和"限制"
-    let guardMemory = "";
-    if (guardedSeat !== undefined && lastTarget) {
-      // 检查昨晚守护是否成功（被守护的人是否存活）
-      const wasProtectionEffective = lastTarget.alive;
-      const protectionResult = wasProtectionEffective 
-        ? t("promptUtils.gameContext.guardProtectionSuccess", { seat: guardedSeat + 1, name: lastTarget.displayName })
-        : t("promptUtils.gameContext.guardProtectionFailed", { seat: guardedSeat + 1, name: lastTarget.displayName });
-      
-      guardMemory = `<night_memory>
-${t("promptUtils.gameContext.guardMemoryTitle")}
-${t("promptUtils.gameContext.guardLastNightAction", { seat: guardedSeat + 1, name: lastTarget.displayName })}
-${protectionResult}
-${t("promptUtils.gameContext.guardConstraintTitle")}
-${t("promptUtils.gameContext.guardCannotProtect", { seat: guardedSeat + 1, name: lastTarget.displayName })}
-</night_memory>`;
-    } else {
-      guardMemory = `<night_memory>
-${t("promptUtils.gameContext.guardMemoryTitle")}
-${t("promptUtils.gameContext.guardFirstNight")}
-${t("promptUtils.gameContext.guardConstraintTitle")}
-${t("promptUtils.gameContext.guardNoConstraint")}
-</night_memory>`;
-    }
-    context += `\n\n${guardMemory}`;
-  }
-
-  if (player.role === "Werewolf") {
-    const teammates = state.players.filter(
-      (p) => p.role === "Werewolf" && p.alive && p.playerId !== player.playerId
-    );
-    const allWolves = state.players.filter((p) => p.role === "Werewolf");
-    const aliveWolves = allWolves.filter((p) => p.alive);
-    context += `\n\n<wolf_team>\nalive_teammates: [${teammates.map((tm) => `${t("promptUtils.gameContext.seatLabel", { seat: tm.seat + 1 })}${tm.displayName}`).join(", ")}]\nwolf_count: {total: ${allWolves.length}, alive: ${aliveWolves.length}}\n</wolf_team>`;
-  }
+  // NOTE: Role-specific private information is now at the TOP of the context
+  // via buildRolePrivateInfo() to ensure AI sees it first.
 
   // NOTE: We intentionally do NOT include <current_votes> during DAY_VOTE phase.
   // Showing real-time votes to later voters causes a "bandwagon effect" where

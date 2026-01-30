@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
@@ -10,15 +9,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import type { DifficultyLevel } from "@/types/game";
 import { SoundSettingsSection } from "@/components/game/SettingsModal";
 import { useTranslations } from "next-intl";
 
 interface GameSetupModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  difficulty: DifficultyLevel;
-  onDifficultyChange: (value: DifficultyLevel) => void;
   playerCount: number;
   onPlayerCountChange: (value: number) => void;
   isGenshinMode: boolean;
@@ -39,8 +35,6 @@ interface GameSetupModalProps {
 export function GameSetupModal({
   open,
   onOpenChange,
-  difficulty,
-  onDifficultyChange,
   playerCount,
   onPlayerCountChange,
   isGenshinMode,
@@ -57,12 +51,6 @@ export function GameSetupModal({
   onAutoAdvanceDialogueEnabledChange,
 }: GameSetupModalProps) {
   const t = useTranslations();
-  
-  const DIFFICULTY_OPTIONS = [
-    { value: "easy" as DifficultyLevel, label: t("difficulty.easy"), description: t("gameSetup.difficulty.easyDesc") },
-    { value: "normal" as DifficultyLevel, label: t("difficulty.normal"), description: t("gameSetup.difficulty.normalDesc") },
-    { value: "hard" as DifficultyLevel, label: t("difficulty.hard"), description: t("gameSetup.difficulty.hardDesc") },
-  ];
 
   const PLAYER_COUNT_OPTIONS = [
     { value: 8, label: t("gameSetup.playerCount.8.title"), description: t("gameSetup.playerCount.8.description"), roles: t("gameSetup.playerCount.8.roles") },
@@ -83,28 +71,6 @@ export function GameSetupModal({
         </DialogHeader>
 
         <div className="space-y-5">
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-[var(--text-primary)]">{t("gameSetup.difficultyLabel")}</div>
-            <Select
-              value={difficulty}
-              onValueChange={(value) => onDifficultyChange(value as DifficultyLevel)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("gameSetup.selectDifficulty")} />
-              </SelectTrigger>
-              <SelectContent>
-                {DIFFICULTY_OPTIONS.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    label={option.label}
-                    description={option.description}
-                  />
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="space-y-2">
             <div className="text-sm font-medium text-[var(--text-primary)]">{t("gameSetup.playerCountLabel")}</div>
             <Select

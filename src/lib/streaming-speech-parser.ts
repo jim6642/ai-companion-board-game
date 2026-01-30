@@ -172,7 +172,7 @@ export class StreamingSpeechParser {
                 // 过滤掉常见的 JSON 键名，只保留实际内容
                 const commonKeys = new Set(["message", "content", "text", "value", "speech", "speaker", "role", "type", "index", "id"]);
                 if (arrayDepth > 0 && cleaned && cleaned.length > 5 && !commonKeys.has(cleaned.toLowerCase())) {
-                  validSegments.push(cleaned);
+                    validSegments.push(cleaned);
                 }
               }
             } catch {

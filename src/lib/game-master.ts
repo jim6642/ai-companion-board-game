@@ -1264,6 +1264,7 @@ export async function generateAIBadgeSignupBatch(
       const targetPlayer = state.players.find((p) => p.seat === lastCheck.targetSeat);
       if (targetPlayer) {
         nightActionInfo = t("gameMaster.badgeSignup.seerChecked", {
+          targetSeat: lastCheck.targetSeat + 1,
           targetName: targetPlayer.displayName,
           result: lastCheck.isWolf ? t("gameMaster.badgeSignup.werewolf") : t("gameMaster.badgeSignup.notWerewolf"),
         });
@@ -1282,7 +1283,10 @@ export async function generateAIBadgeSignupBatch(
     } else if (player.role === "Guard" && state.nightActions.lastGuardTarget !== undefined) {
       const targetPlayer = state.players.find((p) => p.seat === state.nightActions.lastGuardTarget);
       if (targetPlayer) {
-        nightActionInfo = t("gameMaster.badgeSignup.guardProtected", { targetName: targetPlayer.displayName });
+        nightActionInfo = t("gameMaster.badgeSignup.guardProtected", { 
+          targetSeat: state.nightActions.lastGuardTarget + 1,
+          targetName: targetPlayer.displayName 
+        });
       }
     } else if (player.role === "Werewolf") {
       nightActionInfo = t("gameMaster.badgeSignup.werewolfParticipated");
