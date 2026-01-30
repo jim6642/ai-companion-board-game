@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   // 获取用户注册日期
   const createdDate = new Date(creditsRow.created_at).toISOString().split("T")[0];
 
-  // 检查是否是注册当天（注册当天已送5局，不再送2局）
+  // 检查是否是注册当天（注册当天已送3局，不再送1局）
   if (createdDate === today) {
     return NextResponse.json({
       success: true,
