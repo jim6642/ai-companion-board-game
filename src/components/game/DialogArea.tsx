@@ -12,7 +12,6 @@ import { MentionInput } from "./MentionInput";
 import { TalkingAvatar } from "./TalkingAvatar";
 import { VoiceRecorder, type VoiceRecorderHandle } from "./VoiceRecorder";
 import { buildSimpleAvatarUrl, getModelLogoUrl } from "@/lib/avatar-config";
-import { VoteResultCard } from "./VoteResultCard";
 import { RoleRevealHistoryCard, type RoleRevealEntry } from "@/components/game/RoleRevealHistoryCard";
 import LoadingMiniGame from "./MiniGame/LoadingMiniGame";
 import type { GameState, Player, ChatMessage, Phase } from "@/types/game";
@@ -1804,21 +1803,7 @@ function ChatMessageItem({
     }
     // 检查是否是投票结果消息
     if (msg.content.startsWith('[VOTE_RESULT]')) {
-      try {
-        const jsonData = msg.content.substring('[VOTE_RESULT]'.length);
-        const voteData = JSON.parse(jsonData);
-        return (
-          <VoteResultCard
-            title={voteData.title}
-            results={voteData.results}
-            players={players}
-            isNight={isNight}
-            isGenshinMode={isGenshinMode}
-          />
-        );
-      } catch (e) {
-        console.error('Failed to parse vote result:', e);
-      }
+      return null;
     }
     
     return (

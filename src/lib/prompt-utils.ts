@@ -1,7 +1,7 @@
 import type { DifficultyLevel, GameState, Player, DailySummaryVoteData } from "@/types/game";
 import type { SystemPromptPart } from "@/game/core/types";
 import type { LLMMessage } from "./llm";
-import { getSystemMessages } from "./game-texts";
+import { getSystemMessages, getSystemPatterns } from "./game-texts";
 import { getI18n } from "@/i18n/translator";
 
 /**
@@ -434,6 +434,17 @@ export const buildPlayerTodaySpeech = (state: GameState, player: Player, maxChar
 
 export const buildSystemAnnouncementsSinceDawn = (state: GameState, maxLines: number): string => {
   const dayStartIndex = getDayStartIndex(state);
+  const systemMessages = getSystemMessages();
+  const systemPatterns = getSystemPatterns();
+  const excluded = [
+    "天亮了",
+    "Dawn breaks, please open your eyes",
+    systemMessages.dayBreak,
+    "进入投票环节",
+    "发言结束，开始投票。",
+    "Discussion ends, voting begins.",
+    systemMessages.voteStart,
+  ];
 
   const slice = state.messages.slice(dayStartIndex);
   const systemLines = slice
@@ -443,10 +454,16 @@ export const buildSystemAnnouncementsSinceDawn = (state: GameState, maxLines: nu
       if (!c) return false;
       // 过滤掉带有 0-based 索引的原始 JSON 数据，避免混淆 AI
       if (c.startsWith("[VOTE_RESULT]")) return false;
-      const systemMessages = getSystemMessages();
       // Filter out dawn and vote start messages in both locales
-      const excluded = ["天亮了", "Dawn breaks, please open your eyes", systemMessages.dayBreak, "进入投票环节", "发言结束，开始投票。", "Discussion ends, voting begins.", systemMessages.voteStart];
-      return !excluded.includes(c);
+      if (excluded.includes(c)) return false;
+      if (
+        systemPatterns.playerKilled.test(c) ||
+        systemPatterns.playerPoisoned.test(c) ||
+        systemPatterns.playerMilkKilled.test(c)
+      ) {
+        return false;
+      }
+      return true;
     });
 
   const limit = Math.max(0, maxLines);
@@ -560,6 +577,8 @@ export const buildGameContext = (
   const alivePlayers = state.players.filter((p) => p.alive);
   const deadPlayers = state.players.filter((p) => !p.alive);
   const totalSeats = state.players.length;
+  const publicGenericDeathCause = t("promptUtils.gameContext.deathCauseDeath");
+  const publicExecutionCause = publicGenericDeathCause;
 
   // === 第一优先级：角色私有信息（放在最前面） ===
   const privateInfo = buildRolePrivateInfo(state, player);
@@ -569,28 +588,23 @@ export const buildGameContext = (
   const aliveSeats = alivePlayers.map((p) => p.seat + 1);
   const deadInfo = deadPlayers.map((p) => {
     // Find death info
-    let cause = t("promptUtils.gameContext.deathCauseUnknown");
+    let cause = publicGenericDeathCause;
     let deathDay = 0;
     for (const [day, history] of Object.entries(state.nightHistory || {})) {
-      if (history.wolfTarget === p.seat) { cause = t("promptUtils.gameContext.deathCauseWolf"); deathDay = Number(day); }
-      if (history.witchPoison === p.seat) { cause = t("promptUtils.gameContext.deathCausePoison"); deathDay = Number(day); }
+      if (history.wolfTarget === p.seat) { cause = publicGenericDeathCause; deathDay = Number(day); }
+      if (history.witchPoison === p.seat) { cause = publicGenericDeathCause; deathDay = Number(day); }
       if (Array.isArray(history.deaths)) {
         const match = history.deaths.find((d) => d.seat === p.seat);
         if (match) {
-          cause =
-            match.reason === "wolf"
-              ? t("promptUtils.gameContext.deathCauseWolf")
-              : match.reason === "poison"
-                ? t("promptUtils.gameContext.deathCausePoison")
-                : t("promptUtils.gameContext.deathCauseDeath");
+          cause = publicGenericDeathCause;
           deathDay = Number(day);
         }
       }
-      if (history.hunterShot?.targetSeat === p.seat) { cause = t("promptUtils.gameContext.deathCauseDeath"); deathDay = Number(day); }
+      if (history.hunterShot?.targetSeat === p.seat) { cause = publicGenericDeathCause; deathDay = Number(day); }
     }
     for (const [day, history] of Object.entries(state.dayHistory || {})) {
-      if (history.executed?.seat === p.seat) { cause = t("promptUtils.gameContext.deathCauseVote"); deathDay = Number(day); }
-      if (history.hunterShot?.targetSeat === p.seat) { cause = t("promptUtils.gameContext.deathCauseDeath"); deathDay = Number(day); }
+      if (history.executed?.seat === p.seat) { cause = publicExecutionCause; deathDay = Number(day); }
+      if (history.hunterShot?.targetSeat === p.seat) { cause = publicGenericDeathCause; deathDay = Number(day); }
     }
     return `{seat: ${p.seat + 1}, name: ${p.displayName}, day: ${deathDay}, cause: ${cause}}`;
   });
@@ -675,13 +689,13 @@ alive_count: ${alivePlayers.length}
       if (nightHistory?.wolfTarget !== undefined) {
         const p = state.players.find(p => p.seat === nightHistory.wolfTarget);
         if (p && !p.alive) {
-          currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${t("promptUtils.gameContext.deathCauseWolf")}}`);
+          currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${publicGenericDeathCause}}`);
         }
       }
       if (nightHistory?.witchPoison !== undefined) {
         const p = state.players.find(p => p.seat === nightHistory.witchPoison);
         if (p && !p.alive) {
-          currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${t("promptUtils.gameContext.deathCausePoison")}}`);
+          currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${publicGenericDeathCause}}`);
         }
       }
       if (nightHistory?.deaths && Array.isArray(nightHistory.deaths)) {
@@ -689,8 +703,7 @@ alive_count: ${alivePlayers.length}
           if (death && typeof death.seat === 'number') {
             const p = state.players.find(p => p.seat === death.seat);
             if (p && !p.alive) {
-              const cause = death.reason === 'wolf' ? t("promptUtils.gameContext.deathCauseWolf") : death.reason === 'poison' ? t("promptUtils.gameContext.deathCausePoison") : t("promptUtils.gameContext.deathCauseDeath");
-              currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${cause}}`);
+              currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${publicGenericDeathCause}}`);
             }
           }
         });
@@ -700,7 +713,7 @@ alive_count: ${alivePlayers.length}
         const executedSeat = dayHistory.executed.seat;
         const p = state.players.find(p => p.seat === executedSeat);
         if (p) {
-          currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${t("promptUtils.gameContext.deathCauseVote")}}`);
+          currentDayDeaths.push(`{seat: ${p.seat + 1}, name: ${p.displayName}, cause: ${publicExecutionCause}}`);
         }
       }
 

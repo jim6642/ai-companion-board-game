@@ -310,11 +310,11 @@ export class DaySpeechPhase extends GamePhase {
           }
           currentState = addSystemMessage(
             currentState,
-            systemMessages.playerPoisoned(poisonVictim.seat + 1, poisonVictim.displayName)
+            systemMessages.playerKilled(poisonVictim.seat + 1, poisonVictim.displayName)
           );
           runtime.setDialogue(
             speakerHost,
-            systemMessages.playerPoisoned(poisonVictim.seat + 1, poisonVictim.displayName),
+            systemMessages.playerKilled(poisonVictim.seat + 1, poisonVictim.displayName),
             false
           );
           runtime.setGameState(currentState);
