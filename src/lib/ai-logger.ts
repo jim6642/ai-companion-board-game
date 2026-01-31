@@ -9,6 +9,8 @@ import { generateUUID } from "./utils";
 
 const LOCAL_LOGS_STORAGE_KEY = "wolfcha_ai_logs";
 
+const AI_LOGGER_PAGE_LOAD_CLEAR_FLAG = "__wolfcha_ai_logger_page_load_cleared__";
+
 function canUseStorage(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
@@ -170,6 +172,14 @@ class AILogger {
       }
     }
     this.localCache = [];
+  }
+
+  async clearLogsOncePerPageLoad() {
+    if (typeof window === "undefined") return;
+    const w = window as unknown as Record<string, unknown>;
+    if (w[AI_LOGGER_PAGE_LOAD_CLEAR_FLAG] === true) return;
+    w[AI_LOGGER_PAGE_LOAD_CLEAR_FLAG] = true;
+    await this.clearLogs();
   }
 }
 

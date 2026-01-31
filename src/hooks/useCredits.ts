@@ -6,6 +6,13 @@ import { supabase } from "@/lib/supabase";
 import { getDashscopeApiKey, getZenmuxApiKey, isCustomKeyEnabled } from "@/lib/api-keys";
 
 const REFERRAL_STORAGE_KEY = "wolfcha_referral";
+const REFERRAL_ENDPOINT = "/api/credits/referral";
+const JSON_CONTENT_TYPE = "application/json";
+const AUTH_EVENT = {
+  INITIAL_SESSION: "INITIAL_SESSION",
+  PASSWORD_RECOVERY: "PASSWORD_RECOVERY",
+  SIGNED_IN: "SIGNED_IN",
+} as const;
 
 export function useCredits() {
   const [user, setUser] = useState<User | null>(null);
@@ -45,23 +52,27 @@ export function useCredits() {
   const consumeCredit = useCallback(async (): Promise<boolean> => {
     if (!session) return false;
 
-    const customEnabled = isCustomKeyEnabled();
-    const headerApiKey = customEnabled ? getZenmuxApiKey() : "";
-    const dashscopeApiKey = customEnabled ? getDashscopeApiKey() : "";
-    const res = await fetch("/api/credits/consume", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        ...(headerApiKey ? { "X-Zenmux-Api-Key": headerApiKey } : {}),
-        ...(dashscopeApiKey ? { "X-Dashscope-Api-Key": dashscopeApiKey } : {}),
-      },
-    });
+    try {
+      const customEnabled = isCustomKeyEnabled();
+      const headerApiKey = customEnabled ? getZenmuxApiKey() : "";
+      const dashscopeApiKey = customEnabled ? getDashscopeApiKey() : "";
+      const res = await fetch("/api/credits/consume", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          ...(headerApiKey ? { "X-Zenmux-Api-Key": headerApiKey } : {}),
+          ...(dashscopeApiKey ? { "X-Dashscope-Api-Key": dashscopeApiKey } : {}),
+        },
+      });
 
-    if (!res.ok) return false;
+      if (!res.ok) return false;
 
-    const payload = (await res.json()) as { credits: number };
-    setCredits(payload.credits);
-    return true;
+      const payload = (await res.json()) as { credits: number };
+      setCredits(payload.credits);
+      return true;
+    } catch {
+      return false;
+    }
   }, [session]);
 
   const signOut = useCallback(async () => {
@@ -99,10 +110,50 @@ export function useCredits() {
     }
   }, []);
 
+  const applyReferralCode = useCallback(async (accessToken: string): Promise<void> => {
+    let referralCode: string | null = null;
+    try {
+      referralCode = localStorage.getItem(REFERRAL_STORAGE_KEY);
+    } catch {
+      return;
+    }
+
+    if (!referralCode) return;
+
+    try {
+      const res = await fetch(REFERRAL_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": JSON_CONTENT_TYPE,
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ referralCode }),
+      });
+
+      if (!res.ok) return;
+
+      try {
+        localStorage.removeItem(REFERRAL_STORAGE_KEY);
+      } catch {
+        // Ignore storage errors (e.g. private mode)
+      }
+    } catch {
+      // Silently fail - referral is not critical
+    }
+  }, []);
+
+  const handleAuthenticatedSession = useCallback(async (currentSession: Session): Promise<void> => {
+    await applyReferralCode(currentSession.access_token);
+    void claimDailyBonus(currentSession.access_token);
+  }, [applyReferralCode, claimDailyBonus]);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session) {
+        void handleAuthenticatedSession(session);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -111,32 +162,21 @@ export function useCredits() {
         setUser(session?.user ?? null);
 
         // Handle password recovery flow
-        if (event === "PASSWORD_RECOVERY") {
+        if (event === AUTH_EVENT.PASSWORD_RECOVERY) {
           setIsPasswordRecovery(true);
         }
 
-        if (event === "SIGNED_IN" && session) {
-          const referralCode = localStorage.getItem(REFERRAL_STORAGE_KEY);
-          if (referralCode) {
-            await fetch("/api/credits/referral", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${session.access_token}`,
-              },
-              body: JSON.stringify({ referralCode }),
-            });
-            localStorage.removeItem(REFERRAL_STORAGE_KEY);
-          }
-
-          // 自动领取每日签到奖励
-          void claimDailyBonus(session.access_token);
+        if (
+          session
+          && (event === AUTH_EVENT.SIGNED_IN || event === AUTH_EVENT.INITIAL_SESSION)
+        ) {
+          await handleAuthenticatedSession(session);
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [handleAuthenticatedSession]);
 
   useEffect(() => {
     if (user) {

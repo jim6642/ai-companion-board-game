@@ -92,7 +92,7 @@ export function useGameLogic() {
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
-    void aiLogger.clearLogs();
+    void aiLogger.clearLogsOncePerPageLoad();
   }, []);
 
   // ============================================
@@ -972,10 +972,6 @@ export function useGameLogic() {
       showTableTimeoutRef.current = null;
     }
 
-    // Clear client-side AI logs so exported logs only include the current match.
-    // This prevents mixing previous matches (e.g. non-genshin/English prompts or character_generation).
-    await aiLogger.clearLogs();
-
     setIsLoading(true);
     try {
       // 初始化游戏统计追踪器
@@ -1336,7 +1332,6 @@ export function useGameLogic() {
 
   /** 重新开始 */
   const restartGame = useCallback(() => {
-    void aiLogger.clearLogs();
     setGameState(createInitialGameState());
     resetDialogueState();
     setInputText("");
