@@ -144,7 +144,12 @@ type ReasoningPayload = {
   max_tokens?: number;
 };
 
-const ALLOWED_REASONING_EFFORT = new Set(["minimal", "low", "medium", "high"] as const);
+type ReasoningEffort = NonNullable<ReasoningPayload["effort"]>;
+const ALLOWED_REASONING_EFFORT = new Set<ReasoningEffort>(["minimal", "low", "medium", "high"]);
+
+function isReasoningEffort(value: unknown): value is ReasoningEffort {
+  return typeof value === "string" && ALLOWED_REASONING_EFFORT.has(value as ReasoningEffort);
+}
 
 /** Build ZenMux request reasoning object (no unsupported fields like exclude). */
 function toZenMuxReasoning(
@@ -316,10 +321,7 @@ async function runBatchItem(
     requestBody.max_tokens = Math.max(16, Math.floor(max_tokens));
   }
 
-  const reasoningEffort =
-    typeof reasoning_effort === "string" && ALLOWED_REASONING_EFFORT.has(reasoning_effort)
-      ? reasoning_effort
-      : undefined;
+  const reasoningEffort = isReasoningEffort(reasoning_effort) ? reasoning_effort : undefined;
   const reasoningToUse = effectiveReasoning ?? reasoning;
   if (reasoningToUse !== undefined) {
     requestBody.reasoning = toZenMuxReasoning(reasoningToUse);
@@ -554,10 +556,7 @@ export async function POST(request: NextRequest) {
       requestBody.stream = true;
     }
 
-    const reasoningEffort =
-      typeof reasoning_effort === "string" && ALLOWED_REASONING_EFFORT.has(reasoning_effort)
-        ? reasoning_effort
-        : undefined;
+    const reasoningEffort = isReasoningEffort(reasoning_effort) ? reasoning_effort : undefined;
     const reasoningToUse = effectiveReasoning ?? reasoning;
     if (reasoningToUse !== undefined) {
       requestBody.reasoning = toZenMuxReasoning(reasoningToUse);
