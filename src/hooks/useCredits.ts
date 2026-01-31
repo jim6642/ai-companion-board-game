@@ -120,6 +120,8 @@ export function useCredits() {
 
     if (!referralCode) return;
 
+    console.log("[Referral] Applying referral code:", referralCode);
+
     try {
       const res = await fetch(REFERRAL_ENDPOINT, {
         method: "POST",
@@ -130,15 +132,20 @@ export function useCredits() {
         body: JSON.stringify({ referralCode }),
       });
 
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.warn("[Referral] API returned non-OK status:", res.status);
+        return;
+      }
+
+      console.log("[Referral] Successfully applied referral code");
 
       try {
         localStorage.removeItem(REFERRAL_STORAGE_KEY);
       } catch {
         // Ignore storage errors (e.g. private mode)
       }
-    } catch {
-      // Silently fail - referral is not critical
+    } catch (error) {
+      console.error("[Referral] Failed to apply referral code:", error);
     }
   }, []);
 
