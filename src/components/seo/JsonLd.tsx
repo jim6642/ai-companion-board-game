@@ -1,13 +1,14 @@
 import Script from "next/script";
 
 interface JsonLdProps {
+  id?: string;
   data: object;
 }
 
-export function JsonLd({ data }: JsonLdProps) {
+export function JsonLd({ id = "json-ld", data }: JsonLdProps) {
   return (
     <Script
-      id="json-ld"
+      id={id}
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
       strategy="afterInteractive"
@@ -39,13 +40,6 @@ export function getGameJsonLd() {
       "@type": "Organization",
       name: "Wolfcha Team",
       url: "https://wolf-cha.com",
-    },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.8",
-      ratingCount: "150",
-      bestRating: "5",
-      worstRating: "1",
     },
     keywords:
       "AI werewolf, werewolf game online, play werewolf alone, single player werewolf, AI mafia game, LLM werewolf, social deduction game",
