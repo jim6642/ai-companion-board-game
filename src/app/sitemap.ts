@@ -1,5 +1,7 @@
 import { MetadataRoute } from "next";
 import { roleLandingKeys } from "@/components/seo/landing/roleLandingData";
+import { soloLandingKeys } from "@/components/seo/landing/soloLandingData";
+import { modelLandingKeys } from "@/components/seo/landing/modelLandingData";
 
 // Guide pages for SEO (18 individual guides + index)
 const guidePages = [
@@ -77,6 +79,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "monthly" as const,
       priority: guide ? 0.7 : 0.8, // index gets higher priority
+    })),
+    // Solo landing pages
+    ...soloLandingKeys.map((slug) => ({
+      url: `${baseUrl}/${slug}`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.75,
+    })),
+    // Model landing pages
+    ...modelLandingKeys.map((model) => ({
+      url: `${baseUrl}/models/${model}`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
     })),
   ];
 }
