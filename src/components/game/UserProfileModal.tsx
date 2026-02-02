@@ -224,15 +224,14 @@ import {
   };
 
   const handleSaveKeys = () => {
-    // TEMPORARY: Validation disabled for testing with keys that have no balance
-    // if (isCustomKeyEnabled) {
-    //   const zenmuxOk = !zenmuxKey.trim() || validatedKeys.zenmux === zenmuxKey.trim();
-    //   const dashscopeOk = !dashscopeKey.trim() || validatedKeys.dashscope === dashscopeKey.trim();
-    //   if (!zenmuxOk || !dashscopeOk) {
-    //     toast(t("customKey.toasts.notValidated"), { description: t("customKey.toasts.notValidatedDesc") });
-    //     return;
-    //   }
-    // }
+    if (isCustomKeyEnabled) {
+      const zenmuxOk = !zenmuxKey.trim() || validatedKeys.zenmux === zenmuxKey.trim();
+      const dashscopeOk = !dashscopeKey.trim() || validatedKeys.dashscope === dashscopeKey.trim();
+      if (!zenmuxOk || !dashscopeOk) {
+        toast(t("customKey.toasts.notValidated"), { description: t("customKey.toasts.notValidatedDesc") });
+        return;
+      }
+    }
     const availableSet = new Set(availableModelPool.map((ref) => ref.model));
     const playerAvailableSet = new Set(playerModelPool.map((ref) => ref.model));
     if (isCustomKeyEnabled && availableSet.size === 0) {
