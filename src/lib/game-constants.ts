@@ -27,6 +27,9 @@ export const DELAY_CONFIG = {
   DIALOGUE: 900,
   /** 夜晚结算延迟 */
   NIGHT_RESOLVE: 1000,
+  NIGHT_PHASE_GAP: 2000,
+  NIGHT_ROLE_ANIMATION_MIN: 2000,
+  NIGHT_ROLE_ANIMATION_MAX: 4000,
   /** 开局显示桌面延迟 */
   SHOW_TABLE: 2400,
   /** AI 随机延迟范围 */

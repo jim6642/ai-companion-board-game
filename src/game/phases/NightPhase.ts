@@ -28,7 +28,9 @@ import { playNarrator } from "@/lib/narrator-audio-player";
 import { getI18n } from "@/i18n/translator";
 
 function randomFakeActionDelay(): number {
-  return Math.floor(Math.random() * 3000) + 3000;
+  const min = DELAY_CONFIG.NIGHT_ROLE_ANIMATION_MIN;
+  const max = DELAY_CONFIG.NIGHT_ROLE_ANIMATION_MAX;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 type NightPhaseRuntime = {
@@ -116,10 +118,6 @@ export class NightPhase extends GamePhase {
     const uiText = getUiText();
     const guard = state.players.find((p) => p.role === "Guard" && p.alive);
 
-    if (!guard) {
-      return state;
-    }
-
     let currentState = this.transitionPhase(state, "NIGHT_GUARD_ACTION");
     currentState = addSystemMessage(currentState, systemMessages.guardActionStart);
     runtime.setGameState(currentState);
@@ -127,6 +125,15 @@ export class NightPhase extends GamePhase {
     runtime.setIsWaitingForAI(true);
     runtime.setDialogue(speakerSystem, uiText.guardActing, false);
     await playNarrator("guardWake");
+
+    if (!guard) {
+      await delay(randomFakeActionDelay());
+      await runtime.waitForUnpause();
+      if (!runtime.isTokenValid(runtime.token)) return currentState;
+      runtime.setIsWaitingForAI(false);
+      await playNarrator("guardClose");
+      return currentState;
+    }
 
     if (guard.isHuman) {
       runtime.setIsWaitingForAI(false);
@@ -161,6 +168,20 @@ export class NightPhase extends GamePhase {
     runtime.setGameState(currentState);
 
     const wolves = currentState.players.filter((p) => p.role === "Werewolf" && p.alive);
+
+    if (wolves.length === 0) {
+      runtime.setIsWaitingForAI(true);
+      runtime.setDialogue(speakerSystem, uiText.wolfActing, false);
+      await playNarrator("wolfWake");
+
+      await delay(randomFakeActionDelay());
+      await runtime.waitForUnpause();
+      if (!runtime.isTokenValid(runtime.token)) return currentState;
+
+      runtime.setIsWaitingForAI(false);
+      await playNarrator("wolfClose");
+      return currentState;
+    }
 
     if (wolves.length > 0) {
       const humanWolf = wolves.find((w) => w.isHuman);
@@ -329,20 +350,17 @@ export class NightPhase extends GamePhase {
   private async runNightPhase(state: GameState, runtime: NightPhaseRuntime): Promise<void> {
     let currentState = state;
 
-    const hasAliveGuard = currentState.players.some((p) => p.role === "Guard" && p.alive);
-    if (hasAliveGuard) {
-      currentState = await this.runGuardAction(currentState, runtime);
-      if (!runtime.isTokenValid(runtime.token)) return;
+    currentState = await this.runGuardAction(currentState, runtime);
+    if (!runtime.isTokenValid(runtime.token)) return;
 
-      const guard = currentState.players.find((p) => p.role === "Guard" && p.alive);
-      if (guard?.isHuman && currentState.nightActions.guardTarget === undefined) {
-        return;
-      }
-
-      await delay(2000);
-      await runtime.waitForUnpause();
-      if (!runtime.isTokenValid(runtime.token)) return;
+    const guard = currentState.players.find((p) => p.role === "Guard" && p.alive);
+    if (guard?.isHuman && currentState.nightActions.guardTarget === undefined) {
+      return;
     }
+
+    await delay(DELAY_CONFIG.NIGHT_PHASE_GAP);
+    await runtime.waitForUnpause();
+    if (!runtime.isTokenValid(runtime.token)) return;
 
     currentState = await this.runWolfAction(currentState, runtime);
     if (!runtime.isTokenValid(runtime.token)) return;
@@ -352,7 +370,7 @@ export class NightPhase extends GamePhase {
       return;
     }
 
-    await delay(2000);
+    await delay(DELAY_CONFIG.NIGHT_PHASE_GAP);
     await runtime.waitForUnpause();
     if (!runtime.isTokenValid(runtime.token)) return;
 
@@ -368,7 +386,7 @@ export class NightPhase extends GamePhase {
       if (!decided) return;
     }
 
-    await delay(2000);
+    await delay(DELAY_CONFIG.NIGHT_PHASE_GAP);
     await runtime.waitForUnpause();
     if (!runtime.isTokenValid(runtime.token)) return;
 
@@ -396,7 +414,7 @@ export class NightPhase extends GamePhase {
       return;
     }
 
-    await delay(2000);
+    await delay(DELAY_CONFIG.NIGHT_PHASE_GAP);
     await runtime.waitForUnpause();
     if (!runtime.isTokenValid(runtime.token)) return;
 
@@ -416,7 +434,7 @@ export class NightPhase extends GamePhase {
       if (!decided) return;
     }
 
-    await delay(2000);
+    await delay(DELAY_CONFIG.NIGHT_PHASE_GAP);
     await runtime.waitForUnpause();
     if (!runtime.isTokenValid(runtime.token)) return;
 
@@ -432,7 +450,7 @@ export class NightPhase extends GamePhase {
       return;
     }
 
-    await delay(2000);
+    await delay(DELAY_CONFIG.NIGHT_PHASE_GAP);
     await runtime.waitForUnpause();
     if (!runtime.isTokenValid(runtime.token)) return;
 
