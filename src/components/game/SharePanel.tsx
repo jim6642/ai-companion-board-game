@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { buildReferralShareUrl } from "@/lib/referral";
 import { useTranslations } from "next-intl";
 
 interface SharePanelProps {
@@ -30,7 +31,7 @@ export function SharePanel({
 
   const shareUrl = useMemo(() => {
     if (!referralCode || typeof window === "undefined") return "";
-    return `${window.location.origin}?ref=${referralCode}`;
+    return buildReferralShareUrl(window.location.origin, referralCode);
   }, [referralCode]);
 
   const handleCopy = async () => {

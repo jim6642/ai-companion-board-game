@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { getDashscopeApiKey, getZenmuxApiKey, isCustomKeyEnabled } from "@/lib/api-keys";
+import { readReferralFromStorage, removeReferralFromStorage } from "@/lib/referral";
 
-const REFERRAL_STORAGE_KEY = "wolfcha_referral";
 const REFERRAL_ENDPOINT = "/api/credits/referral";
 const JSON_CONTENT_TYPE = "application/json";
 const AUTH_EVENT = {
@@ -111,12 +111,7 @@ export function useCredits() {
   }, []);
 
   const applyReferralCode = useCallback(async (accessToken: string): Promise<void> => {
-    let referralCode: string | null = null;
-    try {
-      referralCode = localStorage.getItem(REFERRAL_STORAGE_KEY);
-    } catch {
-      return;
-    }
+    const referralCode = readReferralFromStorage();
 
     if (!referralCode) return;
 
@@ -139,11 +134,7 @@ export function useCredits() {
 
       console.log("[Referral] Successfully applied referral code");
 
-      try {
-        localStorage.removeItem(REFERRAL_STORAGE_KEY);
-      } catch {
-        // Ignore storage errors (e.g. private mode)
-      }
+      removeReferralFromStorage();
     } catch (error) {
       console.error("[Referral] Failed to apply referral code:", error);
     }

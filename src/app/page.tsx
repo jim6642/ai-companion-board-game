@@ -57,6 +57,7 @@ import { resolveVoiceId, type AppLocale } from "@/lib/voice-constants";
 import { getLocale } from "@/i18n/locale-store";
 import { useSettings } from "@/hooks/useSettings";
 import { useTutorial } from "@/hooks/useTutorial";
+import { persistReferralFromCurrentUrl, removeReferralFromCurrentUrl } from "@/lib/referral";
 
 const RITUAL_CUE_DURATION_SECONDS = 2.2;
 const DAY_NIGHT_BLINK = {
@@ -66,7 +67,6 @@ const DAY_NIGHT_BLINK = {
 };
 const dayBgm = "/bgm/day.mp3";
 const nightBgm = "/bgm/night.mp3";
-const REFERRAL_STORAGE_KEY = "wolfcha_referral";
 
 const WC_EYE_FEATHER_VAR = "--wc-eye-feather";
 const WC_LID_VAR = "--wc-lid";
@@ -189,11 +189,8 @@ export default function Home() {
   }, [visualIsNight]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const referral = params.get("ref")?.trim();
-    if (referral) {
-      localStorage.setItem(REFERRAL_STORAGE_KEY, referral);
-    }
+    persistReferralFromCurrentUrl();
+    removeReferralFromCurrentUrl();
   }, []);
 
   useEffect(() => {
