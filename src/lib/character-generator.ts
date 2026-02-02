@@ -652,9 +652,23 @@ export async function generateCharacters(
   let lastError: unknown;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
+      console.log(`[character-gen] Attempt ${attempt + 1}/2, customKeyEnabled: ${isCustomKeyEnabled()}, hasZenmux: ${hasZenmuxKey()}, hasDashscope: ${hasDashscopeKey()}`);
       return await runOnce();
     } catch (error) {
       lastError = error;
+      console.error(`[character-gen] Attempt ${attempt + 1} failed:`, error);
+      
+      const errorMsg = String(error);
+      const isQuotaError = errorMsg.includes("[QUOTA_EXHAUSTED]") || 
+                          errorMsg.includes("402") || 
+                          errorMsg.includes("insufficient") ||
+                          errorMsg.includes("余额");
+      
+      if (isCustomKeyEnabled() && isQuotaError) {
+        console.error("[character-gen] Custom key quota exhausted, aborting retry");
+        throw error;
+      }
+      
       if (attempt === 0) {
         continue;
       }

@@ -533,6 +533,7 @@ export function WelcomeScreen({
     }
 
     const hasUserKey = customKeyEnabled && (hasZenmuxKey() || hasDashscopeKey());
+
     if (!hasUserKey && credits !== null && credits <= 0) {
       setIsShareOpen(true);
       toast(t("welcome.toast.noCredits.title"), { description: t("welcome.toast.noCredits.description") });

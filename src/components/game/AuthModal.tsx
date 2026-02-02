@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { translateAuthError } from "@/lib/auth-errors";
+import { buildBaseRedirectToFromCurrentUrl, buildEmailRedirectToFromCurrentUrl } from "@/lib/referral";
 import { useTranslations } from "next-intl";
 
 interface AuthModalProps {
@@ -92,9 +93,12 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     return () => window.clearInterval(timer);
   }, [emailCooldownUntilMs]);
 
-  const redirectTo = useMemo(() => {
-    if (typeof window === "undefined") return undefined;
-    return window.location.origin;
+  const emailRedirectTo = useMemo(() => {
+    return buildEmailRedirectToFromCurrentUrl();
+  }, []);
+
+  const passwordRecoveryRedirectTo = useMemo(() => {
+    return buildBaseRedirectToFromCurrentUrl();
   }, []);
 
   // Reset form state when switching views
@@ -163,7 +167,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: redirectTo,
+        emailRedirectTo,
       },
     });
 
@@ -218,7 +222,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     setError(null);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: redirectTo,
+      redirectTo: passwordRecoveryRedirectTo,
     });
 
     setLoading(false);
