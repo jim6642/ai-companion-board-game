@@ -418,6 +418,13 @@ export async function generateCompletion(
     headers["X-Dashscope-Api-Key"] = dashscopeApiKey;
   }
 
+  console.log("[LLM] generateCompletion:", {
+    customEnabled,
+    hasZenmuxKey: !!headerApiKey,
+    hasDashscopeKey: !!dashscopeApiKey,
+    model: modelToUse,
+  });
+
   const response = await fetchWithRetry(
     "/api/chat",
     {
