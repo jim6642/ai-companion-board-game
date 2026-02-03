@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>赛后复盘 Demo - Wolfcha</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'title': ['Cinzel', 'serif'],
+                        'chinese': ['Noto Serif SC', 'serif'],
+                    },
+                    colors: {
+                        // 复古色板
+                        blood: '#8a1c1c',
+                        gold: '#c5a059',
+                        'gold-dim': '#8c7335',
+                        'gold-dark': '#6e5626',
+                        paper: '#f0e6d2',
+                        'paper-dim': '#e6dac0',
+                        bg: {
+                            main: '#1a1614',
+                            card: '#1e1a17',
+                            secondary: '#2c241b'
+                        },
+                        text: {
+                            primary: '#f0e6d2',
+                            secondary: 'rgba(240, 230, 210, 0.75)',
+                            muted: 'rgba(240, 230, 210, 0.55)'
+                        }
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #1a1614;
+            color: #f0e6d2;
+            font-family: 'Noto Serif SC', serif;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(138, 28, 28, 0.15), transparent 60%),
+                radial-gradient(circle at 0% 100%, rgba(197, 160, 89, 0.08), transparent 50%);
+        }
+        
+        .retro-card {
+            background: linear-gradient(145deg, rgba(40, 35, 33, 0.9), rgba(30, 25, 23, 0.95));
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 0 40px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .retro-card::before {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            pointer-events: none;
+        }
+
+        .gold-text {
+            color: #c5a059;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .ornament-border {
+            position: relative;
+        }
+        
+        .ornament-border::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(197, 160, 89, 0.5), transparent);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .role-badge-img {
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
+        .nav-line {
+            position: absolute;
+            left: 50%; 
+            transform: translateX(-50%);
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(197, 160, 89, 0.1), rgba(197, 160, 89, 0.3), rgba(197, 160, 89, 0.1));
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-24">
+
+    <!-- 1. 顶部状态栏 -->
+    <header class="sticky top-0 z-50 bg-[#1a1614]/90 backdrop-blur-md border-b border-gold/20 px-5 py-4 flex justify-between items-center shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 border border-gold/30 rounded flex items-center justify-center bg-black/20">
+                <i class="ph-fill ph-scroll text-gold text-xl"></i>
+            </div>
+            <h1 class="font-title font-bold text-xl gold-text tracking-wider">Wolfcha</h1>
+        </div>
+        <div class="text-xs text-gold/60 font-title tracking-widest border border-gold/20 px-2 py-1 rounded">GAME #8F2A9C</div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 py-8 space-y-8">
+
+        <!-- 2. 胜负横幅 & 用户信息 -->
+        <section class="text-center space-y-6 relative">
+            <!-- 装饰纹理 -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[radial-gradient(circle,rgba(197,160,89,0.05)_0%,transparent_70%)] pointer-events-none"></div>
+
+            <div class="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-gold/10 text-gold border border-gold/40 shadow-[0_0_20px_rgba(197,160,89,0.15)] backdrop-blur-sm">
+                <i class="ph-fill ph-crown text-lg"></i>
+                <span class="font-bold text-sm tracking-[0.2em] font-chinese">好人阵营获胜</span>
+            </div>
+            
+            <div class="flex flex-col items-center relative z-10">
+                <div class="relative group">
+                    <!-- 头像框 -->
+                    <div class="w-24 h-24 rounded-full border-2 border-gold/40 p-1 bg-black/40 shadow-[0_0_30px_rgba(0,0,0,0.5)] relative overflow-hidden">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User Avatar" class="w-full h-full rounded-full opacity-90 group-hover:opacity-100 transition-opacity">
+                    </div>
+                    <!-- 身份标记 -->
+                    <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-[#1e1a17] rounded-full border border-gold/40 flex items-center justify-center shadow-lg">
+                        <img src="./roles/seer.png" alt="预言家" class="w-7 h-7 object-contain drop-shadow-md">
+                    </div>
+                </div>
+                <h2 class="mt-4 text-2xl font-bold font-title tracking-wide text-paper">Player_One</h2>
+                <div class="flex items-center gap-2 mt-1 text-xs text-text-muted">
+                    <span class="px-2 py-0.5 border border-white/5 rounded bg-white/5">24:15</span>
+                    <span class="px-2 py-0.5 border border-white/5 rounded bg-white/5">8人局</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- MVP & SVP 展示 -->
+        <section class="grid grid-cols-2 gap-4">
+            <!-- MVP -->
+            <div class="retro-card rounded-lg p-4 flex flex-col items-center overflow-hidden group">
+                <div class="absolute -top-6 -right-6 w-12 h-12 bg-gold/20 blur-xl rounded-full"></div>
+                <div class="absolute top-2 right-2">
+                    <i class="ph-fill ph-crown text-gold text-xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"></i>
+                </div>
+                <div class="w-12 h-12 rounded-full border border-gold/30 mb-3 bg-black/20 p-0.5">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-full h-full rounded-full">
+                </div>
+                <div class="text-xs text-gold font-bold tracking-widest mb-1 font-title">MVP</div>
+                <div class="text-sm font-bold text-paper mb-2">Player_One</div>
+                <div class="text-[10px] text-text-secondary text-center leading-tight bg-black/20 px-2 py-1 rounded border border-white/5">
+                    查杀精准<br>带队获胜
+                </div>
+            </div>
+            <!-- SVP -->
+            <div class="retro-card rounded-lg p-4 flex flex-col items-center grayscale hover:grayscale-0 transition-all duration-500">
+                <div class="w-12 h-12 rounded-full border border-white/10 mb-3 bg-black/20 p-0.5 opacity-70">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=WolfKing" class="w-full h-full rounded-full">
+                </div>
+                <div class="text-xs text-text-muted font-bold tracking-widest mb-1 font-title">SVP</div>
+                <div class="text-sm font-bold text-text-secondary mb-2">Wolf_King</div>
+                <div class="text-[10px] text-text-muted text-center leading-tight bg-black/20 px-2 py-1 rounded border border-white/5">
+                    深水倒钩<br>存活最久
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 个人战绩 (核心) -->
+        <section class="retro-card rounded-xl p-6 space-y-6">
+            <div class="flex justify-between items-start border-b border-gold/10 pb-4">
+                <div>
+                    <h3 class="text-lg font-bold flex items-center gap-2 font-chinese text-paper">
+                        <i class="ph-fill ph-scroll text-gold/80"></i>
+                        个人战绩
+                    </h3>
+                    
+                    <!-- 称号预留位 (图片) -->
+                    <div class="mt-3 relative w-28 h-8 bg-black/30 border border-gold/20 rounded flex items-center justify-center group cursor-pointer overflow-hidden">
+                        <!-- Placeholder for Title Image -->
+                        <div class="absolute inset-0 flex items-center justify-center opacity-50 group-hover:opacity-20 transition-opacity">
+                            <span class="text-[10px] text-gold/40 tracking-widest">TITLE_IMG_SLOT</span>
+                        </div>
+                        <span class="relative z-10 text-gold text-xs font-bold font-chinese tracking-widest drop-shadow-md">洞悉之眼</span>
+                        
+                        <!-- Shine Effect -->
+                        <div class="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-25deg] animate-[shine_3s_infinite]"></div>
+                    </div>
+                </div>
+                
+                <div class="text-right">
+                    <div class="text-3xl font-title font-bold text-gold drop-shadow-lg">92<span class="text-sm text-gold/60 ml-0.5">pts</span></div>
+                    <div class="text-[10px] text-text-muted uppercase tracking-widest mt-1">Evaluation</div>
+                </div>
+            </div>
+
+            <!-- 雷达图容器 -->
+            <div class="relative w-full aspect-square max-h-[260px] mx-auto py-2">
+                <!-- 装饰底纹 -->
+                <div class="absolute inset-0 bg-[radial-gradient(circle,rgba(197,160,89,0.03)_0%,transparent_70%)] pointer-events-none"></div>
+                <canvas id="radarChart"></canvas>
+            </div>
+
+            <!-- 本轮金句 -->
+            <div class="bg-[#141210] border border-gold/10 rounded-lg p-4 relative mt-2">
+                <i class="ph-fill ph-quotes text-gold/20 absolute top-3 left-3 text-2xl"></i>
+                <p class="text-sm text-text-secondary italic text-center px-4 py-2 font-chinese leading-relaxed">
+                    "3号刚才的发言完全是在填充时间，逻辑断层很明显，今晚我必验3号。"
+                </p>
+                <div class="flex justify-center mt-3 gap-4 text-[10px] text-gold/60 tracking-wider font-title">
+                    <span class="flex items-center gap-1.5"><i class="ph-fill ph-thumbs-up"></i> 4 LIKES</span>
+                    <span class="flex items-center gap-1.5"><i class="ph-fill ph-brain"></i> BEST LOGIC</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. 复盘回顾 (时间轴) -->
+        <section class="relative">
+            <h3 class="text-center font-title font-bold text-gold/40 text-xs mb-8 uppercase tracking-[0.3em] ornament-border pb-3">Timeline Review</h3>
+            
+            <div class="space-y-6 pl-4 relative">
+                <!-- 连线 -->
+                <div class="nav-line left-[21px]!"></div>
+
+                <!-- Day 1 Night -->
+                <div class="flex gap-5 relative z-10">
+                    <div class="flex flex-col items-center pt-1">
+                        <div class="w-3 h-3 rounded-full bg-[#1a1614] border-2 border-indigo-900 shadow-[0_0_10px_rgba(49,46,129,0.5)]"></div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-xs font-bold text-indigo-300/80 mb-2 font-title tracking-wider">NIGHT 01</div>
+                        <div class="retro-card p-4 rounded-lg text-sm space-y-3 bg-[#1e1a17]/80">
+                            <div class="flex items-center gap-3">
+                                <img src="./roles/werewolf.png" class="w-5 h-5 opacity-80" alt="狼人">
+                                <span class="text-text-secondary text-xs">击杀</span>
+                                <span class="text-blood font-bold border-b border-blood/30">5号</span>
+                                <span class="text-[10px] text-text-muted ml-auto border border-white/10 px-1.5 rounded">女巫救</span>
+                            </div>
+                            <div class="w-full h-px bg-white/5"></div>
+                            <div class="flex items-center gap-3">
+                                <img src="./roles/seer.png" class="w-5 h-5" alt="预言家">
+                                <span class="text-text-secondary text-xs">查验</span>
+                                <span class="text-blood font-bold border-b border-blood/30">3号 (狼人)</span>
+                                <i class="ph-fill ph-eye text-gold ml-auto animate-pulse"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day 1 Day -->
+                <div class="flex gap-5 relative z-10">
+                    <div class="flex flex-col items-center pt-1">
+                        <div class="w-3 h-3 rounded-full bg-[#1a1614] border-2 border-gold/60 shadow-[0_0_10px_rgba(197,160,89,0.3)]"></div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-xs font-bold text-gold/80 mb-2 font-title tracking-wider">DAY 01</div>
+                        <div class="retro-card p-4 rounded-lg text-sm space-y-3 bg-[#1e1a17]/80 border-gold/30">
+                            <div class="flex items-center justify-between pb-2 border-b border-gold/10">
+                                <span class="text-text-muted text-xs">警长竞选</span>
+                                <span class="text-gold font-bold flex items-center gap-1.5 text-xs">
+                                    <i class="ph-fill ph-star"></i> 1号 (你)
+                                </span>
+                            </div>
+                            <p class="text-xs text-text-secondary leading-relaxed font-chinese">
+                                1号(你) 精准报出3号查杀信息，且状态饱满，全票当选警长。3号原地悍跳失败。
+                            </p>
+                            <div class="mt-2 bg-blood/10 border border-blood/20 rounded px-3 py-2 flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <i class="ph-fill ph-gavel text-blood/70"></i>
+                                    <span class="text-xs text-blood/80">放逐投票</span>
+                                </div>
+                                <span class="text-xs font-bold text-blood">3号 (7票)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. 选手评价 (Carousel) -->
+        <section>
+            <h3 class="text-center font-title font-bold text-gold/40 text-xs mb-6 uppercase tracking-[0.3em] ornament-border pb-3">Player Reviews</h3>
+            
+            <div class="flex gap-4 overflow-x-auto pb-6 snap-x hide-scrollbar px-2">
+                
+                <!-- Review 1 -->
+                <div class="retro-card min-w-[280px] p-5 rounded-xl snap-center flex-shrink-0 relative group">
+                    <!-- 关系标签 -->
+                    <div class="absolute top-0 left-0 px-3 py-1 bg-[#2f855a]/20 border-r border-b border-[#2f855a]/30 rounded-br-lg text-[10px] text-[#2f855a] font-bold tracking-wider">ALLY</div>
+                    
+                    <div class="flex items-center gap-3 mb-4 mt-2">
+                        <div class="w-10 h-10 rounded-full border border-gold/20 p-0.5 bg-black/20">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alice" class="w-full h-full rounded-full grayscale group-hover:grayscale-0 transition-all">
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold text-paper">Alice</div>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                <img src="./roles/witch.png" class="w-3 h-3 opacity-70">
+                                <span class="text-[10px] text-text-muted">女巫</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-text-secondary leading-relaxed italic border-l-2 border-gold/20 pl-3">
+                        "这局多亏了你的查杀，不然我第一晚就用错药了。你的逻辑很清晰，带队很稳！"
+                    </p>
+                </div>
+
+                <!-- Review 2 -->
+                <div class="retro-card min-w-[280px] p-5 rounded-xl snap-center flex-shrink-0 relative group">
+                     <!-- 关系标签 -->
+                     <div class="absolute top-0 left-0 px-3 py-1 bg-[#c53030]/20 border-r border-b border-[#c53030]/30 rounded-br-lg text-[10px] text-[#c53030] font-bold tracking-wider">ENEMY</div>
+
+                    <div class="flex items-center gap-3 mb-4 mt-2">
+                        <div class="w-10 h-10 rounded-full border border-gold/20 p-0.5 bg-black/20">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bob" class="w-full h-full rounded-full grayscale group-hover:grayscale-0 transition-all">
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold text-paper">Bob</div>
+                             <div class="flex items-center gap-1.5 mt-0.5">
+                                <img src="./roles/werewolf.png" class="w-3 h-3 opacity-70">
+                                <span class="text-[10px] text-text-muted">狼人</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-text-secondary leading-relaxed italic border-l-2 border-gold/20 pl-3">
+                        "切，要不是我队友聊爆了，你以为你能验到我？下次走着瞧！"
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 6. 底部 Footer -->
+        <footer class="pt-2 pb-6 flex flex-col gap-4">
+            <button class="w-full bg-gold/90 text-[#1a1614] font-bold py-4 rounded-lg shadow-[0_4px_14px_rgba(197,160,89,0.3)] hover:bg-gold hover:translate-y-[-1px] transition-all flex items-center justify-center gap-2 font-title tracking-wider">
+                <i class="ph-bold ph-share-network"></i>
+                SHARE REPORT
+            </button>
+            <button class="w-full bg-transparent text-gold/60 font-bold py-4 rounded-lg hover:bg-white/5 hover:text-gold transition border border-gold/20 font-title tracking-wider text-xs">
+                RETURN TO LOBBY
+            </button>
+        </footer>
+
+    </main>
+
+    <script>
+        // 初始化雷达图
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        
+        // Chart.js 复古风格配置
+        Chart.defaults.font.family = '"Noto Serif SC", serif';
+        Chart.defaults.color = 'rgba(240, 230, 210, 0.5)';
+        
+        // 创建渐变填充
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(197, 160, 89, 0.5)');
+        gradient.addColorStop(1, 'rgba(197, 160, 89, 0.1)');
+
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['逻辑严密', '发言清晰', '存活评分', '技能价值', '投票准确'],
+                datasets: [{
+                    label: '能力评估',
+                    data: [85, 90, 40, 95, 88],
+                    backgroundColor: gradient,
+                    borderColor: '#c5a059',
+                    borderWidth: 1.5,
+                    pointBackgroundColor: '#1a1614',
+                    pointBorderColor: '#c5a059',
+                    pointBorderWidth: 1.5,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: {
+                            color: 'rgba(197, 160, 89, 0.1)',
+                            lineWidth: 1
+                        },
+                        grid: {
+                            color: 'rgba(197, 160, 89, 0.1)',
+                            lineWidth: 1,
+                            circular: true // 圆形网格更符合魔法阵感觉
+                        },
+                        pointLabels: {
+                            color: '#c5a059',
+                            font: {
+                                size: 11,
+                                weight: 'bold'
+                            },
+                            backdropColor: 'transparent'
+                        },
+                        ticks: {
+                            display: false,
+                            maxTicksLimit: 5,
+                            stepSize: 20
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                elements: {
+                    line: {
+                        tension: 0.3 // 稍微圆滑一点
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -6,7 +6,8 @@ import { useAtom } from "jotai";
 import { motion, AnimatePresence } from "framer-motion";
 import { gameStateAtom } from "@/store/game-machine";
 import type { GameState, Phase, Role, Player } from "@/types/game";
-import { X, Wrench, Play, Pause, SkipForward, Eye, Users, Crosshair, Code, ChatDots, Warning, ArrowRight, ArrowLeft, Lightning, SpeakerHigh } from "@phosphor-icons/react";
+import { X, Wrench, Play, Pause, SkipForward, Eye, Users, Crosshair, Code, ChatDots, Warning, ArrowRight, ArrowLeft, Lightning, SpeakerHigh, ChartBar } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 import {
   applySmartJump,
   applySmartJumpWithFilledData,
@@ -1087,6 +1088,7 @@ function GlobalTab({
   setDay: (day: number) => void;
 }) {
   const t = useTranslations();
+  const router = useRouter();
   const phaseNames = usePhaseNames();
   const formatPlayerLabel = useFormatPlayerLabel();
   const actionDays = useMemo(() => {
@@ -1221,6 +1223,20 @@ function GlobalTab({
           >
             +
           </button>
+        </div>
+      </Section>
+
+      {/* 复盘测试 */}
+      <Section title="复盘测试">
+        <button
+          onClick={() => router.push("/analysis-demo")}
+          className="w-full px-4 py-2 rounded font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-purple-600 hover:bg-purple-500 text-white"
+        >
+          <ChartBar size={18} weight="fill" />
+          使用Mock数据测试复盘
+        </button>
+        <div className="mt-2 text-xs text-gray-400">
+          跳转到复盘页面，使用预设的Mock数据进行UI测试
         </div>
       </Section>
 

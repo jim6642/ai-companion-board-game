@@ -58,6 +58,8 @@ import { getLocale } from "@/i18n/locale-store";
 import { useSettings } from "@/hooks/useSettings";
 import { useTutorial } from "@/hooks/useTutorial";
 import { persistReferralFromCurrentUrl, removeReferralFromCurrentUrl } from "@/lib/referral";
+import { useRouter, useParams } from "next/navigation";
+import { useGameAnalysis } from "@/hooks/useGameAnalysis";
 
 const RITUAL_CUE_DURATION_SECONDS = 2.2;
 const DAY_NIGHT_BLINK = {
@@ -134,6 +136,9 @@ function getRitualCueFromSystemMessage(content: string): { title: string; subtit
 
 export default function Home() {
   const t = useTranslations();
+  const router = useRouter();
+  const params = useParams();
+  const slug = params?.slug as string | undefined;
   const {
     humanName,
     setHumanName,
@@ -175,6 +180,9 @@ export default function Home() {
     markSeenRole,
   } = useTutorial();
 
+  // 游戏结束时自动触发复盘分析生成
+  const { isLoading: isAnalysisLoading } = useGameAnalysis();
+
   const [visualIsNight, setVisualIsNight] = useState(isNight);
   const visualIsNightRef = useRef(isNight);
   const [isMobile, setIsMobile] = useState(false);
@@ -213,6 +221,11 @@ export default function Home() {
     if (gameState.phase !== "GAME_END") return;
     setAiVoiceEnabled(false);
   }, [gameState.phase, setAiVoiceEnabled]);
+
+  const handleViewAnalysis = useCallback(() => {
+    const basePath = slug ? `/${slug}` : "";
+    router.push(`${basePath}/analysis-demo`);
+  }, [router, slug]);
 
   const clearDayNightBlinkTimers = useCallback(() => {
     dayNightBlinkTimeoutsRef.current.forEach((t) => window.clearTimeout(t));
@@ -1542,6 +1555,8 @@ export default function Home() {
                       onNightAction={handleNightActionConfirm}
                       onBadgeSignup={handleBadgeSignup}
                       onRestart={restartGame}
+                      onViewAnalysis={handleViewAnalysis}
+                      isAnalysisLoading={isAnalysisLoading}
                     />
 
                     {/* 移动端玩家条 */}

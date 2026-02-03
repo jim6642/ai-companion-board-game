@@ -668,35 +668,32 @@ export async function generateDailySummary(
     },
   });
 
-  // Parse the new { "summary": "..." } format
-  let summaryText = "";
-  
+  // Parse the { "bullets": [...] } format (as per prompt template)
   try {
     const objectMatch = cleanedDaily.match(/\{[\s\S]*\}/);
     if (objectMatch) {
-      const obj = JSON.parse(objectMatch[0]) as { summary?: string };
+      const obj = JSON.parse(objectMatch[0]) as { bullets?: string[]; summary?: string };
+      
+      // Handle bullets array format (expected from AI)
+      if (obj.bullets && Array.isArray(obj.bullets) && obj.bullets.length > 0) {
+        return { bullets: obj.bullets.map(b => String(b)), facts: [], voteData };
+      }
+      
+      // Handle summary string format (fallback)
       if (typeof obj.summary === "string" && obj.summary.trim()) {
-        summaryText = obj.summary.trim();
+        return { bullets: [obj.summary.trim()], facts: [], voteData };
       }
     }
   } catch {
     // ignore parse errors
   }
 
-  // If we got a summary, return it as a single bullet (preserving full text) and structured vote_data
-  if (summaryText) {
-    return { bullets: [summaryText], facts: [], voteData };
-  }
-
-  // Fallback: use raw content
+  // Fallback: use raw content without JSON wrapper
   const fallback = result.content
     .replace(/```json\s*|\s*```/g, "")
-    .replace(/^\s*\{[\s\S]*?"summary"\s*:\s*"/, "")
-    .replace(/"\s*\}\s*$/, "")
     .trim();
 
-  const fallbackBullets = fallback ? [fallback] : [result.content.trim()].filter(Boolean);
-  return { bullets: fallbackBullets, facts: [], voteData };
+  return { bullets: fallback ? [fallback] : [], facts: [], voteData };
 }
 
 export async function* generateAISpeechStream(

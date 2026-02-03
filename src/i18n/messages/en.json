@@ -875,6 +875,7 @@
     "generatingRoles": "Inviting other players...",
     "startGame": "Start game",
     "restart": "Play again",
+    "viewAnalysis": "Analysis",
     "speechOrder": "Players speak in order",
     "generatingVoice": "Generating voice",
     "seatNumber": "Seat {seat}",

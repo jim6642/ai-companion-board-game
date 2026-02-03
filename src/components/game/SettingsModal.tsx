@@ -3,10 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import type { GameState } from "@/types/game";
 import { aiLogger } from "@/lib/ai-logger";
-import type { AILogEntry } from "@/lib/ai-logger";
 import { useTranslations } from "next-intl";
 import { useAppLocale } from "@/i18n/useAppLocale";
 
@@ -119,44 +118,24 @@ export function SettingsModal({
   const discordInviteUrl = "https://discord.gg/ETkdZWgy";
   const [view, setView] = useState<"settings" | "about">("settings");
   const [groupImgOk, setGroupImgOk] = useState<boolean | null>(null);
-  const [aiLogs, setAiLogs] = useState<AILogEntry[]>([]);
-
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
-
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const logs = await aiLogger.getLogs();
-        if (!cancelled) setAiLogs(Array.isArray(logs) ? (logs as AILogEntry[]) : []);
-      } catch {
-        if (!cancelled) setAiLogs([]);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
-
-  const logJsonText = useMemo(() => {
-    return JSON.stringify(aiLogs, null, 2);
-  }, [aiLogs]);
 
   const handleCopyLog = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(logJsonText);
+      const freshLogs = await aiLogger.getLogs();
+      const freshJsonText = JSON.stringify(freshLogs, null, 2);
+      await navigator.clipboard.writeText(freshJsonText);
       toast(t("settings.toast.copySuccess"));
     } catch {
       toast(t("settings.toast.copyFail.title"), { description: t("settings.toast.copyFail.description") });
     }
-  }, [logJsonText]);
+  }, [t]);
 
-  const handleDownloadLog = useCallback(() => {
+  const handleDownloadLog = useCallback(async () => {
     try {
-      const blob = new Blob([logJsonText], { type: "application/json;charset=utf-8" });
+      const freshLogs = await aiLogger.getLogs();
+      const freshJsonText = JSON.stringify(freshLogs, null, 2);
+      const blob = new Blob([freshJsonText], { type: "application/json;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       const safeGameId = (gameState.gameId || "").replace(/[^a-zA-Z0-9_-]/g, "");
@@ -171,7 +150,7 @@ export function SettingsModal({
     } catch {
       toast(t("settings.toast.exportFail"));
     }
-  }, [gameState.gameId, logJsonText]);
+  }, [gameState.gameId, t]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

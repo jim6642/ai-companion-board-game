@@ -6,6 +6,7 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import type { GameState, Phase, Player, Role } from "@/types/game";
+import type { GameAnalysisData } from "@/types/analysis";
 import { createInitialGameState } from "@/lib/game-master";
 import { getI18n } from "@/i18n/translator";
 
@@ -38,6 +39,11 @@ export const dialogueAtom = atom<DialogueState | null>(null);
 
 // 输入文本
 export const inputTextAtom = atom("");
+
+// 游戏分析数据
+export const gameAnalysisAtom = atom<GameAnalysisData | null>(null);
+export const analysisLoadingAtom = atom(false);
+export const analysisErrorAtom = atom<string | null>(null);
 
 // ============ 派生状态 Atoms ============
 
@@ -459,6 +465,9 @@ export const resetGameAtom = atom(null, (get, set) => {
     showRoleReveal: false,
     showLog: false,
   });
+  set(gameAnalysisAtom, null);
+  set(analysisLoadingAtom, false);
+  set(analysisErrorAtom, null);
 });
 
 // ============ 状态机转换规则 ============
