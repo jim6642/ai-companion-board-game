@@ -1461,7 +1461,11 @@ input[type="submit"]:not(:disabled),
     min-height: 48px;
     padding: 8px 12px;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 4px;
+  }
+
+  .wc-topbar__row-1 {
+    order: -1;
   }
 
   .wc-topbar__title {
@@ -1501,15 +1505,11 @@ input[type="submit"]:not(:disabled),
     gap: 4px;
   }
 
-  /* Settings button smaller on mobile */
-  .wc-topbar button[aria-label="声音设置"] {
-    padding: 4px 8px;
-    font-size: 10px;
-  }
-
-  .wc-topbar button[aria-label="声音设置"] svg {
-    width: 14px;
-    height: 14px;
+  /* 投票进度区域最大宽度 */
+  .wc-voting-progress {
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 

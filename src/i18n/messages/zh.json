@@ -552,7 +552,7 @@
   ,
   "sharePanel": {
     "title": "分享链接",
-    "description": "每邀请一位新用户注册可获得 3 局额度。",
+    "description": "每邀请一位新用户注册可获得 2 局额度。",
     "loading": "加载中...",
     "invitedCount": "已邀请人数：{count}",
     "actions": {

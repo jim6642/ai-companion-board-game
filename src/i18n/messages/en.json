@@ -552,7 +552,7 @@
   ,
   "sharePanel": {
     "title": "Share link",
-    "description": "Invite a new user and earn 3 game credits.",
+    "description": "Invite a new user and earn 2 game credits.",
     "loading": "Loading...",
     "invitedCount": "Invited: {count}",
     "actions": {

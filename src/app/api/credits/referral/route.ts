@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to read referrer" }, { status: 500 });
   }
 
-  const creditsGranted = 3;
+  const creditsGranted = 2;
   const referrerUpdatePayload: Partial<Database["public"]["Tables"]["user_credits"]["Row"]> = {
     credits: referrerCreditsRow.credits + creditsGranted,
     total_referrals: referrerCreditsRow.total_referrals + 1,

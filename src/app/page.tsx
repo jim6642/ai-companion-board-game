@@ -1400,9 +1400,23 @@ export default function Home() {
 
             {showTable && (
               <div className="wc-topbar wc-topbar--responsive shrink-0 transition-all duration-300">
-                <div className="wc-topbar__title">
-                  <WerewolfIcon size={22} className="text-[var(--color-blood)]" />
-                  <span>WOLFCHA</span>
+                {/* 移动端第一行：Logo + 设置按钮 */}
+                <div className="wc-topbar__row-1 flex items-center justify-between w-full md:w-auto md:contents">
+                  <div className="wc-topbar__title">
+                    <WerewolfIcon size={22} className="text-[var(--color-blood)]" />
+                    <span>WOLFCHA</span>
+                  </div>
+
+                  {/* 移动端设置按钮 - 只显示图标 */}
+                  <button
+                    type="button"
+                    onClick={() => setIsSettingsOpen(true)}
+                    title={t("page.audioSettings")}
+                    aria-label={t("page.audioSettings")}
+                    className="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-md border border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-primary)] transition-colors hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-bg)]"
+                  >
+                    <GearSix size={16} />
+                  </button>
                 </div>
 
                 <div className="wc-topbar__info">
@@ -1441,7 +1455,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                {/* 桌面端右侧区域 */}
+                <div className="hidden md:flex items-center gap-3">
                   <div className="wc-topbar__item wc-topbar__item--role">
                     <span className="text-xs uppercase tracking-wider opacity-60">{t("page.roleLabel")}</span>
                     <span className="font-bold text-[var(--color-gold)]">
