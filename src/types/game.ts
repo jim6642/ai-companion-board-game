@@ -237,12 +237,12 @@ export const AVAILABLE_MODELS: ModelRef[] = [
   { provider: "dashscope", model: "deepseek-v3.2" },
   { provider: "dashscope", model: "qwen3-max" },
 
-  { provider: "zenmux", model: "deepseek/deepseek-v3.2" },
+  // { provider: "zenmux", model: "deepseek/deepseek-v3.2" },
   { provider: "zenmux", model: "google/gemini-2.5-flash-lite" },
   { provider: "zenmux", model: "z-ai/glm-4.7" },
-  {provider:"zenmux", model:"minimax/minimax-m2.1"},
+  // {provider:"zenmux", model:"minimax/minimax-m2.1"},
   
-  { provider: "zenmux", model: "google/gemini-3-flash-preview" },
+  // { provider: "zenmux", model: "google/gemini-3-flash-preview" },
 ];
 
 // Models not allowed for in-game players (summary & generation only)
