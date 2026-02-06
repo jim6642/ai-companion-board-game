@@ -225,7 +225,7 @@ export default function Home() {
   const handleViewAnalysis = useCallback(() => {
     const basePath = slug ? `/${slug}` : "";
     const gameIdShort = gameState.gameId?.substring(0, 6).toUpperCase() || "";
-    router.push(`${basePath}/analysis-demo#${gameIdShort}`);
+    router.push(`${basePath}/analysis#${gameIdShort}`);
   }, [router, slug, gameState.gameId]);
 
   const clearDayNightBlinkTimers = useCallback(() => {
