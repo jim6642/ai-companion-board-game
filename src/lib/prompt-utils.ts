@@ -642,7 +642,10 @@ alive_count: ${alivePlayers.length}
   context += `\n\n<alive_players>\n${playerList}\n</alive_players>`;
 
   const wolfFriendlyFireNote = t("promptUtils.gameContext.wolfFriendlyFireNote");
-  const phaseOrderNote = t("promptUtils.gameContext.phaseOrderNote");
+  const phaseOrderNote =
+    state.day === 1
+      ? t("promptUtils.gameContext.phaseOrderNoteDay1BadgeBeforeDeath")
+      : t("promptUtils.gameContext.phaseOrderNote");
   
   // Check if guard exists in this game
   const hasGuard = state.players.some(p => p.role === "Guard");

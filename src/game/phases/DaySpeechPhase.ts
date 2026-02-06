@@ -83,10 +83,11 @@ export class DaySpeechPhase extends GamePhase {
 
     const todaySpeakers = new Set<string>();
     const dayStartIndex = getDayStartIndex(state);
+    const speakOrderPhase = state.phase;
 
     for (let i = dayStartIndex; i < state.messages.length; i++) {
       const m = state.messages[i];
-      if (!m.isSystem && m.playerId && m.playerId !== player.playerId) {
+      if (!m.isSystem && m.phase === speakOrderPhase && m.playerId && m.playerId !== player.playerId) {
         todaySpeakers.add(m.playerId);
       }
     }

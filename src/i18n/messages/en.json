@@ -1538,6 +1538,7 @@
       "peacefulNightNote": "Peaceful night explanation: A peaceful night means no one died last night. Three possible reasons: ①Witch used antidote to save someone ②Guard successfully protected someone ③Werewolves skipped kill (no target selected). Note: Wolf self-kill results in death, NOT a peaceful night.",
       "peacefulNightNoteNoGuard": "Peaceful night explanation: A peaceful night means no one died last night. Two possible reasons: ①Witch used antidote to save someone ②Werewolves skipped kill (no target selected). Note: There is NO Guard role in this game; wolf self-kill results in death, NOT a peaceful night.",
       "phaseOrderNote": "Phase order: Night (wolf kills) → Dawn death announcement → Sheriff campaign → Free discussion → Vote. Note: Wolf kills happen BEFORE the campaign; wolves have NOT heard any daytime speeches when they kill.",
+      "phaseOrderNoteDay1BadgeBeforeDeath": "Phase order: Night (wolf kills) → Sheriff campaign → Dawn death announcement → Free discussion → Vote. Note: Wolf kills happen BEFORE the campaign; wolves have NOT heard any daytime speeches when they kill.",
       "deathCauseWolf": "wolf kill",
       "deathCausePoison": "poisoned",
       "deathCauseVote": "voted out",

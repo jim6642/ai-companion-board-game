@@ -68,7 +68,11 @@ export async function POST(request: Request) {
   }
 
   // 检查今天是否已经领取过
-  if (creditsRow.last_daily_bonus_at === today) {
+  const lastBonusDate = creditsRow.last_daily_bonus_at 
+    ? new Date(creditsRow.last_daily_bonus_at).toISOString().split("T")[0]
+    : null;
+  
+  if (lastBonusDate === today) {
     return NextResponse.json({
       success: true,
       credits: currentCredits,
