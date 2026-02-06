@@ -211,6 +211,14 @@
       },
       "exportSuccess": "Log file exported",
       "exportFail": "Export failed"
+    },
+    "game": {
+      "exitGame": "Exit Game",
+      "exitGameDescription": "Exit current game and return to home screen",
+      "exitConfirmTitle": "Exit game?",
+      "exitConfirmDescription": "Your current game progress will be lost and cannot be recovered.",
+      "exitConfirmButton": "Exit",
+      "exitCancelButton": "Continue Playing"
     }
   },
   "playerCount": {
