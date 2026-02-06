@@ -426,7 +426,8 @@ function saveGameState(state: GameState): void {
   }
   
   // 发言阶段使用 throttle：降低频繁 JSON.stringify 的性能损耗
-  if (THROTTLED_SAVE_PHASES.includes(state.phase)) {
+  // 但遗言阶段需要立即保存，因为它是关键的阶段转换点
+  if (THROTTLED_SAVE_PHASES.includes(state.phase) && state.phase !== "DAY_LAST_WORDS") {
     const now = Date.now();
     const elapsed = now - lastSpeechSaveTimestamp;
     

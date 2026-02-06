@@ -863,8 +863,7 @@ export function useGameLogic() {
 
       case "DAY_BADGE_SPEECH":
       case "DAY_PK_SPEECH":
-      case "DAY_SPEECH":
-      case "DAY_LAST_WORDS": {
+      case "DAY_SPEECH": {
         // 发言阶段：恢复后尝试把 UI/AI 推进到一个可继续的状态
         hasContinuedAfterRevealRef.current = true;
         isAwaitingRoleRevealRef.current = false;
@@ -886,7 +885,7 @@ export function useGameLogic() {
           break;
         }
 
-        // AI speaker：如果刷新前它已经说完（最后一条本 phase 消息来自它），则恢复为“等待下一轮”状态
+        // AI speaker：如果刷新前它已经说完（最后一条本 phase 消息来自它），则恢复为"等待下一轮"状态
         // 否则说明它还没开始/没说完，重新触发一次发言生成
         const aiAlreadySpoke = didLastSpeechComeFrom(s, currentSpeaker.playerId);
         if (aiAlreadySpoke) {
@@ -895,6 +894,48 @@ export function useGameLogic() {
         }
 
         void runAISpeech(s, currentSpeaker);
+        break;
+      }
+
+      case "DAY_LAST_WORDS": {
+        // 遗言阶段：发言者应该是已死亡的玩家
+        hasContinuedAfterRevealRef.current = true;
+        isAwaitingRoleRevealRef.current = false;
+
+        // 若没有 speaker，说明状态异常，跳过遗言直接进入下一阶段
+        if (s.currentSpeakerSeat === null) {
+          console.warn('[wolfcha] DAY_LAST_WORDS: currentSpeakerSeat is null, skipping last words');
+          void proceedToNight(s, token);
+          break;
+        }
+
+        const lastWordsSpeaker = s.players.find((p) => p.seat === s.currentSpeakerSeat) || null;
+        
+        // 遗言发言者必须存在（无论生死）
+        if (!lastWordsSpeaker) {
+          console.warn('[wolfcha] DAY_LAST_WORDS: speaker not found, skipping last words');
+          void proceedToNight(s, token);
+          break;
+        }
+
+        // 遗言阶段的发言者应该是已死亡的玩家，如果还活着说明状态异常
+        if (lastWordsSpeaker.alive) {
+          console.warn('[wolfcha] DAY_LAST_WORDS: speaker is still alive, this should not happen');
+          void proceedToNight(s, token);
+          break;
+        }
+
+        if (lastWordsSpeaker.isHuman) {
+          // 人类玩家：始终恢复到可以继续发言的状态，让玩家决定是否继续或结束
+          setDialogue(speakerHint, uiText.yourTurn, false);
+          break;
+        }
+
+        // AI 遗言发言者：由于无法可靠判断是否已完整说完（可能只说了一部分就刷新了）
+        // 因此不检查历史消息，直接重新触发 AI 发言
+        // AI 会根据历史消息自行判断是否需要继续说，如果已经说过遗言，AI 会生成简短的补充或确认
+        console.info('[wolfcha] DAY_LAST_WORDS: Restoring AI last words, re-triggering speech');
+        void runAISpeech(s, lastWordsSpeaker);
         break;
       }
 
