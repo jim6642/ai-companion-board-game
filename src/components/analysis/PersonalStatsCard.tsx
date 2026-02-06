@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Scroll, Quote, ThumbsUp, Brain, Settings, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Scroll, Quote, ThumbsUp, Brain, X, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
 import type { PersonalStats } from "@/types/analysis";
 import { RADAR_LABELS_VILLAGE, RADAR_LABELS_WOLF } from "@/types/analysis";
@@ -85,7 +85,6 @@ function TitleSelectorModal({ isOpen, onClose, currentTag, onSelectTag }: TitleS
 
 export function PersonalStatsCard({ stats, overrideTag, onOverrideTagChange }: PersonalStatsCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [devMode, setDevMode] = useState(false);
   const [showTitleSelector, setShowTitleSelector] = useState(false);
 
   const isWolf = stats.alignment === "wolf";
@@ -210,23 +209,10 @@ export function PersonalStatsCard({ stats, overrideTag, onOverrideTagChange }: P
     <section className="analysis-card rounded-xl p-5 space-y-5">
       {/* Header: 标题 + 评分 */}
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-bold flex items-center gap-2 text-[var(--text-primary)]">
-            <Scroll className="w-5 h-5 text-[var(--color-gold)]/80" />
-            个人战绩
-          </h3>
-          <button
-            onClick={() => setDevMode(!devMode)}
-            className={`p-1 rounded transition-all ${
-              devMode
-                ? "bg-[var(--color-gold)]/20 text-[var(--color-gold)]"
-                : "text-[var(--text-muted)]/40 hover:text-[var(--text-muted)]"
-            }`}
-            title="开发者模式"
-          >
-            <Settings className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <h3 className="text-lg font-bold flex items-center gap-2 text-[var(--text-primary)]">
+          <Scroll className="w-5 h-5 text-[var(--color-gold)]/80" />
+          个人战绩
+        </h3>
       </div>
 
       {/* 称号立绘 + 称号名称 */}
@@ -264,14 +250,6 @@ export function PersonalStatsCard({ stats, overrideTag, onOverrideTagChange }: P
             </div>
           </div>
 
-          {devMode && (
-            <button
-              onClick={() => setShowTitleSelector(true)}
-              className="mt-2 px-3 py-1 text-[10px] bg-[var(--color-gold)]/10 border border-[var(--color-gold)]/30 rounded text-[var(--color-gold)] hover:bg-[var(--color-gold)]/20 transition-colors flex items-center gap-1"
-            >
-              切换称号 <ChevronDown className="w-3 h-3" />
-            </button>
-          )}
         </div>
       )}
 
