@@ -93,6 +93,8 @@ interface AnalysisContext {
   survivedAfterCheck: boolean;   // 被查杀后抗推存活
   // 新增：猎人相关
   hunterShot: boolean;           // 是否开枪
+  hunterShotWolf: boolean;       // 开枪带走狼人
+  hunterShotVillager: boolean;   // 开枪带走好人
 }
 
 const SEER_TAGS: EvaluationTagRule[] = [
@@ -217,6 +219,8 @@ function buildAnalysisContext(humanPlayer: Player, state: GameState): AnalysisCo
   let selfKnifeFirstNight = false;
   let survivedAfterCheck = false;
   let hunterShot = false;
+  let hunterShotWolf = false;
+  let hunterShotVillager = false;
 
   for (const [dayStr, nightData] of Object.entries(nightHistory)) {
     const day = parseInt(dayStr, 10);
@@ -317,11 +321,13 @@ function buildAnalysisContext(humanPlayer: Player, state: GameState): AnalysisCo
     }
   }
 
-  // 检查猎人是否开枪（dayHistory + nightHistory）
+  // 检查猎人是否开枪及目标（dayHistory + nightHistory）
   if (humanPlayer.role === "Hunter") {
+    let shotTargetSeat: number | undefined;
     for (const dayData of Object.values(dayHistory)) {
       if (dayData.hunterShot?.hunterSeat === humanPlayer.seat) {
         hunterShot = true;
+        shotTargetSeat = dayData.hunterShot.targetSeat;
         break;
       }
     }
@@ -329,8 +335,17 @@ function buildAnalysisContext(humanPlayer: Player, state: GameState): AnalysisCo
       for (const nightData of Object.values(nightHistory)) {
         if (nightData.hunterShot?.hunterSeat === humanPlayer.seat) {
           hunterShot = true;
+          shotTargetSeat = nightData.hunterShot.targetSeat;
           break;
         }
+      }
+    }
+    if (shotTargetSeat !== undefined) {
+      const shotTarget = state.players.find(p => p.seat === shotTargetSeat);
+      if (shotTarget?.role === "Werewolf") {
+        hunterShotWolf = true;
+      } else if (shotTarget) {
+        hunterShotVillager = true;
       }
     }
   }
@@ -355,6 +370,8 @@ function buildAnalysisContext(humanPlayer: Player, state: GameState): AnalysisCo
     selfKnifeFirstNight,
     survivedAfterCheck,
     hunterShot,
+    hunterShotWolf,
+    hunterShotVillager,
   };
 }
 
@@ -455,6 +472,22 @@ function buildPlayerSnapshots(state: GameState): PlayerSnapshot[] {
 function buildRoundStates(state: GameState, snapshots: PlayerSnapshot[]): RoundState[] {
   const rounds: RoundState[] = [];
   
+  // 从投票记录中计算第1天的原始当选者
+  const badgeVotes = state.badge.history?.[1] || {};
+  const voteCounts: Record<number, number> = {};
+  for (const targetSeat of Object.values(badgeVotes)) {
+    const seat = Number(targetSeat);
+    voteCounts[seat] = (voteCounts[seat] || 0) + 1;
+  }
+  const sortedByVotes = Object.entries(voteCounts)
+    .map(([seat, count]) => ({ seat: Number(seat), count }))
+    .sort((a, b) => b.count - a.count);
+  // 原始当选者是得票最高的人
+  const originalElectedSeat = sortedByVotes.length > 0 
+    ? sortedByVotes[0].seat 
+    : state.badge.holderSeat;
+  
+  // 第0天（开局）：没有警长
   rounds.push({
     day: 0,
     phase: "night",
@@ -463,14 +496,37 @@ function buildRoundStates(state: GameState, snapshots: PlayerSnapshot[]): RoundS
       village: snapshots.filter(p => p.alignment === "village").length,
       wolf: snapshots.filter(p => p.alignment === "wolf").length,
     },
-    players: snapshots.map(p => ({ ...p, isAlive: true, deathDay: undefined, deathCause: undefined })),
+    players: snapshots.map(p => ({ ...p, isAlive: true, isSheriff: false, deathDay: undefined, deathCause: undefined })),
   });
 
+  // 跟踪当前警长座位
+  let currentSheriffSeat: number | null = null;
+  
   for (let day = 1; day <= state.day; day++) {
+    // 第1天：使用原始当选者
+    if (day === 1 && originalElectedSeat !== null) {
+      currentSheriffSeat = originalElectedSeat;
+    }
+    
+    // 检查当前警长是否在这一天死亡
+    const sheriffSnapshot = currentSheriffSeat !== null 
+      ? snapshots.find(p => p.seat === currentSheriffSeat) 
+      : null;
+    const sheriffDiedThisDay = sheriffSnapshot?.deathDay === day;
+    
+    // 如果警长在这天死亡，检查是否转让（最终警长不同于原警长）
+    if (sheriffDiedThisDay && state.badge.holderSeat !== null && state.badge.holderSeat !== currentSheriffSeat) {
+      // 检查新警长是否在这天或之后还活着
+      const newSheriff = snapshots.find(p => p.seat === state.badge.holderSeat);
+      if (newSheriff && (!newSheriff.deathDay || newSheriff.deathDay > day)) {
+        currentSheriffSeat = state.badge.holderSeat;
+      }
+    }
+    
     const playersAtDay = snapshots.map(p => ({
       ...p,
       isAlive: !p.deathDay || p.deathDay > day,
-      isSheriff: state.badge.holderSeat === p.seat,
+      isSheriff: p.seat === currentSheriffSeat,
     }));
 
     const aliveAtDay = playersAtDay.filter(p => p.isAlive);
@@ -478,7 +534,7 @@ function buildRoundStates(state: GameState, snapshots: PlayerSnapshot[]): RoundS
     rounds.push({
       day,
       phase: "day",
-      sheriffSeat: state.badge.holderSeat ?? undefined,
+      sheriffSeat: currentSheriffSeat ?? undefined,
       aliveCount: {
         village: aliveAtDay.filter(p => p.alignment === "village").length,
         wolf: aliveAtDay.filter(p => p.alignment === "wolf").length,
@@ -762,28 +818,38 @@ function buildTimeline(state: GameState, aiSummaries?: AISpeechSummaryResult): T
         };
       });
 
-      // 从发言消息中提取候选人（DAY_BADGE_SPEECH阶段发言的玩家）
-      const speechCandidates = state.messages
-        .filter(m => m.day === day && m.phase === "DAY_BADGE_SPEECH" && !m.isSystem)
-        .map(m => {
-          const player = state.players.find(p => p.displayName === m.playerName);
-          return player?.seat;
-        })
-        .filter((seat): seat is number => seat !== undefined);
+      // 从投票记录中计算原始当选者（得票最高的人，可能与当前警长不同，因为警长可以转让）
+      const voteCounts: Record<number, number> = {};
+      for (const targetSeat of Object.values(badgeVotes)) {
+        const seat = Number(targetSeat);
+        voteCounts[seat] = (voteCounts[seat] || 0) + 1;
+      }
+      const sortedCandidates = Object.entries(voteCounts)
+        .map(([seat, count]) => ({ seat: Number(seat), count }))
+        .sort((a, b) => b.count - a.count);
+      // 原始当选者是得票最高的人，如果没有投票记录则使用当前警长
+      const originalElectedSeat = sortedCandidates.length > 0 
+        ? sortedCandidates[0].seat 
+        : state.badge.holderSeat;
+      const originalElectedVoteCount = sortedCandidates.length > 0 
+        ? sortedCandidates[0].count 
+        : 0;
+
+      // 从 badge.signup 中获取候选人（signup[playerId] === true 的玩家）
+      const signupCandidates = state.players
+        .filter(p => state.badge.signup?.[p.playerId] === true)
+        .map(p => p.seat);
       
-      // 从投票记录中提取被投票的玩家座位
-      const votedSeats = new Set(Object.values(badgeVotes) as number[]);
+      // 如果 signup 为空，尝试从投票记录中提取被投票的玩家座位作为后备
+      const votedSeats = Object.values(badgeVotes) as number[];
       
-      // 合并候选人：发言的玩家 + 被投票的玩家 + 当选者（确保当选者在列表中）
-      const allCandidateSeats = new Set([...speechCandidates, ...votedSeats]);
-      // 确保当选者一定在候选人列表中
-      allCandidateSeats.add(state.badge.holderSeat);
+      // 合并候选人：signup 中的候选人 + 被投票的玩家 + 原始当选者
+      const allCandidateSeats = new Set([
+        ...signupCandidates,
+        ...votedSeats,
+        originalElectedSeat,
+      ]);
       const candidateSeats = [...allCandidateSeats].sort((a, b) => a - b);
-      
-      // 计算当选警长的得票数（确保类型一致比较）
-      const badgeVoteCount = Object.entries(badgeVotes).filter(
-        ([, targetSeat]) => Number(targetSeat) === state.badge.holderSeat
-      ).length;
 
       // Use AI summaries for election speeches if available
       const electionSpeeches = aiSummaries?.election?.[day] ?? extractSpeechesFromMessages(state, {
@@ -791,10 +857,10 @@ function buildTimeline(state: GameState, aiSummaries?: AISpeechSummaryResult): T
         phases: ["DAY_BADGE_SPEECH"],
       });
 
-      // Election phase - 使用从消息提取的候选人列表
+      // Election phase - 使用原始当选者信息
       const electionSummary = candidateSeats.length > 0
-        ? `${candidateSeats.map(s => `${s + 1}号`).join("、")}上警竞选，${state.badge.holderSeat + 1}号当选警长`
-        : `${state.badge.holderSeat + 1}号当选警长`;
+        ? `${candidateSeats.map(s => `${s + 1}号`).join("、")}上警竞选，${originalElectedSeat + 1}号当选警长`
+        : `${originalElectedSeat + 1}号当选警长`;
       
       // 如果没有投票记录但有当选者，说明是自动当选（单人竞选）
       const isAutoElected = Object.keys(badgeVotes).length === 0;
@@ -805,16 +871,16 @@ function buildTimeline(state: GameState, aiSummaries?: AISpeechSummaryResult): T
         speeches: electionSpeeches.length > 0 ? electionSpeeches : undefined,
         event: {
           type: "badge",
-          target: `${state.badge.holderSeat + 1}号`,
-          voteCount: isAutoElected ? undefined : badgeVoteCount,
+          target: `${originalElectedSeat + 1}号`,
+          voteCount: isAutoElected ? undefined : originalElectedVoteCount,
           votes: isAutoElected ? undefined : votes,
         },
       });
 
       dayEvents.push({
         type: "badge",
-        target: `${state.badge.holderSeat + 1}号`,
-        voteCount: isAutoElected ? undefined : badgeVoteCount,
+        target: `${originalElectedSeat + 1}号`,
+        voteCount: isAutoElected ? undefined : originalElectedVoteCount,
         votes: isAutoElected ? undefined : votes,
       });
     }
@@ -822,10 +888,15 @@ function buildTimeline(state: GameState, aiSummaries?: AISpeechSummaryResult): T
     // Discussion phase with per-player speech summaries (prefer AI summaries)
     const speeches = aiSummaries?.discussion?.[day] ?? extractSpeeches(state, day);
     // Use AI-generated day summary if available, otherwise use simple description
+    // 如果是最后一天且游戏已结束但没有放逐，显示游戏结果
+    const isLastDayGameEnded = day === state.day && state.winner !== null && !dayData?.executed;
+    const gameResultSummary = state.winner === "wolf" ? "狼人阵营获胜" : "好人阵营获胜";
     const discussionSummary = aiSummaries?.daySummaries?.[day] 
       ?? (dayData?.executed
         ? `各玩家发言讨论后，${dayData.executed.seat + 1}号被放逐`
-        : "各玩家发言讨论");
+        : isLastDayGameEnded
+          ? gameResultSummary
+          : "各玩家发言讨论");
     
     // 始终创建讨论阶段（即使没有 speeches），包含放逐事件和猎人开枪事件
     const exileEvent = dayEvents.find(e => e.type === "exile");
@@ -859,22 +930,132 @@ function calculateRadarStats(player: Player, state: GameState, ctx: AnalysisCont
   const isWolf = player.role === "Werewolf";
 
   if (isWolf) {
+    // 狼人隐藏价值：基于伪装和欺骗能力
+    let hideScore = 50; // 基础分
+    
+    // 骗到警徽，说明伪装成功
+    if (ctx.gotBadgeByJump) {
+      hideScore += 30;
+    }
+    
+    // 首夜自刀骗药，高风险高收益操作
+    if (ctx.selfKnifeFirstNight) {
+      hideScore += 15;
+    }
+    
+    // 被查杀后抗推存活，说明演技高超
+    if (ctx.survivedAfterCheck) {
+      hideScore += 20;
+    }
+    
+    // 游戏胜利加分
+    if (state.winner === "wolf") {
+      hideScore += 15;
+    }
+    
+    // 存活到最后额外加分
+    if (player.alive) {
+      hideScore += 10;
+    }
+    
+    hideScore = Math.max(10, Math.min(100, hideScore));
+    
     return {
       logic: 50,
       speech: 50,
       survival: survivalScore,
-      skillOrHide: 80,
+      skillOrHide: hideScore,
       voteOrTicket: Math.round((1 - ctx.voteAccuracy) * 100),
     };
   }
 
   let skillValue = 50;
+  
   if (player.role === "Seer") {
-    skillValue = ctx.humanChecks.wolves > 0 ? 90 : 60;
+    // 预言家技能价值：查验结果的有效性
+    let seerScore = 40; // 基础分（未查验或未查到狼）
+    const totalChecks = ctx.humanChecks.wolves + ctx.humanChecks.villagers;
+    
+    if (ctx.wasFirstNightKilled) {
+      seerScore = 30; // 首夜被刀，技能价值受限
+    } else if (totalChecks > 0) {
+      // 每查到一个狼 +25，最高不超过100
+      seerScore = 40 + ctx.humanChecks.wolves * 25;
+      // 如果只查到村民，略微加分（至少在努力验人）
+      if (ctx.humanChecks.wolves === 0 && ctx.humanChecks.villagers > 0) {
+        seerScore = 50;
+      }
+    }
+    skillValue = Math.max(10, Math.min(100, seerScore));
+    
   } else if (player.role === "Witch") {
-    skillValue = (ctx.humanSaves > 0 || ctx.humanKills > 0) ? 85 : 50;
+    // 女巫技能价值：基于技能使用的正确性
+    let witchScore = 50; // 基础分（未使用技能）
+    
+    // 解药评估
+    if (ctx.humanSaves > 0) {
+      if (ctx.witchSavedWolf) {
+        witchScore -= 20; // 救了狼人，严重失误
+      } else {
+        witchScore += 25; // 正确救人
+      }
+    }
+    
+    // 毒药评估
+    if (ctx.humanKills > 0) {
+      if (ctx.witchPoisonedWolf) {
+        witchScore += 30; // 毒中狼人，高价值
+      } else if (ctx.witchPoisonedVillager) {
+        witchScore -= 35; // 毒了好人，严重失误
+      }
+    }
+    
+    // 同守同救（奶穿）额外惩罚
+    if (ctx.sameSaveAndGuard) {
+      witchScore -= 15;
+    }
+    
+    skillValue = Math.max(10, Math.min(100, witchScore));
+    
   } else if (player.role === "Guard") {
-    skillValue = ctx.humanGuards.success > 0 ? 90 : 40;
+    // 守卫技能价值：守护成功次数与总守护次数的比例
+    let guardScore = 40; // 基础分
+    
+    if (ctx.sameSaveAndGuard) {
+      guardScore = 15; // 同守同救（奶穿），严重失误
+    } else if (ctx.humanGuards.total > 0) {
+      if (ctx.humanGuards.success >= 2) {
+        guardScore = 100; // 多次守护成功
+      } else if (ctx.humanGuards.success === 1) {
+        guardScore = 80; // 单次守护成功
+      } else {
+        // 守护了但没成功，根据守护次数给基础分
+        guardScore = Math.min(60, 40 + ctx.humanGuards.total * 5);
+      }
+    }
+    skillValue = Math.max(10, Math.min(100, guardScore));
+    
+  } else if (player.role === "Hunter") {
+    // 猎人技能价值：是否开枪及目标
+    let hunterScore = 50; // 基础分（未开枪）
+    
+    if (ctx.hunterShot) {
+      if (ctx.hunterShotWolf) {
+        hunterScore = 100; // 带走狼人，完美发挥
+      } else if (ctx.hunterShotVillager) {
+        hunterScore = 20; // 带走好人，严重失误
+      } else {
+        hunterScore = 60; // 开枪但目标不明
+      }
+    } else if (!player.alive) {
+      // 死了但没开枪（可能被毒死）
+      hunterScore = 30;
+    }
+    skillValue = Math.max(10, Math.min(100, hunterScore));
+    
+  } else if (player.role === "Villager") {
+    // 村民技能价值：基于投票准确率（村民没有技能，用投票体现价值）
+    skillValue = Math.max(20, Math.min(100, Math.round(ctx.voteAccuracy * 100) + 20));
   }
 
   return {
