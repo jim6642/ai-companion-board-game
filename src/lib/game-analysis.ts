@@ -116,17 +116,25 @@ const GUARD_TAGS: EvaluationTagRule[] = [
   { tag: "生锈盾牌", condition: (_, __, ctx) => ctx.humanGuards.success === 0 && ctx.humanGuards.total > 0, priority: 80 },
 ];
 
+function findHunterShot(p: Player, state: GameState) {
+  const dayShot = Object.values(state.dayHistory || {}).find(d => d.hunterShot?.hunterSeat === p.seat);
+  if (dayShot?.hunterShot) return dayShot.hunterShot;
+  const nightShot = Object.values(state.nightHistory || {}).find(n => n.hunterShot?.hunterSeat === p.seat);
+  if (nightShot?.hunterShot) return nightShot.hunterShot;
+  return null;
+}
+
 const HUNTER_TAGS: EvaluationTagRule[] = [
   { tag: "一枪致命", condition: (p, state) => {
-    const shot = Object.values(state.dayHistory || {}).find(d => d.hunterShot?.hunterSeat === p.seat);
-    if (!shot?.hunterShot) return false;
-    const target = state.players.find(pl => pl.seat === shot.hunterShot!.targetSeat);
+    const shot = findHunterShot(p, state);
+    if (!shot) return false;
+    const target = state.players.find(pl => pl.seat === shot.targetSeat);
     return target?.role === "Werewolf";
   }, priority: 100 },
   { tag: "擦枪走火", condition: (p, state) => {
-    const shot = Object.values(state.dayHistory || {}).find(d => d.hunterShot?.hunterSeat === p.seat);
-    if (!shot?.hunterShot) return false;
-    const target = state.players.find(pl => pl.seat === shot.hunterShot!.targetSeat);
+    const shot = findHunterShot(p, state);
+    if (!shot) return false;
+    const target = state.players.find(pl => pl.seat === shot.targetSeat);
     return target?.role !== "Werewolf";
   }, priority: 90 },
   { tag: "仁慈之枪", condition: (_, __, ctx) => !ctx.hunterShot, priority: 80 },
@@ -256,9 +264,9 @@ function buildAnalysisContext(humanPlayer: Player, state: GameState): AnalysisCo
       sameSaveAndGuard = true;
     }
     
-    if (day === 1 && nightData.deaths?.some(d => d.seat === humanPlayer.seat)) {
-      wasFirstNightKilled = true;
-      humanDeathDay = 1;
+    if (nightData.deaths?.some(d => d.seat === humanPlayer.seat)) {
+      if (day === 1) wasFirstNightKilled = true;
+      if (!humanDeathDay) humanDeathDay = day;
     }
     
     // 检查狼人首夜自刀骗药
@@ -293,15 +301,36 @@ function buildAnalysisContext(humanPlayer: Player, state: GameState): AnalysisCo
         humanDeathDay = parseInt(dayStr, 10);
         break;
       }
+      if (dayData.hunterShot?.targetSeat === humanPlayer.seat) {
+        humanDeathDay = parseInt(dayStr, 10);
+        break;
+      }
+    }
+  }
+  // 再次兜底：检查 nightHistory 中的猎人开枪
+  if (!humanPlayer.alive && !humanDeathDay) {
+    for (const [dayStr, nightData] of Object.entries(nightHistory)) {
+      if (nightData.hunterShot?.targetSeat === humanPlayer.seat) {
+        humanDeathDay = parseInt(dayStr, 10);
+        break;
+      }
     }
   }
 
-  // 检查猎人是否开枪
+  // 检查猎人是否开枪（dayHistory + nightHistory）
   if (humanPlayer.role === "Hunter") {
     for (const dayData of Object.values(dayHistory)) {
       if (dayData.hunterShot?.hunterSeat === humanPlayer.seat) {
         hunterShot = true;
         break;
+      }
+    }
+    if (!hunterShot) {
+      for (const nightData of Object.values(nightHistory)) {
+        if (nightData.hunterShot?.hunterSeat === humanPlayer.seat) {
+          hunterShot = true;
+          break;
+        }
       }
     }
   }
@@ -378,6 +407,12 @@ function buildPlayerSnapshots(state: GameState): PlayerSnapshot[] {
       if (!deathDay && nightData.witchPoison === player.seat) {
         deathDay = day;
         deathCause = "poisoned";
+      }
+      
+      // Check hunter shot in nightHistory
+      if (!deathDay && nightData.hunterShot?.targetSeat === player.seat) {
+        deathDay = day;
+        deathCause = "shot";
       }
     }
 
@@ -1236,15 +1271,16 @@ export function extractSpeeches(state: GameState, day: number): PlayerSpeech[] {
 
 function convertToFirstPerson(text: string): string {
   // Convert third-person statements to first-person voice
+  // NOTE: order matters — more specific patterns first to avoid cascading replacements
   return text
     .replace(/声称是/g, "我是")
-    .replace(/声称/g, "我认为")
+    .replace(/声称/g, "我觉得")
     .replace(/表示/g, "")
-    .replace(/认为/g, "我觉得")
-    .replace(/怀疑/g, "我怀疑")
+    .replace(/(?<!我)认为/g, "我觉得")
+    .replace(/(?<!我)怀疑/g, "我怀疑")
     .replace(/投票给/g, "我投")
-    .replace(/支持/g, "我支持")
-    .replace(/反对/g, "我反对")
+    .replace(/(?<!我)支持/g, "我支持")
+    .replace(/(?<!我)反对/g, "我反对")
     .replace(/验了/g, "我查了")
     .replace(/查验/g, "我查")
     .replace(/指出/g, "")

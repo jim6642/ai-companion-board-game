@@ -85,7 +85,6 @@ function TitleSelectorModal({ isOpen, onClose, currentTag, onSelectTag }: TitleS
 
 export function PersonalStatsCard({ stats, overrideTag, onOverrideTagChange }: PersonalStatsCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isFlipped, setIsFlipped] = useState(false);
   const [devMode, setDevMode] = useState(false);
   const [showTitleSelector, setShowTitleSelector] = useState(false);
 
@@ -208,147 +207,87 @@ export function PersonalStatsCard({ stats, overrideTag, onOverrideTagChange }: P
   }, [stats.radarStats, radarLabels]);
 
   return (
-    <section className="analysis-card rounded-xl p-6 space-y-6">
-      <div className="flex justify-between items-start border-b border-[var(--color-gold)]/10 pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold flex items-center gap-2 text-[var(--text-primary)]">
-              <Scroll className="w-5 h-5 text-[var(--color-gold)]/80" />
-              个人战绩
-            </h3>
-            <button
-              onClick={() => setDevMode(!devMode)}
-              className={`p-1 rounded transition-all ${
-                devMode
-                  ? "bg-[var(--color-gold)]/20 text-[var(--color-gold)]"
-                  : "text-[var(--text-muted)]/40 hover:text-[var(--text-muted)]"
-              }`}
-              title="开发者模式"
-            >
-              <Settings className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div
-            onClick={() => {
-              if (devMode) {
-                setShowTitleSelector(true);
-              } else if (illustrationSrc) {
-                setIsFlipped(!isFlipped);
-              }
-            }}
-            className={`mt-3 relative w-28 h-8 bg-black/30 border rounded flex items-center justify-center group overflow-hidden ${
+    <section className="analysis-card rounded-xl p-5 space-y-5">
+      {/* Header: 标题 + 评分 */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-bold flex items-center gap-2 text-[var(--text-primary)]">
+            <Scroll className="w-5 h-5 text-[var(--color-gold)]/80" />
+            个人战绩
+          </h3>
+          <button
+            onClick={() => setDevMode(!devMode)}
+            className={`p-1 rounded transition-all ${
               devMode
-                ? "cursor-pointer border-[var(--color-gold)]/50 ring-1 ring-[var(--color-gold)]/30"
-                : illustrationSrc
-                ? "cursor-pointer border-[var(--color-gold)]/20 hover:border-[var(--color-gold)]/50"
-                : "border-[var(--color-gold)]/20"
+                ? "bg-[var(--color-gold)]/20 text-[var(--color-gold)]"
+                : "text-[var(--text-muted)]/40 hover:text-[var(--text-muted)]"
             }`}
+            title="开发者模式"
           >
-            <div className="absolute inset-0 flex items-center justify-center opacity-50 group-hover:opacity-20 transition-opacity">
-              <span className="text-[10px] text-[var(--color-gold)]/40 tracking-widest">
-                TITLE
-              </span>
-            </div>
-            <span className="relative z-10 text-[var(--color-gold)] text-xs font-bold tracking-widest drop-shadow-md">
-              {primaryTag}
-            </span>
-            {devMode && (
-              <ChevronDown className="absolute right-1 w-3 h-3 text-[var(--color-gold)]/60" />
-            )}
-            <div className="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-25deg] animate-[shine_3s_infinite]" />
-          </div>
-        </div>
-
-        <div className="text-right">
-          <div className="text-3xl font-bold text-[var(--color-gold)] drop-shadow-lg">
-            {stats.totalScore}
-            <span className="text-sm text-[var(--color-gold)]/60 ml-0.5">
-              pts
-            </span>
-          </div>
-          <div className="text-[10px] text-[var(--text-muted)] tracking-widest mt-1">
-            综合评分
-          </div>
+            <Settings className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
-      <div
-        className={`relative w-full aspect-square max-h-[260px] mx-auto py-2 ${illustrationSrc ? "cursor-pointer" : ""}`}
-        style={{ perspective: "1000px" }}
-        onClick={() => illustrationSrc && setIsFlipped(!isFlipped)}
-      >
-        <div
-          className="relative w-full h-full transition-transform duration-700"
-          style={{
-            transformStyle: "preserve-3d",
-            transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-          }}
-        >
-          {/* 正面 - 雷达图 */}
-          <div
-            className="absolute inset-0 w-full h-full"
-            style={{ backfaceVisibility: "hidden" }}
+      {/* 称号立绘 + 称号名称 */}
+      {illustrationSrc && (
+        <div className="flex flex-col items-center">
+          <div 
+            className="relative w-full max-w-[280px] aspect-[16/10] rounded-lg overflow-hidden border border-[var(--color-gold)]/25 shadow-[0_0_20px_rgba(197,160,89,0.15)]"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(197,160,89,0.03)_0%,transparent_70%)] pointer-events-none" />
-            <canvas ref={canvasRef} className="w-full h-full" />
+            <Image
+              src={illustrationSrc}
+              alt={primaryTag}
+              fill
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           </div>
 
-          {/* 背面 - 立绘 */}
-          <div
-            className="absolute inset-0 w-full h-full flex flex-col items-center justify-center"
-            style={{
-              backfaceVisibility: "hidden",
-              transform: "rotateY(180deg)",
-            }}
-          >
-            {illustrationSrc && (
-              <div className="relative w-full h-full flex flex-col items-center justify-center">
-                <div 
-                  className="relative w-56 h-56 rounded-lg overflow-hidden border-2 border-[var(--color-gold)]/30 shadow-[0_0_30px_rgba(197,160,89,0.2)]"
-                  style={{ animation: "analysis-float 4s ease-in-out infinite" }}
-                >
-                  <Image
-                    src={illustrationSrc}
-                    alt={primaryTag}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                </div>
-                <div className="mt-5 text-center relative">
-                  {/* Ribbon Style Container */}
-                  <div className="relative inline-flex items-center justify-center min-w-[180px] py-2 px-6">
-                    {/* Background gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--color-gold)]/15 to-transparent" />
-                    
-                    {/* Decorative lines */}
-                    <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-[var(--color-gold)]/60 to-transparent" />
-                    <div className="absolute bottom-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-[var(--color-gold)]/60 to-transparent" />
-                    
-                    {/* Text with shadow effects */}
-                    <span 
-                      className="text-xl font-black text-[var(--color-gold)] tracking-[0.3em] relative z-10"
-                      style={{ 
-                        textShadow: "0 2px 4px rgba(0,0,0,0.8), 0 0 20px rgba(197,160,89,0.4)",
-                        fontFamily: "'Noto Serif SC', serif"
-                      }}
-                    >
-                      {primaryTag}
-                    </span>
-                  </div>
-                  
-                  <div className="text-[10px] text-[var(--text-muted)]/60 mt-2 px-4 text-center leading-relaxed">
-                    {tagCondition}
-                  </div>
-                  
-                  <div className="text-[10px] text-[var(--text-muted)]/40 mt-3 tracking-widest">
-                    点击翻转
-                  </div>
-                </div>
-              </div>
-            )}
+          <div className="mt-3 text-center">
+            <div className="relative inline-flex items-center justify-center min-w-[140px] py-1.5 px-5">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--color-gold)]/12 to-transparent" />
+              <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-[var(--color-gold)]/50 to-transparent" />
+              <div className="absolute bottom-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-[var(--color-gold)]/50 to-transparent" />
+              <span 
+                className="text-lg font-black text-[var(--color-gold)] tracking-[0.25em] relative z-10"
+                style={{ 
+                  textShadow: "0 2px 4px rgba(0,0,0,0.8), 0 0 16px rgba(197,160,89,0.3)",
+                  fontFamily: "'Noto Serif SC', serif"
+                }}
+              >
+                {primaryTag}
+              </span>
+            </div>
+            <div className="text-[10px] text-[var(--text-muted)]/60 mt-1 leading-relaxed">
+              {tagCondition}
+            </div>
           </div>
+
+          {devMode && (
+            <button
+              onClick={() => setShowTitleSelector(true)}
+              className="mt-2 px-3 py-1 text-[10px] bg-[var(--color-gold)]/10 border border-[var(--color-gold)]/30 rounded text-[var(--color-gold)] hover:bg-[var(--color-gold)]/20 transition-colors flex items-center gap-1"
+            >
+              切换称号 <ChevronDown className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 综合评分 + 雷达图 */}
+      <div className="bg-[#0f0e0c]/60 rounded-lg p-4 border border-[var(--color-gold)]/8">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] text-[var(--text-muted)] tracking-widest uppercase">综合评分</span>
+          <div className="text-2xl font-bold text-[var(--color-gold)] drop-shadow-lg">
+            {stats.totalScore}
+            <span className="text-xs text-[var(--color-gold)]/50 ml-0.5">pts</span>
+          </div>
+        </div>
+
+        <div className="relative w-full aspect-square max-h-[240px] mx-auto">
+          <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(197,160,89,0.03)_0%,transparent_70%)] pointer-events-none" />
+          <canvas ref={canvasRef} className="w-full h-full" />
         </div>
       </div>
 
@@ -359,7 +298,8 @@ export function PersonalStatsCard({ stats, overrideTag, onOverrideTagChange }: P
         onSelectTag={(tag) => onOverrideTagChange?.(tag)}
       />
 
-      <div className="bg-[#141210] border border-[var(--color-gold)]/10 rounded-lg p-4 relative mt-2">
+      {/* 高光语录 */}
+      <div className="bg-[#141210] border border-[var(--color-gold)]/10 rounded-lg p-4 relative">
         <Quote className="absolute top-3 left-3 w-6 h-6 text-[var(--color-gold)]/20" />
         <p className="text-sm text-[var(--text-secondary)] italic text-center px-4 py-2 leading-relaxed">
           {stats.highlightQuote ? `"${stats.highlightQuote}"` : "未发言"}

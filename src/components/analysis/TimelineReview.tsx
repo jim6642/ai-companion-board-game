@@ -303,7 +303,7 @@ function DayPhaseCard({
 }: { 
   phase: DayPhase; 
   day: number;
-  onShowVotes: (votes: VoteRecord[], title: string) => void;
+  onShowVotes: (votes: VoteRecord[], title: string, isBadgeVote?: boolean) => void;
 }) {
   const phaseInfo = PHASE_LABELS[phase.type];
   const PhaseIcon = phaseInfo.icon;
@@ -326,8 +326,9 @@ function DayPhaseCard({
           event={phase.event} 
           onShowVotes={() => {
             if (phase.event?.votes) {
-              const title = phase.event.type === "badge" ? "警长竞选投票详情" : "放逐投票详情";
-              onShowVotes(phase.event.votes, title);
+              const isBadge = phase.event.type === "badge";
+              const title = isBadge ? "警长竞选投票详情" : "放逐投票详情";
+              onShowVotes(phase.event.votes, title, isBadge);
             }
           }}
         />
@@ -346,7 +347,7 @@ function DayPhaseCard({
 }
 
 export function TimelineReview({ timeline, selectedDay, sheriffSeat }: TimelineReviewProps) {
-  const [voteModal, setVoteModal] = useState<{ isOpen: boolean; votes?: VoteRecord[]; title: string }>({
+  const [voteModal, setVoteModal] = useState<{ isOpen: boolean; votes?: VoteRecord[]; title: string; isBadgeVote?: boolean }>({
     isOpen: false,
     title: "",
   });
@@ -357,8 +358,8 @@ export function TimelineReview({ timeline, selectedDay, sheriffSeat }: TimelineR
     ? timeline.filter((entry) => entry.day === selectedDay)
     : timeline;
 
-  const handleShowVotes = (votes: VoteRecord[], title: string) => {
-    setVoteModal({ isOpen: true, votes, title });
+  const handleShowVotes = (votes: VoteRecord[], title: string, isBadgeVote?: boolean) => {
+    setVoteModal({ isOpen: true, votes, title, isBadgeVote });
   };
 
   return (
@@ -431,8 +432,9 @@ export function TimelineReview({ timeline, selectedDay, sheriffSeat }: TimelineR
                       event={event}
                       onShowVotes={() => {
                         if (event.votes) {
-                          const title = event.type === "badge" ? "警长竞选投票详情" : "放逐投票详情";
-                          handleShowVotes(event.votes, title);
+                          const isBadge = event.type === "badge";
+                          const title = isBadge ? "警长竞选投票详情" : "放逐投票详情";
+                          handleShowVotes(event.votes, title, isBadge);
                         }
                       }}
                     />
@@ -450,7 +452,7 @@ export function TimelineReview({ timeline, selectedDay, sheriffSeat }: TimelineR
         onClose={() => setVoteModal({ isOpen: false, title: "" })}
         votes={voteModal.votes}
         title={voteModal.title}
-        sheriffSeat={sheriffSeat}
+        sheriffSeat={voteModal.isBadgeVote ? undefined : sheriffSeat}
       />
     </section>
   );

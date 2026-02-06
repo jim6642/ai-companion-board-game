@@ -28,7 +28,8 @@ export function PostGameAnalysisPage({
   const [overrideTag, setOverrideTag] = useState<string | null>(null);
 
   const selectedDay = data.roundStates[selectedRoundIndex]?.day;
-  const sheriffSeat = data.roundStates[selectedRoundIndex]?.sheriffSeat;
+  // Use the actual sheriff seat from the game (find the first round that has one)
+  const sheriffSeat = data.roundStates.find(r => r.sheriffSeat !== undefined)?.sheriffSeat;
 
   const openPlayerDetail = (playerId: string) => {
     const found = data.players.find((p) => p.playerId === playerId);
