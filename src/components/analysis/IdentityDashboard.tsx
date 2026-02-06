@@ -18,6 +18,7 @@ const DEATH_CAUSE_LABELS: Record<string, string> = {
   exiled: "被票",
   poisoned: "被毒",
   shot: "被枪",
+  milk: "毒奶",
 };
 
 function PlayerCard({ player, onClick, seatOffset }: { player: PlayerSnapshot; onClick: () => void; seatOffset: number }) {
@@ -163,7 +164,7 @@ export function IdentityDashboard({
   const sliderLabels = useMemo(
     () =>
       roundStates.map((r) => ({
-        label: r.day === 0 ? "开局" : `D${r.day}`,
+        label: r.day === 0 ? "开局" : `第${r.day}天`,
         day: r.day,
       })),
     [roundStates]

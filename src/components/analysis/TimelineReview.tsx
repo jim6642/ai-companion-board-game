@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Eye, Gavel, Star, Shield, Skull, Heart, Droplets, ChevronDown, ChevronUp, MessageSquare, Vote, X, Crown, Swords } from "lucide-react";
+import { Eye, Gavel, Star, Shield, Skull, Heart, Droplets, ChevronDown, ChevronUp, MessageSquare, Vote, X, Crown, Swords, Crosshair } from "lucide-react";
 import type { TimelineEntry, PlayerSpeech, DayEvent, DayPhase, VoteRecord } from "@/types/analysis";
 import { ROLE_ICONS, NIGHT_EVENT_COLORS } from "./constants";
 
 interface TimelineReviewProps {
   timeline: TimelineEntry[];
-  selectedRoundIndex?: number;
+  selectedDay?: number;
+  sheriffSeat?: number;
 }
 
 const NIGHT_ACTION_LABELS: Record<string, string> = {
@@ -18,6 +19,13 @@ const NIGHT_ACTION_LABELS: Record<string, string> = {
   poison: "毒",
   check: "查验",
 };
+
+function formatSeatTarget(target: string): string {
+  const normalized = target.trim();
+  if (!normalized) return normalized;
+  if (normalized.endsWith("号") || normalized.endsWith("号位")) return normalized;
+  return `${normalized}号`;
+}
 
 function formatNightAction(type: string, source: string, target: string): string {
   // target already contains "号" (e.g., "7号"), so don't add extra "号"
@@ -74,19 +82,21 @@ function NightEventItem({
       <span className={`font-medium text-sm ${colors.text}`}>
         {actionText}
       </span>
-      {event.result && (
-        <span className="text-[10px] text-[var(--text-muted)] border border-white/10 px-1.5 rounded">
-          {event.result}
-        </span>
-      )}
-      {isBlocked && (
-        <span className="text-[10px] text-[#2f855a] ml-auto border border-[#2f855a]/30 px-1.5 rounded bg-[#2f855a]/10">
-          已救
-        </span>
-      )}
-      <EventIcon
-        className={`w-4 h-4 ml-auto ${colors.text} ${isCheck ? "animate-pulse" : ""}`}
-      />
+      <div className="flex items-center gap-2 ml-auto">
+        {event.result && (
+          <span className="text-[10px] text-[var(--text-muted)] border border-white/10 px-1.5 rounded">
+            {event.result}
+          </span>
+        )}
+        {isBlocked && (
+          <span className="text-[10px] text-[#d97706] border border-[#d97706]/30 px-1.5 rounded bg-[#d97706]/10">
+            已守护
+          </span>
+        )}
+        <EventIcon
+          className={`w-4 h-4 ${colors.text} ${isCheck ? "animate-pulse" : ""}`}
+        />
+      </div>
     </div>
   );
 }
@@ -95,12 +105,14 @@ function VoteModal({
   isOpen, 
   onClose, 
   votes, 
-  title 
+  title,
+  sheriffSeat,
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
   votes?: VoteRecord[]; 
   title: string;
+  sheriffSeat?: number;
 }) {
   if (!isOpen || !votes) return null;
 
@@ -109,6 +121,19 @@ function VoteModal({
     acc[vote.targetSeat].push(vote.voterSeat);
     return acc;
   }, {} as Record<number, number[]>);
+
+  // 计算加权票数（警长1.5票）
+  const getWeightedVoteCount = (voters: number[]) => {
+    let count = 0;
+    for (const voter of voters) {
+      count += voter === sheriffSeat ? 1.5 : 1;
+    }
+    return count;
+  };
+
+  const formatVoteCount = (count: number) => {
+    return Number.isInteger(count) ? `${count}票` : `${count.toFixed(1)}票`;
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
@@ -124,17 +149,17 @@ function VoteModal({
         </div>
         <div className="space-y-3">
           {Object.entries(votesByTarget)
-            .sort(([, a], [, b]) => b.length - a.length)
+            .sort(([, a], [, b]) => getWeightedVoteCount(b) - getWeightedVoteCount(a))
             .map(([target, voters]) => (
               <div key={target} className="bg-white/5 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[var(--color-gold)] font-bold text-sm">{target}号</span>
-                  <span className="text-xs text-[var(--text-muted)]">{voters.length}票</span>
+                  <span className="text-xs text-[var(--text-muted)]">{formatVoteCount(getWeightedVoteCount(voters))}</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {voters.map((voter) => (
                     <span key={voter} className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded">
-                      {voter}号
+                      {voter}号{voter === sheriffSeat ? "👑" : ""}
                     </span>
                   ))}
                 </div>
@@ -157,7 +182,7 @@ function DayEventItem({ event, onShowVotes }: { event: DayEvent; onShowVotes?: (
         <span className="text-[var(--text-muted)] text-xs">警长竞选</span>
         <div className="flex items-center gap-2">
           <span className="text-[var(--color-gold)] font-bold flex items-center gap-1.5 text-xs">
-            <Star className="w-3 h-3" /> {event.target}号 ({event.voteCount}票)
+            <Star className="w-3 h-3" /> {formatSeatTarget(event.target)}{event.voteCount != null ? ` (${Number.isInteger(event.voteCount) ? event.voteCount : event.voteCount.toFixed(1)}票)` : ""}
           </span>
           {hasVotes && (
             <button 
@@ -181,7 +206,7 @@ function DayEventItem({ event, onShowVotes }: { event: DayEvent; onShowVotes?: (
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-[var(--color-blood)]">
-            {event.target}号 ({event.voteCount}票)
+            {formatSeatTarget(event.target)}{event.voteCount != null ? ` (${Number.isInteger(event.voteCount) ? event.voteCount : event.voteCount.toFixed(1)}票)` : ""}
           </span>
           {hasVotes && (
             <button 
@@ -196,10 +221,26 @@ function DayEventItem({ event, onShowVotes }: { event: DayEvent; onShowVotes?: (
     );
   }
 
+  // 猎人开枪信息
+  if (event.type === "hunter_shot") {
+    const isNoShot = event.target.includes("不开枪");
+    return (
+      <div className={`mt-2 ${isNoShot ? "bg-gray-500/10 border-gray-500/20" : "bg-orange-500/10 border-orange-500/20"} border rounded px-3 py-2 flex justify-between items-center`}>
+        <div className="flex items-center gap-2">
+          <Crosshair className={`w-4 h-4 ${isNoShot ? "text-gray-400" : "text-orange-400"}`} />
+          <span className={`text-xs ${isNoShot ? "text-gray-400" : "text-orange-400"}`}>猎人开枪</span>
+        </div>
+        <span className={`text-xs font-bold ${isNoShot ? "text-gray-300" : "text-orange-300"}`}>
+          {event.target}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-2 text-xs">
       <span className="text-[var(--text-muted)]">{event.type}</span>
-      <span className="font-bold text-[var(--text-primary)]">{event.target}号</span>
+      <span className="font-bold text-[var(--text-primary)]">{formatSeatTarget(event.target)}</span>
     </div>
   );
 }
@@ -291,22 +332,28 @@ function DayPhaseCard({
           }}
         />
       )}
+
+      {phase.hunterEvent && (
+        <DayEventItem 
+          event={phase.hunterEvent} 
+          onShowVotes={() => {}}
+        />
+      )}
       
       <SpeechesSection speeches={phase.speeches} />
     </div>
   );
 }
 
-export function TimelineReview({ timeline, selectedRoundIndex }: TimelineReviewProps) {
+export function TimelineReview({ timeline, selectedDay, sheriffSeat }: TimelineReviewProps) {
   const [voteModal, setVoteModal] = useState<{ isOpen: boolean; votes?: VoteRecord[]; title: string }>({
     isOpen: false,
     title: "",
   });
 
-  const isRoundSelected = selectedRoundIndex !== undefined && selectedRoundIndex > 0;
-  const selectedDay = isRoundSelected ? selectedRoundIndex : undefined;
+  const isDaySelected = selectedDay !== undefined && selectedDay > 0;
 
-  const filteredTimeline = isRoundSelected
+  const filteredTimeline = isDaySelected
     ? timeline.filter((entry) => entry.day === selectedDay)
     : timeline;
 
@@ -315,89 +362,82 @@ export function TimelineReview({ timeline, selectedRoundIndex }: TimelineReviewP
   };
 
   return (
-    <section className="relative">
-      <h3 className="text-center font-bold text-[var(--color-gold)]/40 text-xs mb-8 uppercase tracking-[0.3em] analysis-ornament-border pb-3">
-        Timeline Review
+    <section className="relative max-w-2xl mx-auto">
+      <h3 className="text-center font-bold text-[var(--color-gold)]/40 text-xs mb-8 tracking-[0.3em] analysis-ornament-border pb-3">
+        时间线回顾
       </h3>
 
-      <div className="space-y-6 pl-4 relative">
-        <div className="analysis-nav-line left-[21px]" />
+      <div className="space-y-6 relative">
 
         {filteredTimeline.map((entry, idx) => (
           <div key={idx}>
             {/* 夜晚 */}
             {entry.nightEvents.length > 0 && (
-              <div className="flex gap-5 relative z-10 mb-6">
-                <div className="flex flex-col items-center pt-1">
-                  <div className="w-3 h-3 rounded-full bg-[var(--bg-main)] border-2 border-indigo-900 shadow-[0_0_10px_rgba(49,46,129,0.5)] transition-all duration-300" />
+              <div className="relative z-10 mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full bg-[var(--bg-main)] border-2 border-indigo-900 shadow-[0_0_10px_rgba(49,46,129,0.5)] transition-all duration-300 flex-shrink-0" />
+                  <div className="text-xs font-bold text-indigo-300/80 tracking-wider">
+                    第 {entry.day} 夜
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <div className="text-xs font-bold text-indigo-300/80 mb-2 tracking-wider">
-                    NIGHT {String(entry.day).padStart(2, "0")}
-                  </div>
-                  <div className="analysis-card p-4 rounded-lg text-sm space-y-3 bg-[var(--bg-card)]/80">
-                    {entry.nightEvents.map((event, eventIdx) => (
-                      <div key={eventIdx}>
-                        <NightEventItem event={event} />
-                        {eventIdx < entry.nightEvents.length - 1 && (
-                          <div className="w-full h-px bg-white/5 my-3" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                <div className="analysis-card p-4 rounded-lg text-sm space-y-3 bg-[var(--bg-card)]/80">
+                  {entry.nightEvents.map((event, eventIdx) => (
+                    <div key={eventIdx}>
+                      <NightEventItem event={event} />
+                      {eventIdx < entry.nightEvents.length - 1 && (
+                        <div className="w-full h-px bg-white/5 my-3" />
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
             {/* 白天 - 使用 dayPhases */}
             {entry.dayPhases && entry.dayPhases.length > 0 ? (
-              <div className="flex gap-5 relative z-10">
-                <div className="flex flex-col items-center pt-1">
-                  <div className="w-3 h-3 rounded-full bg-[var(--bg-main)] border-2 border-[var(--color-gold)]/60 shadow-[0_0_10px_rgba(197,160,89,0.3)] transition-all duration-300" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-xs font-bold text-[var(--color-gold)]/80 mb-2 tracking-wider">
-                    DAY {String(entry.day).padStart(2, "0")}
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full bg-[var(--bg-main)] border-2 border-[var(--color-gold)]/60 shadow-[0_0_10px_rgba(197,160,89,0.3)] transition-all duration-300 flex-shrink-0" />
+                  <div className="text-xs font-bold text-[var(--color-gold)]/80 tracking-wider">
+                    第 {entry.day} 天
                   </div>
-                  {entry.dayPhases.map((phase, phaseIdx) => (
-                    <DayPhaseCard 
-                      key={phaseIdx} 
-                      phase={phase} 
-                      day={entry.day}
-                      onShowVotes={handleShowVotes}
-                    />
-                  ))}
                 </div>
+                {entry.dayPhases.map((phase, phaseIdx) => (
+                  <DayPhaseCard 
+                    key={phaseIdx} 
+                    phase={phase} 
+                    day={entry.day}
+                    onShowVotes={handleShowVotes}
+                  />
+                ))}
               </div>
             ) : entry.dayEvents.length > 0 && (
-              <div className="flex gap-5 relative z-10">
-                <div className="flex flex-col items-center pt-1">
-                  <div className="w-3 h-3 rounded-full bg-[var(--bg-main)] border-2 border-[var(--color-gold)]/60 shadow-[0_0_10px_rgba(197,160,89,0.3)] transition-all duration-300" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full bg-[var(--bg-main)] border-2 border-[var(--color-gold)]/60 shadow-[0_0_10px_rgba(197,160,89,0.3)] transition-all duration-300 flex-shrink-0" />
+                  <div className="text-xs font-bold text-[var(--color-gold)]/80 tracking-wider">
+                    第 {entry.day} 天
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <div className="text-xs font-bold text-[var(--color-gold)]/80 mb-2 tracking-wider">
-                    DAY {String(entry.day).padStart(2, "0")}
-                  </div>
-                  <div className="analysis-card p-4 rounded-lg text-sm space-y-3 bg-[var(--bg-card)]/80 border-[var(--color-gold)]/30">
-                    {entry.summary && (
-                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                        {entry.summary}
-                      </p>
-                    )}
-                    {entry.dayEvents.map((event, eventIdx) => (
-                      <DayEventItem 
-                        key={eventIdx} 
-                        event={event}
-                        onShowVotes={() => {
-                          if (event.votes) {
-                            const title = event.type === "badge" ? "警长竞选投票详情" : "放逐投票详情";
-                            handleShowVotes(event.votes, title);
-                          }
-                        }}
-                      />
-                    ))}
-                    <SpeechesSection speeches={entry.speeches} />
-                  </div>
+                <div className="analysis-card p-4 rounded-lg text-sm space-y-3 bg-[var(--bg-card)]/80 border-[var(--color-gold)]/30">
+                  {entry.summary && (
+                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                      {entry.summary}
+                    </p>
+                  )}
+                  {entry.dayEvents.map((event, eventIdx) => (
+                    <DayEventItem 
+                      key={eventIdx} 
+                      event={event}
+                      onShowVotes={() => {
+                        if (event.votes) {
+                          const title = event.type === "badge" ? "警长竞选投票详情" : "放逐投票详情";
+                          handleShowVotes(event.votes, title);
+                        }
+                      }}
+                    />
+                  ))}
+                  <SpeechesSection speeches={entry.speeches} />
                 </div>
               </div>
             )}
@@ -410,6 +450,7 @@ export function TimelineReview({ timeline, selectedRoundIndex }: TimelineReviewP
         onClose={() => setVoteModal({ isOpen: false, title: "" })}
         votes={voteModal.votes}
         title={voteModal.title}
+        sheriffSeat={sheriffSeat}
       />
     </section>
   );

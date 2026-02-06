@@ -1,65 +1,97 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Scroll, Quote, ThumbsUp, Brain } from "lucide-react";
+import { Scroll, Quote, ThumbsUp, Brain, Settings, X, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
 import type { PersonalStats } from "@/types/analysis";
 import { RADAR_LABELS_VILLAGE, RADAR_LABELS_WOLF } from "@/types/analysis";
+import { TAG_ILLUSTRATIONS, TAG_CONDITIONS, ALL_TAGS } from "./constants";
 
-const TAG_ILLUSTRATIONS: Record<string, string> = {
-  "洞悉之眼": "/lihui/analysis_bg.png",
-  "初露锋芒": "/lihui/analysis_bg.png",
-  "天妒英才": "/lihui/analysis_bg.png",
-  "default": "/lihui/analysis_bg.png",
-};
-
-const TAG_CONDITIONS: Record<string, string> = {
-  // 预言家
-  "洞悉之眼": "作为预言家查杀两只狼或以上",
-  "初露锋芒": "作为预言家查杀一只狼",
-  "天妒英才": "作为预言家首夜被刀",
-  // 女巫
-  "致命毒药": "作为女巫毒死狼人",
-  "妙手回春": "作为女巫救对人（救了好人）",
-  "助纣为虐": "作为女巫救错人（救了狼）",
-  "误入歧途": "作为女巫毒错人（毒了好人）",
-  "药物冲突": "同守同救导致奶穿",
-  // 守卫
-  "铜墙铁壁": "作为守卫成功守卫两人或以上",
-  "坚实盾牌": "作为守卫成功守卫一人",
-  "生锈盾牌": "作为守卫从未成功守卫",
-  "致命守护": "同守同救导致奶穿",
-  // 猎人
-  "一枪致命": "作为猎人带走狼人",
-  "擦枪走火": "作为猎人带走好人",
-  "仁慈之枪": "作为猎人未开枪",
-  // 狼人
-  "孤狼啸月": "狼队友全部出局仅自己存活获胜",
-  "完美猎杀": "没有狼队友出局赢得胜利",
-  "演技大师": "悍跳拿到警徽",
-  "绝命赌徒": "首夜自刀骗药",
-  "绝地反击": "被预言家查杀后抗推好人",
-  "出师未捷": "被首验查杀",
-  "嗜血猎手": "狼人阵营获胜",
-  "长夜难明": "狼人阵营失败",
-  // 平民/通用
-  "明察秋毫": "投票准确率≥50%",
-  "随波逐流": "投票准确率在35%~50%之间",
-  "全场划水": "投票准确率≤35%",
-  // 默认
-  "待评估": "完成一局游戏即可获得称号",
-};
 
 interface PersonalStatsCardProps {
   stats: PersonalStats;
+  overrideTag?: string | null;
+  onOverrideTagChange?: (tag: string | null) => void;
 }
 
-export function PersonalStatsCard({ stats }: PersonalStatsCardProps) {
+interface TitleSelectorModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentTag: string;
+  onSelectTag: (tag: string) => void;
+}
+
+function TitleSelectorModal({ isOpen, onClose, currentTag, onSelectTag }: TitleSelectorModalProps) {
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={onClose}>
+      <div
+        className="bg-[var(--bg-card)] border border-[var(--color-gold)]/20 rounded-lg p-4 max-w-sm w-full mx-4 shadow-xl max-h-[80vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-gold)]/10">
+          <h4 className="text-sm font-bold text-[var(--color-gold)]">选择称号</h4>
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-white transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="overflow-y-auto flex-1 space-y-2">
+          {ALL_TAGS.map((group) => (
+            <div key={group.category} className="bg-white/5 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setExpandedCategory(expandedCategory === group.category ? null : group.category)}
+                className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-white/5 transition-colors"
+              >
+                <span>{group.category}</span>
+                {expandedCategory === group.category ? (
+                  <ChevronUp className="w-3 h-3 text-[var(--text-muted)]" />
+                ) : (
+                  <ChevronDown className="w-3 h-3 text-[var(--text-muted)]" />
+                )}
+              </button>
+              {expandedCategory === group.category && (
+                <div className="px-2 pb-2 grid grid-cols-2 gap-1.5">
+                  {group.tags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => {
+                        onSelectTag(tag);
+                        onClose();
+                      }}
+                      className={`px-2 py-1.5 rounded text-[10px] transition-all ${
+                        currentTag === tag
+                          ? "bg-[var(--color-gold)] text-black font-bold"
+                          : "bg-white/10 text-[var(--text-secondary)] hover:bg-[var(--color-gold)]/20 hover:text-[var(--color-gold)]"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 pt-3 border-t border-[var(--color-gold)]/10 text-[10px] text-[var(--text-muted)] text-center">
+          当前称号: <span className="text-[var(--color-gold)]">{currentTag}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function PersonalStatsCard({ stats, overrideTag, onOverrideTagChange }: PersonalStatsCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [devMode, setDevMode] = useState(false);
+  const [showTitleSelector, setShowTitleSelector] = useState(false);
+
   const isWolf = stats.alignment === "wolf";
   const radarLabels = isWolf ? RADAR_LABELS_WOLF : RADAR_LABELS_VILLAGE;
-  const primaryTag = stats.tags[0] || "待评估";
+  const primaryTag = overrideTag || stats.tags[0] || "待评估";
   const illustrationSrc = TAG_ILLUSTRATIONS[primaryTag] || TAG_ILLUSTRATIONS["default"];
   const tagCondition = TAG_CONDITIONS[primaryTag] || TAG_CONDITIONS["待评估"];
 
@@ -179,15 +211,38 @@ export function PersonalStatsCard({ stats }: PersonalStatsCardProps) {
     <section className="analysis-card rounded-xl p-6 space-y-6">
       <div className="flex justify-between items-start border-b border-[var(--color-gold)]/10 pb-4">
         <div>
-          <h3 className="text-lg font-bold flex items-center gap-2 text-[var(--text-primary)]">
-            <Scroll className="w-5 h-5 text-[var(--color-gold)]/80" />
-            个人战绩
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold flex items-center gap-2 text-[var(--text-primary)]">
+              <Scroll className="w-5 h-5 text-[var(--color-gold)]/80" />
+              个人战绩
+            </h3>
+            <button
+              onClick={() => setDevMode(!devMode)}
+              className={`p-1 rounded transition-all ${
+                devMode
+                  ? "bg-[var(--color-gold)]/20 text-[var(--color-gold)]"
+                  : "text-[var(--text-muted)]/40 hover:text-[var(--text-muted)]"
+              }`}
+              title="开发者模式"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
           <div
-            onClick={() => illustrationSrc && setIsFlipped(!isFlipped)}
-            className={`mt-3 relative w-28 h-8 bg-black/30 border border-[var(--color-gold)]/20 rounded flex items-center justify-center group overflow-hidden ${
-              illustrationSrc ? "cursor-pointer hover:border-[var(--color-gold)]/50" : ""
+            onClick={() => {
+              if (devMode) {
+                setShowTitleSelector(true);
+              } else if (illustrationSrc) {
+                setIsFlipped(!isFlipped);
+              }
+            }}
+            className={`mt-3 relative w-28 h-8 bg-black/30 border rounded flex items-center justify-center group overflow-hidden ${
+              devMode
+                ? "cursor-pointer border-[var(--color-gold)]/50 ring-1 ring-[var(--color-gold)]/30"
+                : illustrationSrc
+                ? "cursor-pointer border-[var(--color-gold)]/20 hover:border-[var(--color-gold)]/50"
+                : "border-[var(--color-gold)]/20"
             }`}
           >
             <div className="absolute inset-0 flex items-center justify-center opacity-50 group-hover:opacity-20 transition-opacity">
@@ -198,6 +253,9 @@ export function PersonalStatsCard({ stats }: PersonalStatsCardProps) {
             <span className="relative z-10 text-[var(--color-gold)] text-xs font-bold tracking-widest drop-shadow-md">
               {primaryTag}
             </span>
+            {devMode && (
+              <ChevronDown className="absolute right-1 w-3 h-3 text-[var(--color-gold)]/60" />
+            )}
             <div className="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-25deg] animate-[shine_3s_infinite]" />
           </div>
         </div>
@@ -209,8 +267,8 @@ export function PersonalStatsCard({ stats }: PersonalStatsCardProps) {
               pts
             </span>
           </div>
-          <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest mt-1">
-            Evaluation
+          <div className="text-[10px] text-[var(--text-muted)] tracking-widest mt-1">
+            综合评分
           </div>
         </div>
       </div>
@@ -284,8 +342,8 @@ export function PersonalStatsCard({ stats }: PersonalStatsCardProps) {
                     {tagCondition}
                   </div>
                   
-                  <div className="text-[10px] text-[var(--text-muted)]/40 mt-3 tracking-widest uppercase">
-                    Click to flip
+                  <div className="text-[10px] text-[var(--text-muted)]/40 mt-3 tracking-widest">
+                    点击翻转
                   </div>
                 </div>
               </div>
@@ -293,6 +351,13 @@ export function PersonalStatsCard({ stats }: PersonalStatsCardProps) {
           </div>
         </div>
       </div>
+
+      <TitleSelectorModal
+        isOpen={showTitleSelector}
+        onClose={() => setShowTitleSelector(false)}
+        currentTag={primaryTag}
+        onSelectTag={(tag) => onOverrideTagChange?.(tag)}
+      />
 
       {stats.highlightQuote && (
         <div className="bg-[#141210] border border-[var(--color-gold)]/10 rounded-lg p-4 relative mt-2">

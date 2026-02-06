@@ -84,7 +84,7 @@ export function PlayerDetailModal({ player, isOpen, onClose }: PlayerDetailModal
 
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <span className="text-xs font-bold bg-white/10 text-[var(--text-secondary)] px-2 py-0.5 rounded">
-                    {player.seat}号位
+                    {player.seat + 1}号位
                   </span>
                   {player.isSheriff && (
                     <span className="text-xs font-bold bg-[var(--color-gold)] text-[var(--bg-main)] px-2 py-0.5 rounded">

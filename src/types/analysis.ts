@@ -33,6 +33,7 @@ export interface DayPhase {
   summary?: string;
   speeches?: PlayerSpeech[];
   event?: DayEvent;
+  hunterEvent?: DayEvent;
 }
 
 export interface TimelineEntry {
@@ -80,9 +81,10 @@ export interface PlayerReview {
   role: Role;
 }
 
-export type DeathCause = "killed" | "exiled" | "poisoned" | "shot";
+export type DeathCause = "killed" | "exiled" | "poisoned" | "shot" | "milk";
 
 export interface PlayerSnapshot {
+  playerId: string;
   seat: number;
   name: string;
   avatar: string;

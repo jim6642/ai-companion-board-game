@@ -151,6 +151,7 @@ export function createInitialGameState(): GameState {
       candidates: [],
       signup: {},
       votes: {},
+      allVotes: {},
       history: {},
       revoteCount: 0,
     },

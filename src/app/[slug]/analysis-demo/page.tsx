@@ -1,37 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PostGameAnalysisPage } from "@/components/analysis";
 import { MOCK_ANALYSIS_DATA } from "@/components/analysis/mockData";
 import { useGameAnalysis } from "@/hooks/useGameAnalysis";
-import { shareAnalysis } from "@/lib/share-utils";
-import { toast } from "sonner";
 
 export default function AnalysisDemoPage() {
   const router = useRouter();
   const { analysisData, isLoading, error } = useGameAnalysis();
-  const [isSharing, setIsSharing] = useState(false);
 
   const displayData = analysisData || MOCK_ANALYSIS_DATA;
-
-  const handleShare = async () => {
-    if (isSharing) return;
-    setIsSharing(true);
-
-    try {
-      const result = await shareAnalysis(displayData);
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-    } catch (err) {
-      toast.error("分享失败");
-    } finally {
-      setIsSharing(false);
-    }
-  };
 
   const handleReturn = () => {
     router.push("/");
@@ -55,7 +33,6 @@ export default function AnalysisDemoPage() {
   return (
     <PostGameAnalysisPage
       data={displayData}
-      onShare={handleShare}
       onReturn={handleReturn}
     />
   );

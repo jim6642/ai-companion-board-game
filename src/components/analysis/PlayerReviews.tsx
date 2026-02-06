@@ -7,13 +7,18 @@ import { buildSimpleAvatarUrl } from "@/lib/avatar-config";
 
 interface PlayerReviewsProps {
   reviews: PlayerReview[];
+  onSelectPlayer?: (playerId: string) => void;
 }
 
-function ReviewCard({ review }: { review: PlayerReview }) {
+function ReviewCard({ review, onClick }: { review: PlayerReview; onClick?: () => void }) {
   const isAlly = review.relation === "ally";
 
   return (
-    <div className="analysis-card p-5 rounded-xl relative group">
+    <button
+      type="button"
+      onClick={onClick}
+      className="analysis-card p-5 rounded-xl relative group w-full text-left cursor-pointer hover:bg-white/5 transition-colors overflow-hidden"
+    >
       <div
         className={`absolute top-0 left-0 px-3 py-1 border-r border-b rounded-br-lg text-[10px] font-bold tracking-wider ${
           isAlly
@@ -21,7 +26,7 @@ function ReviewCard({ review }: { review: PlayerReview }) {
             : "bg-[#c53030]/20 border-[#c53030]/30 text-[#c53030]"
         }`}
       >
-        {isAlly ? "ALLY" : "ENEMY"}
+        {isAlly ? "队友" : "对手"}
       </div>
 
       <div className="flex items-center gap-3 mb-4 mt-2">
@@ -54,22 +59,26 @@ function ReviewCard({ review }: { review: PlayerReview }) {
       <p className="text-xs text-[var(--text-secondary)] leading-relaxed italic border-l-2 border-[var(--color-gold)]/20 pl-3">
         &ldquo;{review.content}&rdquo;
       </p>
-    </div>
+    </button>
   );
 }
 
-export function PlayerReviews({ reviews }: PlayerReviewsProps) {
+export function PlayerReviews({ reviews, onSelectPlayer }: PlayerReviewsProps) {
   if (!reviews || reviews.length === 0) return null;
 
   return (
     <section>
-      <h3 className="text-center font-bold text-[var(--color-gold)]/40 text-xs mb-6 uppercase tracking-[0.3em] analysis-ornament-border pb-3">
-        Player Reviews
+      <h3 className="text-center font-bold text-[var(--color-gold)]/40 text-xs mb-6 tracking-[0.3em] analysis-ornament-border pb-3">
+        选手评价
       </h3>
 
       <div className="flex flex-col gap-4">
         {reviews.map((review, idx) => (
-          <ReviewCard key={idx} review={review} />
+          <ReviewCard
+            key={idx}
+            review={review}
+            onClick={() => onSelectPlayer?.(review.fromPlayerId)}
+          />
         ))}
       </div>
     </section>

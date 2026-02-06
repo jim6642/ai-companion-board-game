@@ -20,7 +20,7 @@ export function AnalysisHeader({ gameId }: AnalysisHeaderProps) {
         </h1>
       </div>
       <div className="text-xs text-[var(--color-gold)]/60 tracking-widest border border-[var(--color-gold)]/20 px-2 py-1 rounded">
-        GAME #{shortId}
+        局号 #{shortId}
       </div>
     </header>
   );

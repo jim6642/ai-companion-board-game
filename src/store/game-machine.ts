@@ -40,8 +40,8 @@ export const dialogueAtom = atom<DialogueState | null>(null);
 // 输入文本
 export const inputTextAtom = atom("");
 
-// 游戏分析数据
-export const gameAnalysisAtom = atom<GameAnalysisData | null>(null);
+// 游戏分析数据 - 使用 localStorage 持久化存储
+export const gameAnalysisAtom = atomWithStorage<GameAnalysisData | null>("wolfcha_analysis_data", null);
 export const analysisLoadingAtom = atom(false);
 export const analysisErrorAtom = atom<string | null>(null);
 

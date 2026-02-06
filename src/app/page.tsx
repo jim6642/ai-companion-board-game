@@ -224,8 +224,9 @@ export default function Home() {
 
   const handleViewAnalysis = useCallback(() => {
     const basePath = slug ? `/${slug}` : "";
-    router.push(`${basePath}/analysis-demo`);
-  }, [router, slug]);
+    const gameIdShort = gameState.gameId?.substring(0, 6).toUpperCase() || "";
+    router.push(`${basePath}/analysis-demo#${gameIdShort}`);
+  }, [router, slug, gameState.gameId]);
 
   const clearDayNightBlinkTimers = useCallback(() => {
     dayNightBlinkTimeoutsRef.current.forEach((t) => window.clearTimeout(t));

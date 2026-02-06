@@ -1,18 +1,18 @@
 import type { GameAnalysisData, PlayerSnapshot, RoundState } from "@/types/analysis";
 
 const PLAYERS: PlayerSnapshot[] = [
-  { seat: 1, name: "QiLin", avatar: "QiLin", role: "Seer", alignment: "village", isAlive: false, deathDay: 1, deathCause: "exiled", isHumanPlayer: true },
-  { seat: 2, name: "DeepSeek 2", avatar: "DeepSeek2", role: "Villager", alignment: "village", isAlive: true },
-  { seat: 3, name: "glm", avatar: "glm", role: "Villager", alignment: "village", isAlive: true },
-  { seat: 4, name: "glm 3", avatar: "glm3", role: "Hunter", alignment: "village", isAlive: true },
-  { seat: 5, name: "Gemini", avatar: "Gemini", role: "Witch", alignment: "village", isAlive: false, deathDay: 2, deathCause: "killed" },
-  { seat: 6, name: "DeepSeek", avatar: "DeepSeek", role: "Guard", alignment: "village", isAlive: true },
-  { seat: 7, name: "glm 2", avatar: "glm2", role: "Werewolf", alignment: "wolf", isAlive: true, isSheriff: true },
-  { seat: 8, name: "minimax 2", avatar: "minimax2", role: "Werewolf", alignment: "wolf", isAlive: true },
-  { seat: 9, name: "Gemini 2", avatar: "Gemini2", role: "Werewolf", alignment: "wolf", isAlive: true },
-  { seat: 10, name: "Qwen", avatar: "Qwen", role: "Villager", alignment: "village", isAlive: false, deathDay: 2, deathCause: "exiled" },
-  { seat: 11, name: "DeepSeek 3", avatar: "DeepSeek3", role: "Werewolf", alignment: "wolf", isAlive: true },
-  { seat: 12, name: "minimax", avatar: "minimax", role: "Villager", alignment: "village", isAlive: false, deathDay: 2, deathCause: "poisoned" },
+  { playerId: "player-1", seat: 1, name: "QiLin", avatar: "QiLin", role: "Seer", alignment: "village", isAlive: false, deathDay: 1, deathCause: "exiled", isHumanPlayer: true },
+  { playerId: "player-2", seat: 2, name: "DeepSeek 2", avatar: "DeepSeek2", role: "Villager", alignment: "village", isAlive: true },
+  { playerId: "player-3", seat: 3, name: "glm", avatar: "glm", role: "Villager", alignment: "village", isAlive: true },
+  { playerId: "player-4", seat: 4, name: "glm 3", avatar: "glm3", role: "Hunter", alignment: "village", isAlive: true },
+  { playerId: "player-5", seat: 5, name: "Gemini", avatar: "Gemini", role: "Witch", alignment: "village", isAlive: false, deathDay: 2, deathCause: "killed" },
+  { playerId: "player-6", seat: 6, name: "DeepSeek", avatar: "DeepSeek", role: "Guard", alignment: "village", isAlive: true },
+  { playerId: "player-7", seat: 7, name: "glm 2", avatar: "glm2", role: "Werewolf", alignment: "wolf", isAlive: true, isSheriff: true },
+  { playerId: "player-8", seat: 8, name: "minimax 2", avatar: "minimax2", role: "Werewolf", alignment: "wolf", isAlive: true },
+  { playerId: "player-9", seat: 9, name: "Gemini 2", avatar: "Gemini2", role: "Werewolf", alignment: "wolf", isAlive: true },
+  { playerId: "player-10", seat: 10, name: "Qwen", avatar: "Qwen", role: "Villager", alignment: "village", isAlive: false, deathDay: 2, deathCause: "exiled" },
+  { playerId: "player-11", seat: 11, name: "DeepSeek 3", avatar: "DeepSeek3", role: "Werewolf", alignment: "wolf", isAlive: true },
+  { playerId: "player-12", seat: 12, name: "minimax", avatar: "minimax", role: "Villager", alignment: "village", isAlive: false, deathDay: 2, deathCause: "poisoned" },
 ];
 
 const ROUND_STATES: RoundState[] = [

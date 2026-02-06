@@ -7,6 +7,7 @@ import { buildSimpleAvatarUrl } from "@/lib/avatar-config";
 
 interface OverviewCardProps {
   data: GameAnalysisData;
+  onSelectPlayer?: (playerId: string) => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -28,7 +29,7 @@ function PlayerAvatar({ seed, size = 96 }: { seed: string; size?: number }) {
   );
 }
 
-export function OverviewCard({ data }: OverviewCardProps) {
+export function OverviewCard({ data, onSelectPlayer }: OverviewCardProps) {
   const isVillageWin = data.result === "village_win";
   const { personalStats, awards } = data;
 
@@ -75,7 +76,11 @@ export function OverviewCard({ data }: OverviewCardProps) {
       {/* MVP & SVP */}
       <section className="grid grid-cols-2 gap-4">
         {/* MVP */}
-        <div className="analysis-card rounded-lg p-4 flex flex-col items-center overflow-hidden group relative">
+        <button
+          type="button"
+          onClick={() => onSelectPlayer?.(awards.mvp.playerId)}
+          className="analysis-card rounded-lg p-4 flex flex-col items-center overflow-hidden group relative cursor-pointer hover:bg-white/5 transition-colors text-left"
+        >
           <div className="absolute -top-6 -right-6 w-12 h-12 bg-[var(--color-gold)]/20 blur-xl rounded-full" />
           <div className="absolute top-2 right-2">
             <Crown className="w-5 h-5 text-[var(--color-gold)] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
@@ -84,7 +89,7 @@ export function OverviewCard({ data }: OverviewCardProps) {
             <PlayerAvatar seed={awards.mvp.avatar} size={44} />
           </div>
           <div className="text-xs text-[var(--color-gold)] font-bold tracking-widest mb-1">
-            MVP
+            最佳表现
           </div>
           <div className="text-sm font-bold text-[var(--text-primary)] mb-2">
             {awards.mvp.playerName}
@@ -92,15 +97,19 @@ export function OverviewCard({ data }: OverviewCardProps) {
           <div className="text-[10px] text-[var(--text-secondary)] text-center leading-tight bg-black/20 px-2 py-1 rounded border border-white/5">
             {awards.mvp.reason}
           </div>
-        </div>
+        </button>
 
         {/* SVP */}
-        <div className="analysis-card rounded-lg p-4 flex flex-col items-center grayscale hover:grayscale-0 transition-all duration-500 relative">
+        <button
+          type="button"
+          onClick={() => onSelectPlayer?.(awards.svp.playerId)}
+          className="analysis-card rounded-lg p-4 flex flex-col items-center grayscale hover:grayscale-0 transition-all duration-500 relative cursor-pointer hover:bg-white/5 text-left"
+        >
           <div className="w-12 h-12 rounded-full border border-white/10 mb-3 bg-black/20 p-0.5 opacity-70">
             <PlayerAvatar seed={awards.svp.avatar} size={44} />
           </div>
           <div className="text-xs text-[var(--text-muted)] font-bold tracking-widest mb-1">
-            SVP
+            虽败犹荣
           </div>
           <div className="text-sm font-bold text-[var(--text-secondary)] mb-2">
             {awards.svp.playerName}
@@ -108,7 +117,7 @@ export function OverviewCard({ data }: OverviewCardProps) {
           <div className="text-[10px] text-[var(--text-muted)] text-center leading-tight bg-black/20 px-2 py-1 rounded border border-white/5">
             {awards.svp.reason}
           </div>
-        </div>
+        </button>
       </section>
     </div>
   );
