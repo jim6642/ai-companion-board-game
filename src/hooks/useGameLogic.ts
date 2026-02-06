@@ -796,7 +796,7 @@ export function useGameLogic() {
         const witchDone =
           !witch ||
           (s.roleAbilities.witchHealUsed && s.roleAbilities.witchPoisonUsed) ||
-          s.nightActions.witchSave === true ||
+          s.nightActions.witchSave !== undefined ||
           s.nightActions.witchPoison !== undefined;
 
         if (witchDone) {
@@ -815,7 +815,20 @@ export function useGameLogic() {
         hasContinuedAfterRevealRef.current = true;
         isAwaitingRoleRevealRef.current = false;
         if (s.nightActions.seerTarget !== undefined) {
-          // 预言家已查验，设置继续回调
+          // 预言家已查验，设置继续回调并显示查验结果
+          const seerResult = s.nightActions.seerResult;
+          if (seerResult) {
+            const targetPlayer = s.players.find((p) => p.seat === seerResult.targetSeat);
+            setDialogue(
+              t("speakers.seerResult"),
+              t("gameLogicMessages.seerResultText", {
+                seat: seerResult.targetSeat + 1,
+                name: targetPlayer?.displayName || "",
+                result: seerResult.isWolf ? t("gameLogicMessages.werewolfResult") : t("gameLogicMessages.goodResult"),
+              }),
+              false
+            );
+          }
           nightContinueRef.current = async (state) => {
             await resolveNight(state, token, async (resolvedState) => {
               await startDayPhaseInternal(resolvedState, token);
@@ -893,6 +906,24 @@ export function useGameLogic() {
         break;
       }
 
+      case "DAY_VOTE": {
+        // 投票阶段恢复：检查是否所有应投票的玩家都已投完
+        hasContinuedAfterRevealRef.current = true;
+        isAwaitingRoleRevealRef.current = false;
+        // PK 投票时，参与PK的人不投票
+        const pkTargets =
+          s.pkSource === "vote" && Array.isArray(s.pkTargets) ? s.pkTargets : [];
+        const voterIds = s.players
+          .filter((p) => p.alive && !pkTargets.includes(p.seat))
+          .map((p) => p.playerId);
+        const allVoted = voterIds.length > 0 && voterIds.every((id) => typeof s.votes[id] === "number");
+        if (allVoted) {
+          void resolveVotesSafely(s, token);
+        }
+        // 否则等待剩余玩家投票（人类和AI）
+        break;
+      }
+
       default: {
         // 其他阶段暂不自动推进
         hasContinuedAfterRevealRef.current = true;
@@ -900,7 +931,7 @@ export function useGameLogic() {
         break;
       }
     }
-  }, [badgePhase, getToken, runAISpeech, runDaySpeechAction, runNightPhaseAction, resolveNight, setDialogue, setWaitingForNextRound, startDayPhaseInternal, t]);
+  }, [badgePhase, getToken, runAISpeech, runDaySpeechAction, runNightPhaseAction, resolveNight, resolveVotesSafely, setDialogue, setWaitingForNextRound, startDayPhaseInternal, t]);
 
   hunterDeathRef.current = async (state: GameState, hunter: Player, diedAtNight: boolean) => {
     const token = getToken();
@@ -993,10 +1024,15 @@ export function useGameLogic() {
     if (isResolvingVotesRef.current) return;
     if (isWaitingForAI) return;
 
-    const aliveIds = gameState.players.filter((p) => p.alive).map((p) => p.playerId);
-    const allVoted = aliveIds.every((id) => typeof gameState.votes[id] === "number");
+    // PK投票时，参与PK的人不投票，需要排除
+    const pkTargets =
+      gameState.pkSource === "vote" && Array.isArray(gameState.pkTargets) ? gameState.pkTargets : [];
+    const voterIds = gameState.players
+      .filter((p) => p.alive && !pkTargets.includes(p.seat))
+      .map((p) => p.playerId);
+    const allVoted = voterIds.every((id) => typeof gameState.votes[id] === "number");
     
-    if (allVoted && aliveIds.length > 0) {
+    if (allVoted && voterIds.length > 0) {
       console.log("[wolfcha] useEffect: All votes detected, triggering resolveVotePhase as safety net");
       const token = getToken();
       void resolveVotesSafely(gameState, token);

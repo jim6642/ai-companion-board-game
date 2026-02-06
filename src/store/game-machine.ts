@@ -97,8 +97,7 @@ function isPhaseActionCompleted(state: GameState): boolean {
       // 注意：witchSave === false 表示明确不救，undefined 表示还没决定
       return (
         state.nightActions.witchSave !== undefined ||
-        state.nightActions.witchPoison !== undefined ||
-        false
+        state.nightActions.witchPoison !== undefined
       );
     }
 
@@ -186,7 +185,7 @@ export function getRestorePhase(state: GameState): Phase {
       const witchDone =
         !witch ||
         (state.roleAbilities.witchHealUsed && state.roleAbilities.witchPoisonUsed) ||
-        state.nightActions.witchSave === true ||
+        state.nightActions.witchSave !== undefined ||
         state.nightActions.witchPoison !== undefined;
       if (witchDone) {
         return "NIGHT_WITCH_ACTION";
@@ -218,6 +217,16 @@ export function getRestorePhase(state: GameState): Phase {
 /**
  * Validate that a game state has all required fields and is structurally valid
  */
+// All valid Phase values for validation
+const VALID_PHASES: readonly string[] = [
+  "LOBBY", "SETUP",
+  "NIGHT_START", "NIGHT_GUARD_ACTION", "NIGHT_WOLF_ACTION",
+  "NIGHT_WITCH_ACTION", "NIGHT_SEER_ACTION", "NIGHT_RESOLVE",
+  "DAY_START", "DAY_BADGE_SIGNUP", "DAY_BADGE_SPEECH", "DAY_BADGE_ELECTION",
+  "DAY_PK_SPEECH", "DAY_SPEECH", "DAY_LAST_WORDS", "DAY_VOTE", "DAY_RESOLVE",
+  "BADGE_TRANSFER", "HUNTER_SHOOT", "GAME_END",
+] as const;
+
 function isValidGameState(state: unknown): state is GameState {
   if (!state || typeof state !== "object") return false;
   
@@ -225,7 +234,7 @@ function isValidGameState(state: unknown): state is GameState {
   
   // Check required string fields
   if (typeof s.gameId !== "string" || !s.gameId) return false;
-  if (typeof s.phase !== "string") return false;
+  if (typeof s.phase !== "string" || !VALID_PHASES.includes(s.phase)) return false;
   
   // Check required number fields
   if (typeof s.day !== "number" || !Number.isFinite(s.day)) return false;
@@ -370,10 +379,25 @@ function loadPersistedGameState(): GameState {
   }
 }
 
+// 发言阶段 throttle：避免流式消息追加导致频繁 JSON 序列化
+const SPEECH_SAVE_THROTTLE_MS = 3000;
+let lastSpeechSaveTimestamp = 0;
+let pendingSpeechSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Phases where throttled saving is applied (frequent state updates during speech)
+const THROTTLED_SAVE_PHASES: Phase[] = [
+  "DAY_BADGE_SPEECH",
+  "DAY_PK_SPEECH",
+  "DAY_SPEECH",
+  "DAY_LAST_WORDS",
+];
+
 /**
  * Save game state to localStorage
  * 细粒度保存：只有当阶段动作完成时才保存
  * 这样刷新后可以恢复到最近完成的检查点
+ * 
+ * 发言阶段使用 throttle 策略，避免频繁序列化影响性能
  */
 function saveGameState(state: GameState): void {
   // SSR safety check
@@ -381,6 +405,11 @@ function saveGameState(state: GameState): void {
   
   // Clear saved state when game ends or returns to lobby
   if (!isGameInProgress(state)) {
+    // Clear any pending throttled save
+    if (pendingSpeechSaveTimer !== null) {
+      clearTimeout(pendingSpeechSaveTimer);
+      pendingSpeechSaveTimer = null;
+    }
     try {
       localStorage.removeItem(GAME_STATE_STORAGE_KEY);
     } catch {
@@ -396,6 +425,38 @@ function saveGameState(state: GameState): void {
     return;
   }
   
+  // 发言阶段使用 throttle：降低频繁 JSON.stringify 的性能损耗
+  if (THROTTLED_SAVE_PHASES.includes(state.phase)) {
+    const now = Date.now();
+    const elapsed = now - lastSpeechSaveTimestamp;
+    
+    if (elapsed < SPEECH_SAVE_THROTTLE_MS) {
+      // 距离上次保存不足阈值，延迟保存（确保最终一定会保存最新状态）
+      if (pendingSpeechSaveTimer !== null) {
+        clearTimeout(pendingSpeechSaveTimer);
+      }
+      pendingSpeechSaveTimer = setTimeout(() => {
+        pendingSpeechSaveTimer = null;
+        doSaveGameState(state);
+        lastSpeechSaveTimestamp = Date.now();
+      }, SPEECH_SAVE_THROTTLE_MS - elapsed);
+      return;
+    }
+    
+    lastSpeechSaveTimestamp = now;
+  }
+  
+  // Clear any pending throttled save since we're saving now
+  if (pendingSpeechSaveTimer !== null) {
+    clearTimeout(pendingSpeechSaveTimer);
+    pendingSpeechSaveTimer = null;
+  }
+  
+  doSaveGameState(state);
+}
+
+/** Internal: actually write state to localStorage */
+function doSaveGameState(state: GameState): void {
   try {
     const persisted: PersistedGameState = {
       version: GAME_STATE_VERSION,
@@ -414,6 +475,11 @@ function saveGameState(state: GameState): void {
  */
 export function clearPersistedGameState(): void {
   if (typeof window === "undefined") return;
+  // Clear any pending throttled save
+  if (pendingSpeechSaveTimer !== null) {
+    clearTimeout(pendingSpeechSaveTimer);
+    pendingSpeechSaveTimer = null;
+  }
   try {
     localStorage.removeItem(GAME_STATE_STORAGE_KEY);
   } catch {
@@ -873,25 +939,6 @@ export const setRoleRevealAtom = atom(
 // 重置游戏（用于开始新游戏，保留持久化状态直到新游戏开始）
 export const resetGameAtom = atom(null, (get, set) => {
   set(gameStateAtom, createInitialGameState());
-  set(dialogueAtom, null);
-  set(inputTextAtom, "");
-  set(uiStateAtom, {
-    isLoading: false,
-    isWaitingForAI: false,
-    showTable: false,
-    selectedSeat: null,
-    showRoleReveal: false,
-    showLog: false,
-  });
-});
-
-// 退出游戏（清除所有状态和持久化数据）
-export const exitGameAtom = atom(null, (get, set) => {
-  // Clear persisted game state from localStorage
-  clearPersistedGameState();
-  
-  // Reset all game-related state
-  set(rawGameStateAtom, createInitialGameState());
   set(dialogueAtom, null);
   set(inputTextAtom, "");
   set(uiStateAtom, {
