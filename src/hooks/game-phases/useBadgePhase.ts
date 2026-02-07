@@ -34,6 +34,7 @@ export interface BadgePhaseActions {
   startBadgeSignupPhase: (state: GameState) => Promise<void>;
   startBadgeSpeechPhase: (state: GameState) => Promise<void>;
   startBadgeElectionPhase: (state: GameState, options?: { isRevote?: boolean }) => Promise<void>;
+  resumeBadgeSignupPhase: (state: GameState) => Promise<void>;
   handleBadgeSignup: (wants: boolean) => Promise<void>;
   handleBadgeTransfer: (state: GameState, sheriff: Player, afterTransfer: (s: GameState) => Promise<void>) => Promise<void>;
   handleHumanBadgeTransfer: (targetSeat: number) => Promise<void>;
@@ -416,6 +417,22 @@ export function useBadgePhase(
     await maybeStartBadgeSpeechAfterSignup(nextState);
   }, [gameState, setGameState, resolveAIBadgeSignup, maybeStartBadgeSpeechAfterSignup]);
 
+  /**
+   * 刷新恢复后的报名阶段恢复：
+   * - 不重置 badge.signup / candidates（避免回到“报名刚开始”）
+   * - 继续让 AI 参与报名（对未决定者补齐）
+   * - 若报名已全部完成，直接衔接到发言阶段
+   */
+  const resumeBadgeSignupPhase = useCallback(async (state: GameState) => {
+    if (state.phase !== "DAY_BADGE_SIGNUP") return;
+    // 如果没有任何玩家（理论上不会出现），直接退出
+    if (!state.players || state.players.length === 0) return;
+
+    // 继续跑 AI 报名（仅补齐未决定者）
+    const nextState = await resolveAIBadgeSignup(state);
+    await maybeStartBadgeSpeechAfterSignup(nextState);
+  }, [maybeStartBadgeSpeechAfterSignup, resolveAIBadgeSignup]);
+
   /** 开始警长竞选发言 */
   const startBadgeSpeechPhase = useCallback(async (state: GameState) => {
     const texts = getTexts();
@@ -655,6 +672,7 @@ export function useBadgePhase(
     startBadgeSignupPhase,
     startBadgeSpeechPhase,
     startBadgeElectionPhase,
+    resumeBadgeSignupPhase,
     handleBadgeSignup,
     handleBadgeTransfer,
     handleHumanBadgeTransfer,

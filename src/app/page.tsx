@@ -29,7 +29,7 @@ import {
 import { useTypewriter } from "@/hooks/useTypewriter";
 import { useGameLogic } from "@/hooks/useGameLogic";
 import type { Player, Role } from "@/types/game";
-import { PHASE_CONFIGS } from "@/store/game-machine";
+import { PHASE_CONFIGS, isGameInProgress } from "@/store/game-machine";
 import { getI18n } from "@/i18n/translator";
 import { getSystemMessages, getSystemPatterns } from "@/lib/game-texts";
 import { useTranslations } from "next-intl";
@@ -170,6 +170,9 @@ export default function Home() {
   const { settings, setBgmVolume, setSoundEnabled, setAiVoiceEnabled, setGenshinMode, setSpectatorMode, setAutoAdvanceDialogueEnabled } = useSettings();
   const { bgmVolume, isSoundEnabled, isAiVoiceEnabled, isGenshinMode, isSpectatorMode, isAutoAdvanceDialogueEnabled } = settings;
   const shouldUseAiVoice = isSoundEnabled && isAiVoiceEnabled && bgmVolume > 0;
+  
+  // Exit game functionality - use restartGame which properly handles all state resets
+  const gameInProgress = useMemo(() => isGameInProgress(gameState), [gameState]);
   const {
     state: tutorialState,
     isLoaded: isTutorialLoaded,
@@ -846,6 +849,8 @@ export default function Home() {
     if (!humanPlayer) return;
     if (hasShownRoleReveal) return;
     if (gameState.phase !== "NIGHT_START") return;
+    // 只在第一晚弹身份牌，恢复到后续夜晚时不再弹
+    if (gameState.day !== 1) return;
     if (!visualIsNight) return;
     if (dayNightBlinkPhase) return;
     const t = window.setTimeout(() => {
@@ -853,7 +858,7 @@ export default function Home() {
       setHasShownRoleReveal(true);
     }, 380);
     return () => window.clearTimeout(t);
-  }, [showTable, humanPlayer, hasShownRoleReveal, gameState.phase, visualIsNight, dayNightBlinkPhase]);
+  }, [showTable, humanPlayer, hasShownRoleReveal, gameState.phase, gameState.day, visualIsNight, dayNightBlinkPhase]);
 
   const openTutorial = useCallback(
     (payload: TutorialPayload, options?: { force?: boolean }) => {
@@ -1710,6 +1715,8 @@ export default function Home() {
         onSoundEnabledChange={setSoundEnabled}
         onAiVoiceEnabledChange={setAiVoiceEnabled}
         onAutoAdvanceDialogueEnabledChange={setAutoAdvanceDialogueEnabled}
+        isGameInProgress={gameInProgress}
+        onExitGame={restartGame}
       />
 
       {/* 开发者模式 - 只在游戏开始后显示 */}

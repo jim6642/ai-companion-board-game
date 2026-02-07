@@ -211,6 +211,14 @@
       },
       "exportSuccess": "已导出日志文件",
       "exportFail": "导出失败"
+    },
+    "game": {
+      "exitGame": "退出游戏",
+      "exitGameDescription": "退出当前游戏并返回主界面",
+      "exitConfirmTitle": "确定要退出游戏吗？",
+      "exitConfirmDescription": "当前游戏进度将丢失，无法恢复。",
+      "exitConfirmButton": "确认退出",
+      "exitCancelButton": "继续游戏"
     }
   },
   "playerCount": {
