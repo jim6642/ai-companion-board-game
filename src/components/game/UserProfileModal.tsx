@@ -26,6 +26,7 @@ import {
   getMinimaxGroupId,
   getSelectedModels,
   getSummaryModel,
+  getReviewModel,
   getZenmuxApiKey,
   getValidatedZenmuxKey,
   getValidatedDashscopeKey,
@@ -34,6 +35,7 @@ import {
   setMinimaxGroupId,
   setSelectedModels,
   setSummaryModel,
+  setReviewModel,
   setZenmuxApiKey,
   setDashscopeApiKey,
   setCustomKeyEnabled,
@@ -47,6 +49,7 @@ import {
   AVAILABLE_MODELS,
   GENERATOR_MODEL,
   SUMMARY_MODEL,
+  REVIEW_MODEL,
   filterPlayerModels,
   type ModelRef,
 } from "@/types/game";
@@ -93,6 +96,7 @@ import {
   const [selectedModels, setSelectedModelsState] = useState<string[]>([]);
   const [generatorModel, setGeneratorModelState] = useState("");
   const [summaryModel, setSummaryModelState] = useState("");
+  const [reviewModel, setReviewModelState] = useState("");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [isValidatingZenmux, setIsValidatingZenmux] = useState(false);
   const [isValidatingDashscope, setIsValidatingDashscope] = useState(false);
@@ -119,6 +123,7 @@ import {
     const nextSelectedModels = getSelectedModels();
     const nextGeneratorModel = getGeneratorModel();
     const nextSummaryModel = getSummaryModel();
+    const nextReviewModel = getReviewModel();
     const storedCustomEnabled = getCustomKeyEnabled();
     if (mounted) {
       setZenmuxKeyState(nextZenmuxKey);
@@ -128,6 +133,7 @@ import {
       setSelectedModelsState(nextSelectedModels);
       setGeneratorModelState(nextGeneratorModel);
       setSummaryModelState(nextSummaryModel);
+      setReviewModelState(nextReviewModel);
       setIsCustomKeyEnabled(storedCustomEnabled);
       const z = nextZenmuxKey;
       const d = nextDashscopeKey;
@@ -189,6 +195,11 @@ import {
       if (availableSet.has(SUMMARY_MODEL)) return SUMMARY_MODEL;
       return availableModelPool[0]?.model ?? "";
     });
+    setReviewModelState((prev) => {
+      if (prev && availableSet.has(prev)) return prev;
+      if (availableSet.has(REVIEW_MODEL)) return REVIEW_MODEL;
+      return availableModelPool[0]?.model ?? "";
+    });
   }, [availableModelPool, defaultPlayerModels, isCustomKeyEnabled, playerModelPool]);
 
   const selectedModelSummary = useMemo(() => {
@@ -246,15 +257,20 @@ import {
     const fallbackSummary = availableSet.has(SUMMARY_MODEL)
       ? SUMMARY_MODEL
       : availableModelPool[0]?.model ?? "";
+    const fallbackReview = availableSet.has(REVIEW_MODEL)
+      ? REVIEW_MODEL
+      : availableModelPool[0]?.model ?? "";
     const nextGeneratorModel = availableSet.has(generatorModel) ? generatorModel : fallbackGenerator;
     const nextSummaryModel = availableSet.has(summaryModel) ? summaryModel : fallbackSummary;
+    const nextReviewModel = availableSet.has(reviewModel) ? reviewModel : fallbackReview;
     const removedSelected = selectedModels.filter((m) => !playerAvailableSet.has(m));
     const generatorAdjusted = Boolean(generatorModel) && !availableSet.has(generatorModel);
     const summaryAdjusted = Boolean(summaryModel) && !availableSet.has(summaryModel);
+    const reviewAdjusted = Boolean(reviewModel) && !availableSet.has(reviewModel);
 
     if (
       isCustomKeyEnabled &&
-      (availableSet.size === 0 || removedSelected.length > 0 || generatorAdjusted || summaryAdjusted)
+      (availableSet.size === 0 || removedSelected.length > 0 || generatorAdjusted || summaryAdjusted || reviewAdjusted)
     ) {
       toast(t("customKey.toasts.modelsAdjusted"), {
         description: t("customKey.toasts.modelsAdjustedDesc"),
@@ -267,9 +283,11 @@ import {
     setSelectedModels(nextSelectedModels);
     setGeneratorModel(nextGeneratorModel);
     setSummaryModel(nextSummaryModel);
+    setReviewModel(nextReviewModel);
     setSelectedModelsState(nextSelectedModels);
     setGeneratorModelState(nextGeneratorModel);
     setSummaryModelState(nextSummaryModel);
+    setReviewModelState(nextReviewModel);
     toast(t("customKey.toasts.saved"), { description: t("customKey.toasts.savedDesc") });
     onOpenChange(false);
   };
@@ -366,6 +384,7 @@ import {
     setSelectedModelsState([]);
     setGeneratorModelState(getGeneratorModel());
     setSummaryModelState(getSummaryModel());
+    setReviewModelState(getReviewModel());
     setIsCustomKeyEnabled(false);
     setValidatedKeys({ zenmux: "", dashscope: "" });
     onCustomKeyEnabledChange?.(false);
@@ -720,6 +739,20 @@ import {
                             onValueChange={(v) => setSummaryModelState(v)}
                           >
                             <SelectTrigger id="summary-model"><SelectValue placeholder={t("customKey.selectModel")} /></SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {availableModelPool.map((r) => (
+                                <SelectItem key={`${r.provider}:${r.model}`} value={r.model} label={r.model} description={r.provider === "zenmux" ? "Zenmux" : t("customKey.dashscope.short")} icon={getModelLogoPath(r)} />
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label htmlFor="review-model" className="text-xs">{t("customKey.modelConfig.review")}</Label>
+                          <Select
+                            value={availableModelPool.some((r) => r.model === reviewModel) ? reviewModel : ""}
+                            onValueChange={(v) => setReviewModelState(v)}
+                          >
+                            <SelectTrigger id="review-model"><SelectValue placeholder={t("customKey.selectModel")} /></SelectTrigger>
                             <SelectContent className="max-h-60">
                               {availableModelPool.map((r) => (
                                 <SelectItem key={`${r.provider}:${r.model}`} value={r.model} label={r.model} description={r.provider === "zenmux" ? "Zenmux" : t("customKey.dashscope.short")} icon={getModelLogoPath(r)} />

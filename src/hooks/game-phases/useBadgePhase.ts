@@ -203,15 +203,18 @@ export function useBadgePhase(
 
         const badgeTieTearMessage = texts.t("badgePhase.tieTear" as never);
 
+        // 合并所有轮次的投票保存到历史
+        const finalVotes = { ...state.badge.allVotes, ...state.badge.votes };
         let nextState: GameState = {
           ...state,
           badge: {
             ...state.badge,
             holderSeat: null,
             votes: {},
+            allVotes: {},
             candidates: [],
             revoteCount,
-            history: { ...state.badge.history, [state.day]: { ...state.badge.votes } },
+            history: { ...state.badge.history, [state.day]: finalVotes },
           },
         };
 
@@ -227,13 +230,14 @@ export function useBadgePhase(
         return;
       }
 
-      // 进入PK发言
+      // 进入PK发言，累积当前轮投票到 allVotes
       isResolvingBadgeElectionRef.current = false;
       const nextState: GameState = {
         ...state,
         badge: {
           ...state.badge,
           votes: {},
+          allVotes: { ...state.badge.allVotes, ...state.badge.votes },
           revoteCount,
           candidates: topSeats,
         },
@@ -247,12 +251,15 @@ export function useBadgePhase(
     const winner = state.players.find((p) => p.seat === winnerSeat);
     const votedCount = counts[winnerSeat] || 0;
 
+    // 合并所有轮次的投票（包括 PK 轮）保存到历史
+    const finalVotes = { ...state.badge.allVotes, ...state.badge.votes };
     let nextState: GameState = {
       ...state,
       badge: {
         ...state.badge,
         holderSeat: winnerSeat,
-        history: { ...state.badge.history, [state.day]: { ...state.badge.votes } },
+        allVotes: {},
+        history: { ...state.badge.history, [state.day]: finalVotes },
       },
     };
 
@@ -479,6 +486,7 @@ export function useBadgePhase(
         badge: {
           ...currentState.badge,
           holderSeat: winnerSeat,
+          allVotes: {},
           history: { ...currentState.badge.history, [currentState.day]: {} },
         },
       };

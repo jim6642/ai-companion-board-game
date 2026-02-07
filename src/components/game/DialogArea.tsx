@@ -269,6 +269,8 @@ interface DialogAreaProps {
   onNightAction?: (seat: number, actionType?: WitchActionType) => void;
   onBadgeSignup?: (wants: boolean) => void;
   onRestart?: () => void;
+  onViewAnalysis?: () => void;
+  isAnalysisLoading?: boolean;
 }
 
 // 等待状态动画组件已移除，与当前简洁风格不符
@@ -379,6 +381,8 @@ export function DialogArea({
   onNightAction,
   onBadgeSignup,
   onRestart,
+  onViewAnalysis,
+  isAnalysisLoading = false,
 }: DialogAreaProps) {
   const t = useTranslations();
   const isGenshinMode = !!gameState.isGenshinMode;
@@ -1241,14 +1245,26 @@ export function DialogArea({
                   </div>
                   <div className={`flex items-center justify-between mt-4 pt-3 border-t ${isNight ? "border-white/10" : "border-black/5"}`}>
                     <span className="text-xs text-[var(--text-muted)]">{t("dialog.playAgainHint")}</span>
-                    <button
-                      onClick={onRestart}
-                      className="wc-action-btn wc-action-btn--primary text-sm h-9 px-4"
-                      type="button"
-                    >
-                      <ArrowClockwise size={14} weight="bold" />
-                      {t("ui.restart")}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={onViewAnalysis}
+                        className="wc-action-btn text-sm h-9 px-4 flex items-center gap-2"
+                        type="button"
+                      >
+                        {isAnalysisLoading && (
+                          <span className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                        )}
+                        {t("ui.viewAnalysis")}
+                      </button>
+                      <button
+                        onClick={onRestart}
+                        className="wc-action-btn wc-action-btn--primary text-sm h-9 px-4"
+                        type="button"
+                      >
+                        <ArrowClockwise size={14} weight="bold" />
+                        {t("ui.restart")}
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               )}
