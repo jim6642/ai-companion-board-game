@@ -44,6 +44,7 @@ import {
   isCustomKeyEnabled as getCustomKeyEnabled,
 } from "@/lib/api-keys";
 import { getModelLogoPath } from "@/lib/model-logo";
+import { supabase } from "@/lib/supabase";
 import {
   ALL_MODELS,
   AVAILABLE_MODELS,
@@ -65,8 +66,8 @@ import {
    onShareInvite: () => void;
   onSignOut: () => void | Promise<void>;
   onCustomKeyEnabledChange?: (value: boolean) => void;
-  accessToken?: string;
   onCreditsChange?: () => void;
+  defaultTab?: string;
  }
  
  export function UserProfileModal({
@@ -80,8 +81,8 @@ import {
    onShareInvite,
    onSignOut,
   onCustomKeyEnabledChange,
-  accessToken,
   onCreditsChange,
+  defaultTab = "profile",
  }: UserProfileModalProps) {
   const t = useTranslations();
   const [zenmuxKey, setZenmuxKeyState] = useState("");
@@ -107,6 +108,7 @@ import {
   const [purchaseQuantity, setPurchaseQuantity] = useState(10);
   const [purchaseQuantityInput, setPurchaseQuantityInput] = useState("10");
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isWechatQrOpen, setIsWechatQrOpen] = useState(false);
 
    const displayCredits = useMemo(() => {
     if (credits === null || credits === undefined) return t("userProfile.empty");
@@ -392,14 +394,22 @@ import {
   };
 
   const handlePurchase = async () => {
-    if (isPurchasing || purchaseQuantity < 10 || !accessToken) return;
+    if (isPurchasing || purchaseQuantity < 10) return;
     setIsPurchasing(true);
     try {
+      // Get fresh access token to avoid using expired token
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        toast(t("customKey.payAsYouGo.error"));
+        return;
+      }
+
       const response = await fetch("/api/stripe/payment-link", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ quantity: purchaseQuantity }),
       });
@@ -432,7 +442,7 @@ import {
           <DialogDescription>{t("userProfile.description")}</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="profile">
+        <Tabs defaultValue={defaultTab} key={defaultTab}>
           <TabsList>
             <TabsTrigger value="profile">{t("customKey.tabs.profile")}</TabsTrigger>
             <TabsTrigger value="payAsYouGo">{t("customKey.tabs.payAsYouGo")}</TabsTrigger>
@@ -493,17 +503,22 @@ import {
 
           <TabsContent value="payAsYouGo">
             <div className="space-y-4">
-              <section className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] p-4">
-                <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => setIsWechatQrOpen(true)}
+                className="w-full rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] p-4 hover:border-[var(--color-accent)] hover:bg-[var(--bg-hover)] transition-colors text-left"
+              >
+                <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-bg)]">
                     <CreditCard size={20} className="text-[var(--color-accent)]" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-sm font-medium text-[var(--text-primary)]">{t("customKey.payAsYouGo.title")}</h3>
-                    <p className="text-xs text-[var(--text-muted)] mt-1">{t("customKey.payAsYouGo.description")}</p>
+                    <p className="text-xs text-[var(--text-muted)] mt-1">{t("customKey.payAsYouGo.wechatPayHint")}</p>
                   </div>
+                  <ArrowRight size={16} className="text-[var(--text-muted)]" />
                 </div>
-              </section>
+              </button>
 
               <section className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] p-4 space-y-4">
                 <div className="flex items-center justify-between">
@@ -867,6 +882,29 @@ import {
           </TabsContent>
         </Tabs>
       </DialogContent>
+
+      <Dialog open={isWechatQrOpen} onOpenChange={setIsWechatQrOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("customKey.payAsYouGo.wechatQrTitle")}</DialogTitle>
+            <DialogDescription>{t("customKey.payAsYouGo.wechatQrDescription")}</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center p-2">
+            <a
+              href="/wechat-qr.png"
+              download="wechat-qr.png"
+              className="block"
+            >
+              <img
+                src="/wechat-qr.png"
+                alt="Developer WeChat QR Code"
+                className="w-72 h-72 sm:w-80 sm:h-80 object-contain rounded-lg"
+              />
+            </a>
+          </div>
+          <p className="text-xs text-center text-[var(--text-muted)]">{t("customKey.payAsYouGo.longPressToSave")}</p>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
  }

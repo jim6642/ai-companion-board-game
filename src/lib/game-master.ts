@@ -136,6 +136,7 @@ export function createInitialGameState(): GameState {
     gameId: uuidv4(),
     phase: "LOBBY",
     day: 0,
+    startTime: Date.now(),
     difficulty: "normal",
     players: [],
     events: [],

@@ -1575,14 +1575,16 @@ export function useGameLogic() {
         hasContinuedAfterRevealRef.current = true;
         isAwaitingRoleRevealRef.current = false;
         
-        // Start the night phase directly
-        const token = getToken();
-        if (isTokenValid(token)) {
-          const systemMessages = getSystemMessages();
-          setDialogue(speakerHost, systemMessages.nightFall(newState.day), false);
-          await playNarrator("nightFall");
-          await runNightPhaseAction(newState, token, "START_NIGHT");
-        }
+        // Start the night phase directly after state is set
+        setTimeout(async () => {
+          const token = getToken();
+          if (isTokenValid(token)) {
+            const systemMessages = getSystemMessages();
+            setDialogue(speakerHost, systemMessages.nightFall(newState.day), false);
+            await playNarrator("nightFall");
+            await runNightPhaseAction(newState, token, "START_NIGHT");
+          }
+        }, 0);
       } else {
         pendingStartStateRef.current = devPreset ? null : newState;
         hasContinuedAfterRevealRef.current = false;

@@ -278,6 +278,13 @@ export default function Home() {
     if (isNight) {
       // Mark that we need to blink to night
       pendingNightBlinkRef.current = true;
+      
+      // In spectator mode (no human player), trigger night blink immediately
+      // because the game progresses quickly without waiting for role reveal
+      if (showTable && !humanPlayer) {
+        scheduleDayNightBlink(true, 0);
+        pendingNightBlinkRef.current = false;
+      }
       return;
     }
 
@@ -285,7 +292,7 @@ export default function Home() {
     pendingNightBlinkRef.current = false;
     lastNightCueIdRef.current = null;
     scheduleDayNightBlink(false, 0);
-  }, [isNight, scheduleDayNightBlink]);
+  }, [isNight, scheduleDayNightBlink, showTable, humanPlayer]);
 
   useEffect(() => {
     return () => {
@@ -761,6 +768,10 @@ export default function Home() {
       clearAutoAdvanceTimeout();
       return;
     }
+    if (!showTable) {
+      clearAutoAdvanceTimeout();
+      return;
+    }
     if (isRoleRevealOpen) {
       clearAutoAdvanceTimeout();
       return;
@@ -832,6 +843,7 @@ export default function Home() {
     isRoleRevealOpen,
     isSettingsOpen,
     isWaitingForAI,
+    showTable,
     waitingForNextRound,
   ]);
 

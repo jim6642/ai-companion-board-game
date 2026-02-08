@@ -459,6 +459,12 @@ function saveGameState(state: GameState): void {
 
 /** Internal: actually write state to localStorage */
 function doSaveGameState(state: GameState): void {
+  // Double-check: don't save if game is no longer in progress
+  // This handles the case where a throttled timer fires after the user exits the game
+  if (!isGameInProgress(state)) {
+    return;
+  }
+  
   try {
     const persisted: PersistedGameState = {
       version: GAME_STATE_VERSION,

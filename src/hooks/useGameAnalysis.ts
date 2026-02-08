@@ -31,10 +31,18 @@ export function useGameAnalysis() {
 
     try {
       const winner = gameState.winner === "wolf" ? "wolf" : "villager";
-      const statsSummary = gameStatsTracker.getSummary(winner, true);
-      const durationSeconds = statsSummary?.durationSeconds ?? 0;
-      const reviewModel = getReviewModel();
       
+      // 优先使用 GameState.startTime 计算时长，避免刷新后丢失
+      let durationSeconds = 0;
+      if (gameState.startTime) {
+        durationSeconds = Math.round((Date.now() - gameState.startTime) / 1000);
+      } else {
+        // 降级方案：尝试从 gameStatsTracker 获取
+        const statsSummary = gameStatsTracker.getSummary(winner, true);
+        durationSeconds = statsSummary?.durationSeconds ?? 0;
+      }
+      
+      const reviewModel = getReviewModel();
       const data = await generateGameAnalysis(gameState, reviewModel, durationSeconds);
       setAnalysisData(data);
     } catch (err) {

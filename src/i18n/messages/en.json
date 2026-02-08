@@ -1929,6 +1929,11 @@
     "payAsYouGo": {
       "title": "Buy Game Credits",
       "description": "Purchase single-game credits without a subscription. Each credit grants one game session.",
+      "wechatPayHint": "WeChat/Alipay (¥2/game) - contact developer",
+      "contactDeveloper": "Contact",
+      "wechatQrTitle": "Developer WeChat",
+      "wechatQrDescription": "Scan to add developer on WeChat, note 'Wolfcha credits'",
+      "longPressToSave": "Long press to save image",
       "pricePerGame": "${price} per game",
       "quantity": "Quantity",
       "quantityPlaceholder": "Enter quantity",
@@ -2080,5 +2085,16 @@
       "copied": "Copied to clipboard",
       "copyFailed": "Copy failed"
     }
+  },
+  "lowCreditModal": {
+    "title": "Running Low on Credits",
+    "description": "Your game credits are running low. Consider recharging for a better experience.",
+    "currentCredits": "Credits Left",
+    "unit": "games",
+    "guidance": "We're indie developers, and server & AI costs add up. If you enjoy this game, your support helps us keep it running 🙏",
+    "buyApiKey": "Get API Key",
+    "recharge": "Buy Game Credits",
+    "startGame": "Continue Playing",
+    "startGameNoCredits": "Buy Game Credits"
   }
 }

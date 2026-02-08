@@ -1929,6 +1929,11 @@
     "payAsYouGo": {
       "title": "购买游戏额度",
       "description": "无需订阅，按需购买单次游戏额度。每个额度可进行一局游戏。",
+      "wechatPayHint": "微信/支付宝支付（每局¥2）可联系开发人员",
+      "contactDeveloper": "联系开发者",
+      "wechatQrTitle": "开发者微信",
+      "wechatQrDescription": "扫码添加开发者微信，备注「狼人杀充值」即可",
+      "longPressToSave": "长按图片可保存到相册",
       "pricePerGame": "每局 ${price}",
       "quantity": "购买数量",
       "quantityPlaceholder": "输入数量",
@@ -2080,5 +2085,16 @@
       "copied": "已复制到剪贴板",
       "copyFailed": "复制失败"
     }
+  },
+  "lowCreditModal": {
+    "title": "额度即将用尽",
+    "description": "您的游戏额度较低，建议补充额度以获得更好的体验。",
+    "currentCredits": "剩余额度",
+    "unit": "局",
+    "guidance": "我们是独立开发者，服务器和 AI 调用成本不低。如果你喜欢这个游戏，希望能支持一下我们继续做下去 🙏",
+    "buyApiKey": "购买 API Key",
+    "recharge": "充值游戏额度",
+    "startGame": "继续开始游戏",
+    "startGameNoCredits": "充值游戏额度"
   }
 }

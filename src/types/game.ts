@@ -136,6 +136,7 @@ export interface GameState {
   gameId: string;
   phase: Phase;
   day: number;
+  startTime?: number;
   devMutationId?: number;
   devPhaseJump?: { to: Phase; ts: number };
   isPaused?: boolean;
