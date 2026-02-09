@@ -230,13 +230,14 @@ export interface DailySummaryVoteData {
 }
 
 // Models for summary & character generation
-export const GENERATOR_MODEL = "google/gemini-2.5-flash-lite";
-export const SUMMARY_MODEL = "google/gemini-2.5-flash-lite";
+export const GENERATOR_MODEL = "qwen-flash";
+export const SUMMARY_MODEL = "qwen-flash";
 export const REVIEW_MODEL = "google/gemini-3-flash-preview";
 
 // Default models used when custom key is not enabled
 // Note: SUMMARY_MODEL and GENERATOR_MODEL are included here for server-side validation.
 export const AVAILABLE_MODELS: ModelRef[] = [
+  { provider: "dashscope", model: "qwen-flash" },
   { provider: "dashscope", model: "deepseek-v3.2" },
   { provider: "dashscope", model: "qwen3-max" },
 
@@ -261,6 +262,7 @@ export const PLAYER_MODELS: ModelRef[] = filterPlayerModels(AVAILABLE_MODELS);
 // All available models for custom key users (includes commented ones from AVAILABLE_MODELS)
 export const ALL_MODELS: ModelRef[] = [
   // Dashscope models
+  { provider: "dashscope", model: "qwen-flash" },
   { provider: "dashscope", model: "deepseek-v3.2" },
   { provider: "dashscope", model: "qwen-plus-2025-12-01" },
   { provider: "dashscope", model: "qwen3-max" },
