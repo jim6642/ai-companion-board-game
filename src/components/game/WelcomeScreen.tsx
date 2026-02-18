@@ -31,6 +31,11 @@ import {
   getShanghaiDateKey,
   isSpringCampaignActive,
 } from "@/lib/spring-campaign";
+import {
+  FREE_ROUNDS_PROMO_ENABLED,
+  REFERRAL_BONUS_ENABLED,
+  SPRING_CAMPAIGN_ENABLED,
+} from "@/lib/welfare-config";
 
 type SponsorCardProps = {
   sponsorId: string;
@@ -311,13 +316,15 @@ export function WelcomeScreen({
   const [githubStars, setGithubStars] = useState<number | null>(null);
   const springCampaignRemainingQuota = springCampaign?.remainingQuota ?? 0;
   const springCampaignTotalQuota = springCampaign?.totalQuota ?? 0;
-  const springCampaignActiveNow = springCampaign?.active ?? isSpringCampaignActive();
+  const springCampaignActiveNow = SPRING_CAMPAIGN_ENABLED
+    && (springCampaign?.active ?? isSpringCampaignActive());
   const springCampaignDateToday = springCampaignActiveNow ? getShanghaiDateKey() : null;
-  const isSpringCampaignForToday = springCampaign?.quotaDate === springCampaignDateToday;
-  const effectiveSpringRemainingQuota = springCampaign?.active
+  const isSpringCampaignForToday = springCampaignActiveNow
+    && springCampaign?.quotaDate === springCampaignDateToday;
+  const effectiveSpringRemainingQuota = springCampaignActiveNow
     ? (isSpringCampaignForToday ? springCampaignRemainingQuota : SPRING_CAMPAIGN_DAILY_QUOTA)
     : 0;
-  const effectiveSpringTotalQuota = springCampaign?.active
+  const effectiveSpringTotalQuota = springCampaignActiveNow
     ? (isSpringCampaignForToday ? springCampaignTotalQuota : SPRING_CAMPAIGN_DAILY_QUOTA)
     : 0;
   const hasSpringQuota = springCampaignActiveNow && effectiveSpringRemainingQuota > 0;
@@ -329,7 +336,7 @@ export function WelcomeScreen({
   }, [locale]);
 
   useEffect(() => {
-    if (!springCampaign?.active || !springCampaign.justClaimed) return;
+    if (!SPRING_CAMPAIGN_ENABLED || !springCampaign?.active || !springCampaign.justClaimed) return;
     toast.success(t("welcome.springCampaign.toast.claimed.title"), {
       description: t("welcome.springCampaign.toast.claimed.description"),
     });
@@ -481,11 +488,11 @@ export function WelcomeScreen({
   const isAnyModalOpen =
     isSetupOpen ||
     isAuthOpen ||
-    isShareOpen ||
+    (REFERRAL_BONUS_ENABLED && isShareOpen) ||
     isAccountOpen ||
     isUserProfileOpen ||
     isSponsorOpen ||
-    isSpringFestivalOpen ||
+    (SPRING_CAMPAIGN_ENABLED && isSpringFestivalOpen) ||
     isGroupOpen ||
     isMobileMenuOpen ||
     isCustomCharacterOpen ||
@@ -579,6 +586,18 @@ export function WelcomeScreen({
     }
   };
 
+  const handleCreditFailure = () => {
+    setIsTransitioning(false);
+    onAbort?.();
+    if (REFERRAL_BONUS_ENABLED) {
+      setIsShareOpen(true);
+    } else {
+      setUserProfileDefaultTab("payAsYouGo");
+      setIsUserProfileOpen(true);
+    }
+    toast.error(t("welcome.toast.creditFail.title"), { description: t("welcome.toast.creditFail.description") });
+  };
+
   const handleConfirm = async () => {
     if (!canConfirm) {
       return;
@@ -650,18 +669,10 @@ export function WelcomeScreen({
     void consumeCredit()
       .then((consumed) => {
         if (consumed) return;
-        // Credit deduction failed, abort the game and show share panel
-        setIsTransitioning(false);
-        onAbort?.();
-        setIsShareOpen(true);
-        toast.error(t("welcome.toast.creditFail.title"), { description: t("welcome.toast.creditFail.description") });
+        handleCreditFailure();
       })
       .catch(() => {
-        // Credit deduction failed, abort the game and show share panel
-        setIsTransitioning(false);
-        onAbort?.();
-        setIsShareOpen(true);
-        toast.error(t("welcome.toast.creditFail.title"), { description: t("welcome.toast.creditFail.description") });
+        handleCreditFailure();
       })
       .finally(() => {
         isStartingRef.current = false;
@@ -717,16 +728,10 @@ export function WelcomeScreen({
     void consumeCredit()
       .then((consumed) => {
         if (consumed) return;
-        setIsTransitioning(false);
-        onAbort?.();
-        setIsShareOpen(true);
-        toast.error(t("welcome.toast.creditFail.title"), { description: t("welcome.toast.creditFail.description") });
+        handleCreditFailure();
       })
       .catch(() => {
-        setIsTransitioning(false);
-        onAbort?.();
-        setIsShareOpen(true);
-        toast.error(t("welcome.toast.creditFail.title"), { description: t("welcome.toast.creditFail.description") });
+        handleCreditFailure();
       })
       .finally(() => {
         isStartingRef.current = false;
@@ -812,12 +817,14 @@ export function WelcomeScreen({
           onOpenChange={(open) => !open && clearPasswordRecovery()}
           onSuccess={clearPasswordRecovery}
         />
-        <SharePanel
-          open={isShareOpen}
-          onOpenChange={setIsShareOpen}
-          referralCode={referralCode}
-          totalReferrals={totalReferrals}
-        />
+        {REFERRAL_BONUS_ENABLED && (
+          <SharePanel
+            open={isShareOpen}
+            onOpenChange={setIsShareOpen}
+            referralCode={referralCode}
+            totalReferrals={totalReferrals}
+          />
+        )}
         <CustomCharacterModal
           open={isCustomCharacterOpen}
           onOpenChange={setIsCustomCharacterOpen}
@@ -907,46 +914,48 @@ export function WelcomeScreen({
           </DialogContent>
         </Dialog>
 
-        <Dialog open={isSpringFestivalOpen} onOpenChange={setIsSpringFestivalOpen}>
-          <DialogContent className="max-w-[560px] overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-card)] p-0">
-            <motion.div
-              initial={{ opacity: 0, y: 18, scale: 0.92, rotateX: -14, filter: "blur(8px)" }}
-              animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.55, ease: "easeOut" }}
-              style={{ transformOrigin: "top center", perspective: 1100 }}
-              className="relative"
-            >
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_40%)]" />
-              <div className="bg-gradient-to-r from-[#8b1a1a] via-[#b4232b] to-[#8b1a1a] px-6 py-5 text-white">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/80">
-                  <Sparkle size={14} weight="fill" />
-                  {t("welcome.springCampaign.modal.badge")}
+        {SPRING_CAMPAIGN_ENABLED && (
+          <Dialog open={isSpringFestivalOpen} onOpenChange={setIsSpringFestivalOpen}>
+            <DialogContent className="max-w-[560px] overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-card)] p-0">
+              <motion.div
+                initial={{ opacity: 0, y: 18, scale: 0.92, rotateX: -14, filter: "blur(8px)" }}
+                animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0, filter: "blur(0px)" }}
+                transition={{ duration: 0.55, ease: "easeOut" }}
+                style={{ transformOrigin: "top center", perspective: 1100 }}
+                className="relative"
+              >
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_40%)]" />
+                <div className="bg-gradient-to-r from-[#8b1a1a] via-[#b4232b] to-[#8b1a1a] px-6 py-5 text-white">
+                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/80">
+                    <Sparkle size={14} weight="fill" />
+                    {t("welcome.springCampaign.modal.badge")}
+                  </div>
+                  <h3 className="mt-2 text-2xl font-semibold tracking-wide">
+                    {t("welcome.springCampaign.modal.title")}
+                  </h3>
+                  <p className="mt-1 text-sm text-white/90">
+                    {t("welcome.springCampaign.modal.subtitle")}
+                  </p>
                 </div>
-                <h3 className="mt-2 text-2xl font-semibold tracking-wide">
-                  {t("welcome.springCampaign.modal.title")}
-                </h3>
-                <p className="mt-1 text-sm text-white/90">
-                  {t("welcome.springCampaign.modal.subtitle")}
-                </p>
-              </div>
-              <div className="space-y-3 px-6 py-5 text-sm">
-                <p className="text-[var(--text-primary)]">{t("welcome.springCampaign.modal.line1")}</p>
-                <p className="text-[var(--text-secondary)]">{t("welcome.springCampaign.modal.line2")}</p>
-                <p className="text-[var(--text-secondary)]">{t("welcome.springCampaign.modal.line3")}</p>
-                <div className="rounded-lg border border-[var(--border-color)] bg-white/60 px-3 py-2 text-xs text-[var(--text-secondary)]">
-                  {t("welcome.springCampaign.modal.note")}
+                <div className="space-y-3 px-6 py-5 text-sm">
+                  <p className="text-[var(--text-primary)]">{t("welcome.springCampaign.modal.line1")}</p>
+                  <p className="text-[var(--text-secondary)]">{t("welcome.springCampaign.modal.line2")}</p>
+                  <p className="text-[var(--text-secondary)]">{t("welcome.springCampaign.modal.line3")}</p>
+                  <div className="rounded-lg border border-[var(--border-color)] bg-white/60 px-3 py-2 text-xs text-[var(--text-secondary)]">
+                    {t("welcome.springCampaign.modal.note")}
+                  </div>
+                  <Button
+                    type="button"
+                    className="w-full bg-[#b4232b] text-white hover:bg-[#9f1f26]"
+                    onClick={() => setIsSpringFestivalOpen(false)}
+                  >
+                    {t("welcome.springCampaign.modal.action")}
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  className="w-full bg-[#b4232b] text-white hover:bg-[#9f1f26]"
-                  onClick={() => setIsSpringFestivalOpen(false)}
-                >
-                  {t("welcome.springCampaign.modal.action")}
-                </Button>
-              </div>
-            </motion.div>
-          </DialogContent>
-        </Dialog>
+              </motion.div>
+            </DialogContent>
+          </Dialog>
+        )}
 
         <Dialog open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <DialogContent className="max-w-[420px]">
@@ -1196,7 +1205,7 @@ export function WelcomeScreen({
           <div ref={paperRef} className="wc-contract-paper">
             <div className="wc-contract-borders" aria-hidden="true" />
 
-            {locale === "zh" && (
+            {locale === "zh" && FREE_ROUNDS_PROMO_ENABLED && (
               <a
                 href="https://my.feishu.cn/share/base/form/shrcnqLuGo3qyh64vFp2JhCN9CF"
                 target="_blank"

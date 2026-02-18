@@ -138,11 +138,11 @@
       "signInFirst": "Please sign in or register first.",
       "noCredits": {
         "title": "Not enough credits",
-        "description": "Share an invite to earn more credits."
+        "description": "Please recharge credits or add your API key to keep playing."
       },
       "creditFail": {
         "title": "Failed to deduct credits",
-        "description": "Share an invite to earn more credits."
+        "description": "Please try again or recharge your credits."
       },
       "keyExhausted": {
         "title": "API Key balance exhausted",
@@ -604,7 +604,7 @@
   ,
   "sharePanel": {
     "title": "Share link",
-    "description": "Invite a new user and earn 2 game credits.",
+    "description": "Share this link with friends.",
     "loading": "Loading...",
     "invitedCount": "Invited: {count}",
     "actions": {
@@ -2041,10 +2041,10 @@
   "customKey": {
     "title": "Use my own key",
     "description": "Enable to enter your API Key. Stored locally in browser only.",
-    "dailyBonus": "Claim 1 free game daily. Come back often!",
+    "dailyBonus": "Promo is currently unavailable.",
     "springCampaign": {
-      "active": "Lunar New Year bonus is live: sign in daily before Feb 18 to get 10 Spring quota (today only).",
-      "ended": "Lunar New Year bonus has ended. Thanks for playing."
+      "active": "Promo is currently unavailable.",
+      "ended": "Promo is currently unavailable."
     },
     "tabs": {
       "profile": "Profile",

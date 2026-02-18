@@ -4,6 +4,11 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { getDashscopeApiKey, getZenmuxApiKey, isCustomKeyEnabled } from "@/lib/api-keys";
+import {
+  DAILY_BONUS_ENABLED,
+  REFERRAL_BONUS_ENABLED,
+  SPRING_CAMPAIGN_ENABLED,
+} from "@/lib/welfare-config";
 import { readReferralFromStorage, removeReferralFromStorage } from "@/lib/referral";
 import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
 
@@ -101,6 +106,7 @@ export function useCredits() {
   }, []);
 
   const claimDailyBonus = useCallback(async (accessToken: string, userId: string): Promise<void> => {
+    if (!DAILY_BONUS_ENABLED) return;
     if (dailyBonusClaimedUserRef.current === userId) return;
     dailyBonusClaimedUserRef.current = userId;
 
@@ -128,6 +134,7 @@ export function useCredits() {
   }, []);
 
   const claimSpringCampaign = useCallback(async (accessToken: string, userId: string): Promise<void> => {
+    if (!SPRING_CAMPAIGN_ENABLED) return;
     if (springCampaignClaimedUserRef.current === userId) return;
     springCampaignClaimedUserRef.current = userId;
 
@@ -151,6 +158,10 @@ export function useCredits() {
   }, []);
 
   const applyReferralCode = useCallback(async (accessToken: string): Promise<void> => {
+    if (!REFERRAL_BONUS_ENABLED) {
+      removeReferralFromStorage();
+      return;
+    }
     const referralCode = readReferralFromStorage();
 
     if (!referralCode) return;

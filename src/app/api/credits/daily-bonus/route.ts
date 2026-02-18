@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, ensureAdminClient } from "@/lib/supabase-admin";
+import { DAILY_BONUS_ENABLED } from "@/lib/welfare-config";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ const DAILY_BONUS_REASON = {
   firstDay: "first_day",
   alreadyClaimed: "already_claimed",
   maxCredits: "max_credits",
+  disabled: "disabled",
 } as const;
 
 export async function POST(request: Request) {
@@ -50,6 +52,15 @@ export async function POST(request: Request) {
     created_at: string;
   };
   const currentCredits = creditsRow.credits;
+
+  if (!DAILY_BONUS_ENABLED) {
+    return NextResponse.json({
+      success: true,
+      credits: currentCredits,
+      bonusClaimed: false,
+      reason: DAILY_BONUS_REASON.disabled,
+    });
+  }
 
   // 获取今天的日期（UTC）
   const today = new Date().toISOString().split("T")[0];

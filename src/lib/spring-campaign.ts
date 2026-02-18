@@ -1,3 +1,5 @@
+import { SPRING_CAMPAIGN_ENABLED } from "@/lib/welfare-config";
+
 export const SPRING_CAMPAIGN_CODE = "spring_2026_login_quota";
 export const SPRING_CAMPAIGN_TIMEZONE = "Asia/Shanghai";
 export const SPRING_CAMPAIGN_DAILY_QUOTA = 10;
@@ -47,6 +49,7 @@ export function getSpringQuotaExpiresAtIso(quotaDate: string) {
 }
 
 export function isSpringCampaignActive(now: Date = new Date()) {
+  if (!SPRING_CAMPAIGN_ENABLED) return false;
   const { startDate, endDate } = getSpringCampaignWindow();
   return now >= startDate && now < endDate;
 }

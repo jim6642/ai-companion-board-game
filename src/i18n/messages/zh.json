@@ -138,11 +138,11 @@
       "signInFirst": "请先登录或注册",
       "noCredits": {
         "title": "额度不足",
-        "description": "分享邀请可获得更多额度。"
+        "description": "请充值额度或配置 API Key 后继续游戏。"
       },
       "creditFail": {
         "title": "扣除额度失败",
-        "description": "请分享邀请获取更多额度。"
+        "description": "请稍后重试或前往充值额度。"
       },
       "keyExhausted": {
         "title": "API Key 余额已耗尽",
@@ -604,7 +604,7 @@
   ,
   "sharePanel": {
     "title": "分享链接",
-    "description": "每邀请一位新用户注册可获得 2 局额度。",
+    "description": "分享链接给朋友一起玩。",
     "loading": "加载中...",
     "invitedCount": "已邀请人数：{count}",
     "actions": {
@@ -2041,10 +2041,10 @@
   "customKey": {
     "title": "用我自己的 key 玩",
     "description": "开启后填写 API Key，仅保存在本地浏览器",
-    "dailyBonus": "每天上线可领 1 局，记得常来呀~",
+    "dailyBonus": "活动暂不可用。",
     "springCampaign": {
-      "active": "新春福利进行中：2月18日前每日登录送 10 把新春额度（仅当日有效）",
-      "ended": "新春福利已结束，感谢参与。"
+      "active": "活动暂不可用。",
+      "ended": "活动暂不可用。"
     },
     "tabs": {
       "profile": "信息",

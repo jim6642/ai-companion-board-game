@@ -45,6 +45,7 @@ import {
 } from "@/lib/api-keys";
 import { getModelLogoPath } from "@/lib/model-logo";
 import { supabase } from "@/lib/supabase";
+import { REFERRAL_BONUS_ENABLED, SPRING_CAMPAIGN_ENABLED } from "@/lib/welfare-config";
 import {
   ALL_MODELS,
   AVAILABLE_MODELS,
@@ -112,6 +113,11 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
   const [purchaseQuantityInput, setPurchaseQuantityInput] = useState("10");
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isWechatQrOpen, setIsWechatQrOpen] = useState(false);
+  const profileActionGridClassName = REFERRAL_BONUS_ENABLED
+    ? "grid grid-cols-2 gap-2"
+    : "grid grid-cols-1 gap-2";
+  const shouldShowSpringCampaignQuota = SPRING_CAMPAIGN_ENABLED && springCampaign?.active;
+  const shouldShowSpringCampaignStatus = SPRING_CAMPAIGN_ENABLED;
 
    const displayCredits = useMemo(() => {
     if (credits === null || credits === undefined) return t("userProfile.empty");
@@ -220,7 +226,7 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
   }, [open]);
 
    const handleCopyReferral = async () => {
-     if (!referralCode) return;
+    if (!REFERRAL_BONUS_ENABLED || !referralCode) return;
      try {
        await navigator.clipboard.writeText(referralCode);
       toast(t("userProfile.toasts.copySuccess"));
@@ -463,7 +469,7 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
                       <span className="text-[var(--text-muted)]">{t("userProfile.fields.credits")}</span>
                       <span className="text-[var(--text-primary)]">{displayCredits}</span>
                     </div>
-                    {springCampaign?.active && (
+                    {shouldShowSpringCampaignQuota && (
                       <div className="flex items-center justify-between">
                         <span className="text-[var(--text-muted)]">{t("userProfile.fields.springQuota")}</span>
                         <span className="text-[var(--text-primary)]">
@@ -474,42 +480,50 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
                         </span>
                       </div>
                     )}
-                    <div className="flex items-center justify-between">
-                      <span className="text-[var(--text-muted)]">{t("userProfile.fields.referrals")}</span>
-                      <span className="text-[var(--text-primary)]">{totalReferrals ?? 0}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[var(--text-muted)]">{t("userProfile.fields.referralCode")}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[var(--text-primary)]">{referralCode ?? "—"}</span>
-                        {referralCode && (
-                          <button
-                            type="button"
-                            onClick={handleCopyReferral}
-                            className="p-1 rounded hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                            title={t("userProfile.actions.copy")}
-                          >
-                            <Copy size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-xs text-[var(--text-muted)] pt-0.5">
-                      {springCampaign?.active
-                        ? t("customKey.springCampaign.active")
-                        : t("customKey.springCampaign.ended")}
-                    </p>
+                    {REFERRAL_BONUS_ENABLED && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[var(--text-muted)]">{t("userProfile.fields.referrals")}</span>
+                          <span className="text-[var(--text-primary)]">{totalReferrals ?? 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-[var(--text-muted)]">{t("userProfile.fields.referralCode")}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[var(--text-primary)]">{referralCode ?? "—"}</span>
+                            {referralCode && (
+                              <button
+                                type="button"
+                                onClick={handleCopyReferral}
+                                className="p-1 rounded hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                                title={t("userProfile.actions.copy")}
+                              >
+                                <Copy size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    {shouldShowSpringCampaignStatus && (
+                      <p className="text-xs text-[var(--text-muted)] pt-0.5">
+                        {springCampaign?.active
+                          ? t("customKey.springCampaign.active")
+                          : t("customKey.springCampaign.ended")}
+                      </p>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className={profileActionGridClassName}>
                     <Button type="button" variant="outline" onClick={onChangePassword} className="gap-2">
                       <Key size={16} />
                       {t("userProfile.actions.changePassword")}
                     </Button>
-                    <Button type="button" variant="outline" onClick={onShareInvite} className="gap-2">
-                      <ShareNetwork size={16} />
-                      {t("userProfile.actions.shareInvite")}
-                    </Button>
+                    {REFERRAL_BONUS_ENABLED && (
+                      <Button type="button" variant="outline" onClick={onShareInvite} className="gap-2">
+                        <ShareNetwork size={16} />
+                        {t("userProfile.actions.shareInvite")}
+                      </Button>
+                    )}
                   </div>
 
                   <Button type="button" variant="outline" onClick={handleSignOut} className="w-full gap-2">

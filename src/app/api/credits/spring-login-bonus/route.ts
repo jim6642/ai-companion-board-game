@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ensureAdminClient, supabaseAdmin } from "@/lib/supabase-admin";
+import { SPRING_CAMPAIGN_ENABLED } from "@/lib/welfare-config";
 import {
   SPRING_CAMPAIGN_CODE,
   SPRING_CAMPAIGN_DAILY_QUOTA,
@@ -44,6 +45,9 @@ export async function POST(request: Request) {
 
   const now = new Date();
   const base = buildSpringCampaignBase(now);
+  if (!SPRING_CAMPAIGN_ENABLED) {
+    return NextResponse.json({ success: true, campaign: base });
+  }
   if (!isSpringCampaignActive(now)) {
     return NextResponse.json({ success: true, campaign: base });
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, ensureAdminClient } from "@/lib/supabase-admin";
+import { REFERRAL_BONUS_ENABLED } from "@/lib/welfare-config";
 import type { Database } from "@/types/database";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,10 @@ export async function POST(request: Request) {
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!REFERRAL_BONUS_ENABLED) {
+    return NextResponse.json({ success: true, disabled: true });
   }
 
   let payload: ReferralPayload;
