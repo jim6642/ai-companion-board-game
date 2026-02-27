@@ -45,7 +45,7 @@ import {
 } from "@/lib/api-keys";
 import { getModelLogoPath } from "@/lib/model-logo";
 import { supabase } from "@/lib/supabase";
-import { REFERRAL_BONUS_ENABLED, SPRING_CAMPAIGN_ENABLED } from "@/lib/welfare-config";
+import { REFERRAL_BONUS_ENABLED, SPRING_CAMPAIGN_ENABLED, REDEMPTION_CODE_ENABLED } from "@/lib/welfare-config";
 import {
   ALL_MODELS,
   AVAILABLE_MODELS,
@@ -68,6 +68,12 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
    onChangePassword: () => void;
    onShareInvite: () => void;
   onSignOut: () => void | Promise<void>;
+  onRedeemCode?: (code: string) => Promise<{
+    success: boolean;
+    credits?: number;
+    creditsGranted?: number;
+    error?: string;
+  }>;
   onCustomKeyEnabledChange?: (value: boolean) => void;
   onCreditsChange?: () => void;
   defaultTab?: string;
@@ -84,6 +90,7 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
    onChangePassword,
    onShareInvite,
    onSignOut,
+  onRedeemCode,
   onCustomKeyEnabledChange,
   onCreditsChange,
   defaultTab = "profile",
@@ -113,6 +120,8 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
   const [purchaseQuantityInput, setPurchaseQuantityInput] = useState("10");
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isWechatQrOpen, setIsWechatQrOpen] = useState(false);
+  const [redeemCodeInput, setRedeemCodeInput] = useState("");
+  const [isRedeeming, setIsRedeeming] = useState(false);
   const profileActionGridClassName = REFERRAL_BONUS_ENABLED
     ? "grid grid-cols-2 gap-2"
     : "grid grid-cols-1 gap-2";
@@ -435,6 +444,28 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
     }
   };
 
+  const handleRedeem = async () => {
+    if (isRedeeming || !redeemCodeInput.trim() || !onRedeemCode) return;
+    setIsRedeeming(true);
+    try {
+      const result = await onRedeemCode(redeemCodeInput);
+      if (result.success) {
+        toast(t("customKey.payAsYouGo.redeemSuccess", { count: result.creditsGranted ?? 5 }));
+        setRedeemCodeInput("");
+      } else {
+        const errorKey = result.error as "invalid_code" | "already_redeemed" | "disabled" | undefined;
+        const errorMsg = errorKey && t.has(`customKey.payAsYouGo.redeemError.${errorKey}`)
+          ? t(`customKey.payAsYouGo.redeemError.${errorKey}`)
+          : t("customKey.payAsYouGo.redeemError.default");
+        toast(errorMsg);
+      }
+    } catch {
+      toast(t("customKey.payAsYouGo.redeemError.default"));
+    } finally {
+      setIsRedeeming(false);
+    }
+  };
+
   const totalPrice = (purchaseQuantity * 0.5).toFixed(2);
 
   return (
@@ -535,22 +566,62 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
 
           <TabsContent value="payAsYouGo">
             <div className="space-y-4">
-              <button
-                type="button"
-                onClick={() => setIsWechatQrOpen(true)}
-                className="w-full rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] p-4 hover:border-[var(--color-accent)] hover:bg-[var(--bg-hover)] transition-colors text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-bg)]">
-                    <CreditCard size={20} className="text-[var(--color-accent)]" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-medium text-[var(--text-primary)]">{t("customKey.payAsYouGo.title")}</h3>
-                    <p className="text-xs text-[var(--text-muted)] mt-1">{t("customKey.payAsYouGo.wechatPayHint")}</p>
-                  </div>
-                  <ArrowRight size={16} className="text-[var(--text-muted)]" />
-                </div>
-              </button>
+              {REDEMPTION_CODE_ENABLED && (
+                <>
+                  <section className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] p-4 space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-[var(--text-primary)]">{t("customKey.payAsYouGo.purchaseTitle")}</h3>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">{t("customKey.payAsYouGo.purchaseDesc")}</p>
+                    </div>
+                    <div className="flex justify-center">
+                      <img
+                        src="/pay.png"
+                        alt="Purchase QR Code"
+                        className="w-48 h-48 object-contain rounded-lg"
+                      />
+                    </div>
+                    <a
+                      href="https://pay.ldxp.cn/item/j9arl2"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)]"
+                    >
+                      {t("customKey.payAsYouGo.openPurchaseLink")}
+                      <ArrowRight size={14} />
+                    </a>
+                  </section>
+
+                  <section className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] p-4 space-y-3">
+                    <div>
+                      <h3 className="text-sm font-medium text-[var(--text-primary)]">{t("customKey.payAsYouGo.redeemTitle")}</h3>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">{t("customKey.payAsYouGo.redeemHint")}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={redeemCodeInput}
+                        onChange={(e) => setRedeemCodeInput(e.target.value)}
+                        placeholder={t("customKey.payAsYouGo.redeemPlaceholder")}
+                        className="flex-1"
+                        disabled={isRedeeming}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && redeemCodeInput.trim() && !isRedeeming) {
+                            void handleRedeem();
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => void handleRedeem()}
+                        disabled={isRedeeming || !redeemCodeInput.trim()}
+                        className="gap-2"
+                      >
+                        <CreditCard size={16} />
+                        {isRedeeming ? t("customKey.payAsYouGo.redeeming") : t("customKey.payAsYouGo.redeemButton")}
+                      </Button>
+                    </div>
+                  </section>
+                </>
+              )}
 
               <section className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] p-4 space-y-4">
                 <div className="flex items-center justify-between">
@@ -915,28 +986,6 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
         </Tabs>
       </DialogContent>
 
-      <Dialog open={isWechatQrOpen} onOpenChange={setIsWechatQrOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("customKey.payAsYouGo.wechatQrTitle")}</DialogTitle>
-            <DialogDescription>{t("customKey.payAsYouGo.wechatQrDescription")}</DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-center p-2">
-            <a
-              href="/wechat-qr.png"
-              download="wechat-qr.png"
-              className="block"
-            >
-              <img
-                src="/wechat-qr.png"
-                alt="Developer WeChat QR Code"
-                className="w-72 h-72 sm:w-80 sm:h-80 object-contain rounded-lg"
-              />
-            </a>
-          </div>
-          <p className="text-xs text-center text-[var(--text-muted)]">{t("customKey.payAsYouGo.longPressToSave")}</p>
-        </DialogContent>
-      </Dialog>
     </Dialog>
   );
  }

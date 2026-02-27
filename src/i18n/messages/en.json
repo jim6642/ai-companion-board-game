@@ -2049,7 +2049,7 @@
     "tabs": {
       "profile": "Profile",
       "custom": "Use my own key",
-      "payAsYouGo": "Pay as you go"
+      "payAsYouGo": "Top Up"
     },
     "payAsYouGo": {
       "title": "Buy Game Credits",
@@ -2068,7 +2068,22 @@
       "maxQuantity": "Maximum 100 credits",
       "minQuantityHint": "Minimum purchase is 10 credits per transaction",
       "redirecting": "Redirecting to Stripe...",
-      "error": "Failed to create payment link"
+      "error": "Failed to create payment link",
+      "purchaseTitle": "Purchase Redemption Code",
+      "purchaseDesc": "Scan or click the link below to purchase a redemption code",
+      "openPurchaseLink": "Open Purchase Link (¥0.8/game)",
+      "redeemTitle": "Redeem Code",
+      "redeemPlaceholder": "wolf-XXXX-XXXX",
+      "redeemButton": "Redeem",
+      "redeemHint": "Each code grants 5 game credits",
+      "redeeming": "Redeeming...",
+      "redeemSuccess": "Redeemed! You received {count} game credits",
+      "redeemError": {
+        "invalid_code": "Invalid code, please check and try again",
+        "already_redeemed": "This code has already been used",
+        "disabled": "Redemption is currently unavailable",
+        "default": "Redemption failed, please try again later"
+      }
     },
     "selectModel": "Select model",
     "modelJoiner": ", ",

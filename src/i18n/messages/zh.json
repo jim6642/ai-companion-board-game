@@ -2049,7 +2049,7 @@
     "tabs": {
       "profile": "信息",
       "custom": "用我自己的 key 玩",
-      "payAsYouGo": "按需购买"
+      "payAsYouGo": "充值兑换"
     },
     "payAsYouGo": {
       "title": "购买游戏额度",
@@ -2068,7 +2068,22 @@
       "maxQuantity": "最多购买 100 次",
       "minQuantityHint": "每次购买最少需要 10 个额度",
       "redirecting": "正在跳转到 Stripe...",
-      "error": "创建支付链接失败"
+      "error": "创建支付链接失败",
+      "purchaseTitle": "购买兑换码",
+      "purchaseDesc": "扫码或点击下方链接前往链动小铺购买兑换码",
+      "openPurchaseLink": "打开购买链接（每局 ¥0.8）",
+      "redeemTitle": "兑换码兑换",
+      "redeemPlaceholder": "wolf-XXXX-XXXX",
+      "redeemButton": "兑换",
+      "redeemHint": "每个兑换码可获得 5 局游戏额度",
+      "redeeming": "兑换中...",
+      "redeemSuccess": "兑换成功！获得 {count} 局游戏额度",
+      "redeemError": {
+        "invalid_code": "兑换码无效，请检查后重试",
+        "already_redeemed": "该兑换码已被使用",
+        "disabled": "兑换功能暂未开放",
+        "default": "兑换失败，请稍后重试"
+      }
     },
     "selectModel": "选择模型",
     "modelJoiner": "、",

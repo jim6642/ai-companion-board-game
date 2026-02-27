@@ -132,6 +132,60 @@ export interface Database {
         };
         Relationships: [];
       };
+      redemption_codes: {
+        Row: {
+          id: string;
+          code: string;
+          credits_amount: number;
+          is_redeemed: boolean;
+          redeemed_by: string | null;
+          redeemed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          credits_amount?: number;
+          is_redeemed?: boolean;
+          redeemed_by?: string | null;
+          redeemed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          credits_amount?: number;
+          is_redeemed?: boolean;
+          redeemed_by?: string | null;
+          redeemed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      redemption_records: {
+        Row: {
+          id: string;
+          user_id: string;
+          code: string;
+          credits_granted: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          code: string;
+          credits_granted: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          code?: string;
+          credits_granted?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       game_sessions: {
         Row: {
           id: string;

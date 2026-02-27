@@ -13,6 +13,7 @@ import { readReferralFromStorage, removeReferralFromStorage } from "@/lib/referr
 import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
 
 const REFERRAL_ENDPOINT = "/api/credits/referral";
+const REDEEM_ENDPOINT = "/api/credits/redeem";
 const SPRING_CAMPAIGN_ENDPOINT = "/api/credits/spring-login-bonus";
 const JSON_CONTENT_TYPE = "application/json";
 const AUTH_EVENT = {
@@ -94,6 +95,49 @@ export function useCredits() {
       return true;
     } catch {
       return false;
+    }
+  }, [session]);
+
+  const redeemCode = useCallback(async (code: string): Promise<{
+    success: boolean;
+    credits?: number;
+    creditsGranted?: number;
+    error?: string;
+  }> => {
+    if (!session) return { success: false, error: "unauthorized" };
+
+    try {
+      const res = await fetch(REDEEM_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": JSON_CONTENT_TYPE,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ code: code.trim() }),
+      });
+
+      const payload = await res.json() as {
+        success?: boolean;
+        credits?: number;
+        creditsGranted?: number;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        return { success: false, error: payload.error };
+      }
+
+      if (payload.credits !== undefined) {
+        setCredits(payload.credits);
+      }
+
+      return {
+        success: true,
+        credits: payload.credits,
+        creditsGranted: payload.creditsGranted,
+      };
+    } catch {
+      return { success: false, error: "network_error" };
     }
   }, [session]);
 
@@ -254,6 +298,7 @@ export function useCredits() {
     loading,
     fetchCredits,
     consumeCredit,
+    redeemCode,
     signOut,
     isPasswordRecovery,
     clearPasswordRecovery,

@@ -262,6 +262,7 @@ export function WelcomeScreen({
     totalReferrals,
     loading: creditsLoading,
     consumeCredit,
+    redeemCode,
     signOut,
     isPasswordRecovery,
     clearPasswordRecovery,
@@ -801,6 +802,7 @@ export function WelcomeScreen({
           onChangePassword={() => setIsAccountOpen(true)}
           onShareInvite={() => setIsShareOpen(true)}
           onSignOut={signOut}
+          onRedeemCode={redeemCode}
           onCustomKeyEnabledChange={setCustomKeyEnabled}
           onCreditsChange={fetchCredits}
           defaultTab={userProfileDefaultTab}
