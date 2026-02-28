@@ -2071,7 +2071,7 @@
       "error": "创建支付链接失败",
       "purchaseTitle": "购买兑换码",
       "purchaseDesc": "扫码或点击下方链接前往链动小铺购买兑换码",
-      "openPurchaseLink": "打开购买链接（每局 ¥0.8）",
+      "openPurchaseLink": "打开购买链接（每局 ¥1.5）",
       "redeemTitle": "兑换码兑换",
       "redeemPlaceholder": "wolf-XXXX-XXXX",
       "redeemButton": "兑换",

@@ -2071,7 +2071,7 @@
       "error": "Failed to create payment link",
       "purchaseTitle": "Purchase Redemption Code",
       "purchaseDesc": "Scan or click the link below to purchase a redemption code",
-      "openPurchaseLink": "Open Purchase Link (¥0.8/game)",
+      "openPurchaseLink": "Open Purchase Link (¥1.5/game)",
       "redeemTitle": "Redeem Code",
       "redeemPlaceholder": "wolf-XXXX-XXXX",
       "redeemButton": "Redeem",
