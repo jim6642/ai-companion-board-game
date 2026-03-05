@@ -1025,6 +1025,8 @@
     "night": {
       "option": "{seat}号({name})",
       "optionName": "({name})",
+      "todayDiscussionLabel": "【今日讨论】",
+      "selfSpeechLabel": "【你今天的发言】",
       "seer": {
         "base": "【身份】\n你是 {seat}号「{name}」\n身份: {role}\n\n{winCondition}\n\n{difficultyHint}",
         "checkedLine": "已查验过: {list}（不建议重复查验）",

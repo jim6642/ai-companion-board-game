@@ -1025,6 +1025,8 @@
     "night": {
       "option": "Seat {seat} ({name})",
       "optionName": "({name})",
+      "todayDiscussionLabel": "【Today's Discussion】",
+      "selfSpeechLabel": "【Your Speech Today】",
       "seer": {
         "base": "【Identity】\nYou are Seat {seat} \"{name}\"\nRole: {role}\n\n{winCondition}\n\n{difficultyHint}",
         "checkedLine": "Already checked: {list} (avoid repeat checks)",

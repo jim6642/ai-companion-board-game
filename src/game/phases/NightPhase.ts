@@ -5,8 +5,12 @@ import type { GameAction, GameContext, PromptResult, SystemPromptPart } from "..
 import {
   buildGameContext,
   buildDifficultyDecisionHint,
+  buildTodayTranscript,
+  buildPlayerTodaySpeech,
   getRoleText,
   getWinCondition,
+  getRoleKnowHow,
+  buildSituationalStrategy,
   buildSystemTextFromParts,
 } from "@/lib/prompt-utils";
 import {
@@ -27,6 +31,9 @@ import {
 } from "@/lib/game-flow-controller";
 import { playNarrator } from "@/lib/narrator-audio-player";
 import { getI18n } from "@/i18n/translator";
+
+const NIGHT_TRANSCRIPT_MAX_CHARS = 2200;
+const NIGHT_SELF_SPEECH_MAX_CHARS = 700;
 
 function randomFakeActionDelay(): number {
   const min = DELAY_CONFIG.NIGHT_ROLE_ANIMATION_MIN;
@@ -461,9 +468,43 @@ export class NightPhase extends GamePhase {
     await runtime.onNightComplete(currentState);
   }
 
+  private buildNightEnhancements(state: GameContext["state"], player: Player) {
+    const todayTranscript = buildTodayTranscript(state, NIGHT_TRANSCRIPT_MAX_CHARS, { includeDeadSpeech: true });
+    const selfSpeech = buildPlayerTodaySpeech(state, player, NIGHT_SELF_SPEECH_MAX_CHARS);
+    const roleKnowHow = getRoleKnowHow(player.role);
+    const situationalStrategy = buildSituationalStrategy(state, player);
+    return { todayTranscript, selfSpeech, roleKnowHow, situationalStrategy };
+  }
+
+  private buildEnhancedSystemParts(
+    roleKnowHow: string,
+    situationalStrategy: string
+  ): SystemPromptPart[] {
+    return [
+      ...(roleKnowHow ? [{ text: roleKnowHow }] : []),
+      ...(situationalStrategy ? [{ text: situationalStrategy }] : []),
+    ];
+  }
+
+  private buildContextWithDay(
+    context: string,
+    todayTranscript: string,
+    selfSpeech: string
+  ): string {
+    const { t } = getI18n();
+    return [
+      context,
+      todayTranscript ? `${t("prompts.night.todayDiscussionLabel")}\n${todayTranscript}` : "",
+      selfSpeech ? `${t("prompts.night.selfSpeechLabel")}\n${selfSpeech}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+  }
+
   private buildSeerPrompt(state: GameContext["state"], player: Player): PromptResult {
     const { t } = getI18n();
     const context = buildGameContext(state, player);
+    const { todayTranscript, selfSpeech, roleKnowHow, situationalStrategy } = this.buildNightEnhancements(state, player);
     const seerHistory = state.nightActions.seerHistory || [];
     const checkedSeats = seerHistory.map((h) => h.targetSeat);
     const difficultyHint = buildDifficultyDecisionHint(state.difficulty, player.role);
@@ -498,10 +539,11 @@ export class NightPhase extends GamePhase {
     const systemParts: SystemPromptPart[] = [
       { text: cacheableContent, cacheable: true, ttl: "1h" },
       { text: dynamicContent },
+      ...this.buildEnhancedSystemParts(roleKnowHow, situationalStrategy),
     ];
     const system = buildSystemTextFromParts(systemParts);
 
-    const user = t("prompts.night.seer.user", { context });
+    const user = t("prompts.night.seer.user", { context: this.buildContextWithDay(context, todayTranscript, selfSpeech) });
 
     return { system, user, systemParts };
   }
@@ -513,6 +555,7 @@ export class NightPhase extends GamePhase {
   ): PromptResult {
     const { t } = getI18n();
     const context = buildGameContext(state, player);
+    const { todayTranscript, selfSpeech, roleKnowHow, situationalStrategy } = this.buildNightEnhancements(state, player);
     const difficultyHint = buildDifficultyDecisionHint(state.difficulty, player.role);
     // 狼人可以刀任何存活玩家（包括队友和自己），但通常刀好人
     const alivePlayers = state.players.filter((p) => p.alive);
@@ -540,15 +583,6 @@ export class NightPhase extends GamePhase {
       name: player.displayName,
       role: getRoleText(player.role),
     });
-    const teammateLine = teammates.length > 0
-      ? t("prompts.night.wolf.teammates", {
-        list: teammates
-          .map((teammate) =>
-            t("promptUtils.gameContext.seatName", { seat: teammate.seat + 1, name: teammate.displayName })
-          )
-          .join(t("promptUtils.gameContext.listSeparator")),
-      })
-      : t("prompts.night.wolf.solo");
     const cacheableRules = t("prompts.night.wolf.rules", {
       winCondition: getWinCondition(player.role),
       difficultyHint,
@@ -565,13 +599,13 @@ export class NightPhase extends GamePhase {
 
     const systemParts: SystemPromptPart[] = [
       { text: identitySection, cacheable: true, ttl: "1h" },
-      { text: teammateLine },
       { text: cacheableRules, cacheable: true, ttl: "1h" },
       { text: taskSection },
+      ...this.buildEnhancedSystemParts(roleKnowHow, situationalStrategy),
     ];
     const system = buildSystemTextFromParts(systemParts);
 
-    const user = t("prompts.night.wolf.user", { context });
+    const user = t("prompts.night.wolf.user", { context: this.buildContextWithDay(context, todayTranscript, selfSpeech) });
 
     return { system, user, systemParts };
   }
@@ -579,6 +613,7 @@ export class NightPhase extends GamePhase {
   private buildGuardPrompt(state: GameContext["state"], player: Player): PromptResult {
     const { t } = getI18n();
     const context = buildGameContext(state, player);
+    const { todayTranscript, selfSpeech, roleKnowHow, situationalStrategy } = this.buildNightEnhancements(state, player);
     const alivePlayers = state.players.filter((p) => p.alive);
     const lastTarget = state.nightActions.lastGuardTarget;
     const difficultyHint = buildDifficultyDecisionHint(state.difficulty, player.role);
@@ -603,10 +638,11 @@ export class NightPhase extends GamePhase {
     const systemParts: SystemPromptPart[] = [
       { text: cacheableContent, cacheable: true, ttl: "1h" },
       { text: dynamicContent },
+      ...this.buildEnhancedSystemParts(roleKnowHow, situationalStrategy),
     ];
     const system = buildSystemTextFromParts(systemParts);
 
-    const user = t("prompts.night.guard.user", { context });
+    const user = t("prompts.night.guard.user", { context: this.buildContextWithDay(context, todayTranscript, selfSpeech) });
 
     return { system, user, systemParts };
   }
@@ -618,6 +654,7 @@ export class NightPhase extends GamePhase {
   ): PromptResult {
     const { t } = getI18n();
     const context = buildGameContext(state, player);
+    const { todayTranscript, selfSpeech, roleKnowHow, situationalStrategy } = this.buildNightEnhancements(state, player);
     const difficultyHint = buildDifficultyDecisionHint(state.difficulty, player.role);
     const alivePlayers = state.players.filter(
       (p) => p.alive && p.playerId !== player.playerId
@@ -669,10 +706,11 @@ export class NightPhase extends GamePhase {
     const systemParts: SystemPromptPart[] = [
       { text: cacheableContent, cacheable: true, ttl: "1h" },
       { text: dynamicContent },
+      ...this.buildEnhancedSystemParts(roleKnowHow, situationalStrategy),
     ];
     const system = buildSystemTextFromParts(systemParts);
 
-    const user = t("prompts.night.witch.user", { context });
+    const user = t("prompts.night.witch.user", { context: this.buildContextWithDay(context, todayTranscript, selfSpeech) });
 
     return { system, user, systemParts };
   }
