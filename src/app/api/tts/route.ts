@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authenticateRequest, requireCredits } from "@/lib/api-auth";
 import type { IncomingHttpHeaders } from "node:http";
 import * as https from "node:https";
 import { URL } from "node:url";
@@ -9,6 +10,17 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const auth = await authenticateRequest(req as unknown as Request);
+  if ("error" in auth) return auth.error;
+
+  const headerApiKey = req.headers.get("x-minimax-api-key")?.trim();
+  if (!headerApiKey) {
+    const hasCredits = await requireCredits(auth.user.id);
+    if (!hasCredits) {
+      return NextResponse.json({ error: "Insufficient credits" }, { status: 403 });
+    }
+  }
+
   try {
     const parsed = await req.json().catch(() => ({} as any));
     const text = typeof parsed?.text === "string" ? parsed.text : String(parsed?.text ?? "");

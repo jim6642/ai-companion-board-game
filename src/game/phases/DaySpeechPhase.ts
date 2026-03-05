@@ -306,32 +306,45 @@ export class DaySpeechPhase extends GamePhase {
       }
 
       if (pendingPoisonVictim !== undefined) {
-        hasDeaths = true;
-        currentState = killPlayer(currentState, pendingPoisonVictim);
-        poisonVictim = currentState.players.find((p) => p.seat === pendingPoisonVictim);
-        if (poisonVictim) {
-          if (poisonVictim.role === "Hunter") {
+        const sameTargetAsWolf =
+          pendingWolfVictim !== undefined && pendingPoisonVictim === pendingWolfVictim;
+
+        if (sameTargetAsWolf) {
+          const overlappedVictim = currentState.players.find((p) => p.seat === pendingPoisonVictim);
+          if (overlappedVictim?.role === "Hunter") {
             currentState = {
               ...currentState,
               roleAbilities: { ...currentState.roleAbilities, hunterCanShoot: false },
             };
           }
-          currentState = addSystemMessage(
-            currentState,
-            systemMessages.playerKilled(poisonVictim.seat + 1, poisonVictim.displayName)
-          );
-          runtime.setDialogue(
-            speakerHost,
-            systemMessages.playerKilled(poisonVictim.seat + 1, poisonVictim.displayName),
-            false
-          );
-          runtime.setGameState(currentState);
+        } else {
+          hasDeaths = true;
+          currentState = killPlayer(currentState, pendingPoisonVictim);
+          poisonVictim = currentState.players.find((p) => p.seat === pendingPoisonVictim);
+          if (poisonVictim) {
+            if (poisonVictim.role === "Hunter") {
+              currentState = {
+                ...currentState,
+                roleAbilities: { ...currentState.roleAbilities, hunterCanShoot: false },
+              };
+            }
+            currentState = addSystemMessage(
+              currentState,
+              systemMessages.playerKilled(poisonVictim.seat + 1, poisonVictim.displayName)
+            );
+            runtime.setDialogue(
+              speakerHost,
+              systemMessages.playerKilled(poisonVictim.seat + 1, poisonVictim.displayName),
+              false
+            );
+            runtime.setGameState(currentState);
 
-          const poisonDiedKey = getPlayerDiedKey(poisonVictim.seat);
-          if (poisonDiedKey) await playNarrator(poisonDiedKey);
+            const poisonDiedKey = getPlayerDiedKey(poisonVictim.seat);
+            if (poisonDiedKey) await playNarrator(poisonDiedKey);
 
-          await delay(DELAY_CONFIG.LONG);
-          await runtime.waitForUnpause();
+            await delay(DELAY_CONFIG.LONG);
+            await runtime.waitForUnpause();
+          }
         }
       }
 

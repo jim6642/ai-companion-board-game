@@ -178,45 +178,55 @@ export async function POST(request: Request) {
     campaignRow = latestCampaignRow;
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("user_credits")
-    .select("credits")
-    .eq("id", user.id)
-    .single();
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const { data, error } = await supabaseAdmin
+      .from("user_credits")
+      .select("credits")
+      .eq("id", user.id)
+      .single();
 
-  if (error) {
-    return NextResponse.json({ error: "Failed to read credits" }, { status: 500 });
-  }
+    if (error) {
+      return NextResponse.json({ error: "Failed to read credits" }, { status: 500 });
+    }
 
-  const creditsRow = data as { credits: number } | null;
-  if (!creditsRow || creditsRow.credits <= 0) {
-    return NextResponse.json(
-      {
-        error: "Insufficient credits",
+    const creditsRow = data as { credits: number } | null;
+    if (!creditsRow || creditsRow.credits <= 0) {
+      return NextResponse.json(
+        {
+          error: "Insufficient credits",
+          campaign: buildCampaignPayload(campaignRow),
+        },
+        { status: 400 }
+      );
+    }
+
+    const nextCredits = creditsRow.credits - 1;
+    const updatePayload: Partial<Database["public"]["Tables"]["user_credits"]["Row"]> = {
+      credits: nextCredits,
+      updated_at: new Date().toISOString(),
+    };
+    const { data: updatedRows, error: updateError } = await supabaseAdmin
+      .from("user_credits")
+      .update(updatePayload as never)
+      .eq("id", user.id)
+      .eq("credits", creditsRow.credits)
+      .select("credits")
+      .maybeSingle();
+
+    if (updateError) {
+      return NextResponse.json({ error: "Failed to update credits" }, { status: 500 });
+    }
+
+    if (updatedRows) {
+      const updatedCreditsRow = updatedRows as { credits: number };
+      return NextResponse.json({
+        success: true,
+        credits: updatedCreditsRow.credits,
+        usedTemporaryQuota: false,
         campaign: buildCampaignPayload(campaignRow),
-      },
-      { status: 400 }
-    );
+      });
+    }
   }
 
-  const nextCredits = creditsRow.credits - 1;
-  const updatePayload: Partial<Database["public"]["Tables"]["user_credits"]["Row"]> = {
-    credits: nextCredits,
-    updated_at: new Date().toISOString(),
-  };
-  const { error: updateError } = await supabaseAdmin
-    .from("user_credits")
-    .update(updatePayload as never)
-    .eq("id", user.id);
-
-  if (updateError) {
-    return NextResponse.json({ error: "Failed to update credits" }, { status: 500 });
-  }
-
-  return NextResponse.json({
-    success: true,
-    credits: nextCredits,
-    usedTemporaryQuota: false,
-    campaign: buildCampaignPayload(campaignRow),
-  });
+  return NextResponse.json({ error: "Conflict while updating credits" }, { status: 409 });
 }

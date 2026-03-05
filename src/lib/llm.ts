@@ -2,6 +2,7 @@ import { getDashscopeApiKey, getZenmuxApiKey, isCustomKeyEnabled } from "@/lib/a
 import { ALL_MODELS, AVAILABLE_MODELS, type ModelRef } from "@/types/game";
 import { gameStatsTracker } from "@/hooks/useGameStats";
 import { gameSessionTracker } from "@/lib/game-session-tracker";
+import { supabase } from "@/lib/supabase";
 
 export type LLMContentPart =
   | { type: "text"; text: string; cache_control?: { type: "ephemeral"; ttl?: "1h" } }
@@ -17,6 +18,15 @@ export interface LLMMessage {
 }
 
 type Provider = "zenmux" | "dashscope";
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    if (token) return { Authorization: `Bearer ${token}` };
+  } catch {}
+  return {};
+}
 
 function getProviderForModel(model: string): Provider {
    const modelRef =
@@ -418,6 +428,8 @@ export async function generateCompletion(
     headers["X-Dashscope-Api-Key"] = dashscopeApiKey;
   }
 
+  Object.assign(headers, await getAuthHeaders());
+
   console.log("[LLM] generateCompletion:", {
     customEnabled,
     hasZenmuxKey: !!headerApiKey,
@@ -516,6 +528,8 @@ export async function generateCompletionBatch(
     headers["X-Dashscope-Api-Key"] = dashscopeApiKey;
   }
 
+  Object.assign(headers, await getAuthHeaders());
+
   const response = await fetchWithRetry(
     "/api/chat",
     {
@@ -580,6 +594,8 @@ export async function* generateCompletionStream(
   if (dashscopeApiKey) {
     headers["X-Dashscope-Api-Key"] = dashscopeApiKey;
   }
+
+  Object.assign(headers, await getAuthHeaders());
 
   const response = await fetchWithRetry(
     "/api/chat",

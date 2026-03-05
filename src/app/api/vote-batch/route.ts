@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authenticateRequest } from "@/lib/api-auth";
 
 type VoteBatchRequest = {
   voterId: string;
@@ -14,6 +15,9 @@ type VoteBatchRequest = {
 };
 
 export async function POST(request: NextRequest) {
+  const auth = await authenticateRequest(request as unknown as Request);
+  if ("error" in auth) return auth.error;
+
   try {
     const body = await request.json();
     const requests = Array.isArray(body?.requests) ? (body.requests as VoteBatchRequest[]) : [];
@@ -32,6 +36,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
         ...(headerApiKey ? { "X-Zenmux-Api-Key": headerApiKey } : {}),
         ...(headerDashscopeKey ? { "X-Dashscope-Api-Key": headerDashscopeKey } : {}),
+        Authorization: request.headers.get("Authorization") || "",
       },
       body: JSON.stringify({ requests: chatRequests }),
     });

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authenticateRequest, requireCredits } from "@/lib/api-auth";
 import { ALL_MODELS, AVAILABLE_MODELS } from "@/types/game";
 
 const ZENMUX_API_URL = "https://zenmux.ai/api/v1/chat/completions";
@@ -376,6 +377,20 @@ async function runBatchItem(
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await authenticateRequest(request as unknown as Request);
+  if ("error" in auth) return auth.error;
+
+  const earlyZenmuxKey = request.headers.get("x-zenmux-api-key")?.trim();
+  const earlyDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim();
+  const hasCustomKeys = Boolean((earlyZenmuxKey ?? "") || (earlyDashscopeKey ?? ""));
+
+  if (!hasCustomKeys) {
+    const hasCredits = await requireCredits(auth.user.id);
+    if (!hasCredits) {
+      return NextResponse.json({ error: "Insufficient credits" }, { status: 403 });
+    }
+  }
+
   try {
     const body = await request.json();
     if (Array.isArray(body?.requests)) {

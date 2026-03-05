@@ -43,6 +43,7 @@ const IN_PROGRESS_PHASES: Phase[] = [
   "DAY_RESOLVE",
   "BADGE_TRANSFER",
   "HUNTER_SHOOT",
+  "WHITE_WOLF_KING_BOOM",
 ];
 
 /**
@@ -84,7 +85,7 @@ function isPhaseActionCompleted(state: GameState): boolean {
     }
 
     case "NIGHT_WOLF_ACTION": {
-      const aliveWolves = state.players.filter((p) => p.role === "Werewolf" && p.alive);
+      const aliveWolves = state.players.filter((p) => isWolfRole(p.role) && p.alive);
       if (aliveWolves.length === 0) return true;
       // 狼人已选择目标
       return state.nightActions.wolfTarget !== undefined;
@@ -230,7 +231,7 @@ const VALID_PHASES: readonly string[] = [
   "NIGHT_WITCH_ACTION", "NIGHT_SEER_ACTION", "NIGHT_RESOLVE",
   "DAY_START", "DAY_BADGE_SIGNUP", "DAY_BADGE_SPEECH", "DAY_BADGE_ELECTION",
   "DAY_PK_SPEECH", "DAY_SPEECH", "DAY_LAST_WORDS", "DAY_VOTE", "DAY_RESOLVE",
-  "BADGE_TRANSFER", "HUNTER_SHOOT", "GAME_END",
+  "BADGE_TRANSFER", "HUNTER_SHOOT", "WHITE_WOLF_KING_BOOM", "GAME_END",
 ] as const;
 
 function isValidGameState(state: unknown): state is GameState {
@@ -1006,7 +1007,7 @@ export const VALID_TRANSITIONS: Record<Phase, Phase[]> = {
   SETUP: ["NIGHT_START"],
   
   // 夜晚流程: 守卫 -> 狼人 -> 女巫 -> 预言家 -> 结算
-  NIGHT_START: ["NIGHT_GUARD_ACTION"],
+  NIGHT_START: ["NIGHT_GUARD_ACTION", "NIGHT_WOLF_ACTION"],
   NIGHT_GUARD_ACTION: ["NIGHT_WOLF_ACTION"],
   NIGHT_WOLF_ACTION: ["NIGHT_WITCH_ACTION"],
   NIGHT_WITCH_ACTION: ["NIGHT_SEER_ACTION"],

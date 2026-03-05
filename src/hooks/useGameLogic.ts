@@ -708,19 +708,19 @@ export function useGameLogic() {
 
     setGameState(currentState);
 
-    const winner = checkWinCondition(currentState);
-    if (winner) {
-      const endFn = endGameRef.current;
-      if (endFn) await endFn(currentState, winner);
-      return true;
-    }
-
     // 白狼王自爆带走猎人时，猎人可以开枪（非毒死，技能可发动）
     const boomTarget = currentState.players.find((p) => p.seat === targetSeat);
     if (boomTarget?.role === "Hunter" && currentState.roleAbilities.hunterCanShoot) {
       await delay(1200);
       const hunterFn = hunterDeathRef.current;
       if (hunterFn) await hunterFn(currentState, boomTarget, false);
+      return true;
+    }
+
+    const winner = checkWinCondition(currentState);
+    if (winner) {
+      const endFn = endGameRef.current;
+      if (endFn) await endFn(currentState, winner);
       return true;
     }
 
@@ -868,7 +868,7 @@ export function useGameLogic() {
           // 狼人已选择，继续到女巫阶段
           void runNightPhaseAction(s, token, "CONTINUE_NIGHT_AFTER_WOLF");
         } else {
-          const humanWolf = s.players.find((p) => p.role === "Werewolf" && p.alive && p.isHuman);
+          const humanWolf = s.players.find((p) => isWolfRole(p.role) && p.alive && p.isHuman);
           if (!humanWolf) {
             // AI 狼人需要重新选择
             void runNightPhaseAction(s, token, "CONTINUE_NIGHT_AFTER_GUARD");
@@ -1737,6 +1737,8 @@ export function useGameLogic() {
 
   /** 重新开始 */
   const restartGame = useCallback(() => {
+    flowController.current.interrupt();
+
     // Clear persisted game state from localStorage
     clearPersistedGameState();
     
@@ -2100,12 +2102,6 @@ export function useGameLogic() {
 
       setGameState(currentState);
 
-      const winner = checkWinCondition(currentState);
-      if (winner) {
-        await endGameSafely(currentState, winner);
-        return;
-      }
-
       // 白狼王自爆带走猎人时，猎人可以开枪（非毒死，技能可发动）
       if (targetSeat >= 0) {
         const boomTarget = currentState.players.find((p) => p.seat === targetSeat);
@@ -2115,6 +2111,12 @@ export function useGameLogic() {
           if (hunterFn) await hunterFn(currentState, boomTarget, false);
           return;
         }
+      }
+
+      const winner = checkWinCondition(currentState);
+      if (winner) {
+        await endGameSafely(currentState, winner);
+        return;
       }
 
       await delay(1200);
