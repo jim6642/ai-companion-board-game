@@ -18,7 +18,6 @@
 
 *   [ZenMux](https://zenmux.ai/invite/DMMBVZ) - 提供游戏核心流程、角色扮演、总结记录等 AI 模型能力支持
 *   [Bailian](https://bailian.console.aliyun.com/) - 提供部分 AI 模型能力支持
-*   [OpenCreator](https://opencreator.io?promo=wolfcha) - 提供角色 AI 立绘生成支持
 *   [观猹](https://watcha.cn/) - 提供 AI 模型能力与展示平台
 
 ---

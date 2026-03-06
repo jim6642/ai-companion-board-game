@@ -18,7 +18,6 @@ Current sponsors:
 
 *   [ZenMux](https://zenmux.ai/invite/DMMBVZ) - Powers the core game flow, roleplay, and summary features with AI models
 *   [Dashscope](https://bailian.console.aliyun.com/) - Provides additional AI model support
-*   [OpenCreator](https://opencreator.io?promo=wolfcha) - Generates AI character portraits
 *   [Watcha](https://watcha.cn/) - Provides AI model capabilities and showcase platform
 
 ---

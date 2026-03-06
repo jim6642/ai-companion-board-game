@@ -1034,19 +1034,6 @@ export function WelcomeScreen({
 
         {/* Scattered sponsor cards */}
         <div className="wc-sponsor-cards" aria-label={t("welcome.sponsor.showcaseLabel")}>
-          {/* Sponsor card - OpenCreator (左侧) */}
-          <SponsorCard
-            sponsorId="opencreator"
-            href="https://opencreator.io/"
-            className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--left-center wc-sponsor-card--featured"
-            rotate="-6deg"
-            delay={0.3}
-            logoSrc="/sponsor/opencreator.png"
-            logoAlt="OpenCreator"
-            name="OpenCreator"
-            note={t("welcome.sponsor.cards.openCreator")}
-          />
-
           {/* Sponsor card - Bailian (左上) */}
           <SponsorCard
             sponsorId="bailian"
@@ -1239,17 +1226,6 @@ export function WelcomeScreen({
 
             {/* Mobile: inline sponsor stamps at top of paper */}
             <div className="wc-paper-sponsors sm:hidden">
-              <a
-                href="https://opencreator.io?promo=wolfcha"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="wc-paper-stamp"
-                style={{ "--stamp-rotate": "-8deg" } as React.CSSProperties}
-                onClick={() => void trackSponsorClick("opencreator")}
-              >
-                <img src="/sponsor/opencreator.png" alt="OpenCreator" className="wc-paper-stamp__logo" />
-                <span className="wc-paper-stamp__name">OpenCreator</span>
-              </a>
               <a
                 href="https://bailian.console.aliyun.com/?ref=wolfcha"
                 target="_blank"
