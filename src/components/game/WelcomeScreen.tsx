@@ -1072,6 +1072,19 @@ export function WelcomeScreen({
             name="ZenMux"
             note={t("welcome.sponsor.cards.zenmux")}
           />
+
+          {/* Sponsor card - Watcha (右上) */}
+          <SponsorCard
+            sponsorId="watcha"
+            href="https://watcha.cn/"
+            className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--top-right"
+            rotate="5deg"
+            delay={0.45}
+            logoSrc="/sponsor/watcha.svg"
+            logoAlt="观猹"
+            name="观猹"
+            note={t("welcome.sponsor.cards.watcha")}
+          />
         </div>
 
         <div className="wc-welcome-actions absolute top-5 right-5 z-20 flex items-center gap-2">
@@ -1258,6 +1271,17 @@ export function WelcomeScreen({
               >
                 <img src="/sponsor/zenmux.png" alt="ZenMux" className="wc-paper-stamp__logo" />
                 <span className="wc-paper-stamp__name">ZenMux</span>
+              </a>
+              <a
+                href="https://watcha.cn/?ref=wolfcha"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="wc-paper-stamp"
+                style={{ "--stamp-rotate": "6deg" } as React.CSSProperties}
+                onClick={() => void trackSponsorClick("watcha")}
+              >
+                <img src="/sponsor/watcha.svg" alt="观猹" className="wc-paper-stamp__logo" />
+                <span className="wc-paper-stamp__name">观猹</span>
               </a>
             </div>
 
