@@ -318,7 +318,7 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
     key: string;
     model: string;
   }) => {
-    const { provider, key, model } = options;
+    const { provider, key } = options;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -328,16 +328,9 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
       headers["X-Dashscope-Api-Key"] = key;
     }
 
-    const response = await fetch("/api/chat", {
+    const response = await fetch("/api/validate-key", {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        provider,
-        model,
-        messages: [{ role: "user", content: "ping" }],
-        temperature: 0,
-        max_tokens: 1,
-      }),
     });
 
     if (!response.ok) {
@@ -349,6 +342,11 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
         detail = await response.text();
       }
       throw new Error(detail || t("customKey.toasts.validateFailed"));
+    }
+
+    const data = await response.json();
+    if (!data.valid) {
+      throw new Error(data.error || t("customKey.toasts.validateFailed"));
     }
   };
 
