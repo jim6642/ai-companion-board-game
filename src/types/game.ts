@@ -246,9 +246,6 @@ export const MODEL_IDS = {
     geminiFlashLite: "google/gemini-3.1-flash-lite-preview",
     geminiFlashPreview: "google/gemini-3-flash-preview",
     deepseek: "deepseek/deepseek-v3.2",
-    kimiK2: "moonshotai/kimi-k2-0905",
-    qwen3Max: "qwen/qwen3-max",
-    doubaoSeed: "volcengine/doubao-seed-1.8",
     gpt52Chat: "openai/gpt-5.2-chat",
     claudeHaiku45: "anthropic/claude-haiku-4.5",
     claudeSonnet45: "anthropic/claude-sonnet-4.5",
@@ -260,8 +257,6 @@ export const MODEL_IDS = {
   dashscope: {
     qwenFlash: "qwen-flash",
     deepseek: "deepseek-v3.2",
-    qwenPlus: "qwen-plus-2025-12-01",
-    qwen3Max: "qwen3-max",
   },
   newapi: {
     gemini3FlashPreview: "gemini-3-flash-preview",
@@ -271,7 +266,7 @@ export const MODEL_IDS = {
 
 export const DEFAULT_MODEL_CONFIG = {
   generator: MODEL_IDS.zenmux.geminiFlashLite,
-  summary: MODEL_IDS.dashscope.qwenFlash,
+  summary: MODEL_IDS.zenmux.geminiFlashLite,
   review: MODEL_IDS.zenmux.geminiFlashPreview,
   validation: {
     zenmux: MODEL_IDS.zenmux.geminiFlashLite,
@@ -294,8 +289,6 @@ export const BUILTIN_PLAYER_MODELS: ModelRef[] = [
   { provider: "newapi", model: MODEL_IDS.newapi.gemini3FlashPreview },
   { provider: "dashscope", model: MODEL_IDS.dashscope.qwenFlash },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwenPlus },
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwen3Max },
 
 ];
 
@@ -305,8 +298,6 @@ export const AVAILABLE_MODELS: ModelRef[] = [
   { provider: "newapi", model: MODEL_IDS.newapi.gemini3FlashPreview },
   { provider: "dashscope", model: MODEL_IDS.dashscope.qwenFlash },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwenPlus },
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwen3Max },
 
   // { provider: "dashscope", model: MODEL_IDS.dashscope.qwenFlash },
   // ...BUILTIN_PLAYER_MODELS,
@@ -321,8 +312,6 @@ export const PROJECT_MODELS: ModelRef[] = [
   { provider: "newapi", model: MODEL_IDS.newapi.gemini3FlashPreview },
   { provider: "dashscope", model: MODEL_IDS.dashscope.qwenFlash },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwenPlus },
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwen3Max },
   // Generator / summary / review system models (zenmux)
   { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashLite },
   { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashPreview },
@@ -332,14 +321,9 @@ export const PROJECT_MODELS: ModelRef[] = [
 export const ALL_MODELS: ModelRef[] = [
   { provider: "dashscope", model: MODEL_IDS.dashscope.qwenFlash },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwenPlus },
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwen3Max },
   { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashLite },
   { provider: "zenmux", model: MODEL_IDS.zenmux.deepseek },
   { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashPreview },
-  { provider: "zenmux", model: MODEL_IDS.zenmux.kimiK2 },
-  { provider: "zenmux", model: MODEL_IDS.zenmux.qwen3Max },
-  { provider: "zenmux", model: MODEL_IDS.zenmux.doubaoSeed },
   { provider: "zenmux", model: MODEL_IDS.zenmux.gpt52Chat },
   { provider: "zenmux", model: MODEL_IDS.zenmux.claudeHaiku45 },
   { provider: "zenmux", model: MODEL_IDS.zenmux.claudeSonnet45 },
