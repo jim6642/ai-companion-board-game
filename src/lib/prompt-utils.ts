@@ -175,6 +175,10 @@ export const buildSituationalStrategy = (state: GameState, player: Player): stri
  * in AI speeches without prescriptive output formatting.
  */
 function buildPerspectiveHint(state: GameState, player: Player): string {
+  // Only generate perspective hints during day speech phases (not night actions)
+  const isDaySpeech = state.phase.startsWith("DAY_");
+  if (!isDaySpeech) return "";
+
   const hints: string[] = [];
 
   // --- 1. Mentioned by others: if other players named you, react to it ---

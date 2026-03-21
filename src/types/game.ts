@@ -255,7 +255,6 @@ export const MODEL_IDS = {
     minimaxM21: "minimax/minimax-m2.1",
   },
   dashscope: {
-    qwenFlash: "qwen-flash",
     deepseek: "deepseek-v3.2",
   },
   newapi: {
@@ -287,22 +286,14 @@ export const BUILTIN_PLAYER_MODELS: ModelRef[] = [
   // { provider: "zenmux", model: MODEL_IDS.zenmux.qwen3Max },
   // { provider: "zenmux", model: MODEL_IDS.zenmux.doubaoSeed },
   // { provider: "newapi", model: MODEL_IDS.newapi.gemini3FlashPreview }, // agent-wiki 服务挂了，临时注释
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwenFlash },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
-
 ];
 
 // Default built-in models exposed to the app when custom key is not enabled.
 // This list includes system defaults plus the small built-in player pool.
 export const AVAILABLE_MODELS: ModelRef[] = [
   // { provider: "newapi", model: MODEL_IDS.newapi.gemini3FlashPreview }, // agent-wiki 服务挂了，临时注释
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwenFlash },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
-
-  // { provider: "dashscope", model: MODEL_IDS.dashscope.qwenFlash },
-  // ...BUILTIN_PLAYER_MODELS,
-  // { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashLite },
-  // { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashPreview },
 ];
 
 // Built-in project-key models that the server may call internally.
@@ -310,7 +301,6 @@ export const AVAILABLE_MODELS: ModelRef[] = [
 export const PROJECT_MODELS: ModelRef[] = [
   ...AVAILABLE_MODELS,
   // { provider: "newapi", model: MODEL_IDS.newapi.gemini3FlashPreview }, // agent-wiki 服务挂了，临时注释
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwenFlash },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
   // Generator / summary / review system models (zenmux)
   { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashLite },
@@ -319,7 +309,6 @@ export const PROJECT_MODELS: ModelRef[] = [
 
 // User-selectable models when custom key is enabled.
 export const ALL_MODELS: ModelRef[] = [
-  { provider: "dashscope", model: MODEL_IDS.dashscope.qwenFlash },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
   { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashLite },
   { provider: "zenmux", model: MODEL_IDS.zenmux.deepseek },
