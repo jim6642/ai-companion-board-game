@@ -85,44 +85,43 @@ export const getRoleKnowHow = (role: string): string => {
  */
 export const buildSituationalStrategy = (state: GameState, player: Player): string => {
   const lines: string[] = [];
-  
+
+  // === Part 1: Role-specific private info strategy ===
   if (player.role === "Seer") {
     const checks = state.nightActions.seerHistory || [];
     if (checks.length === 0) {
-      return "";
+      // no checks yet — skip role-specific tips
+    } else {
+      const hasWolfCheck = checks.some(c => c.isWolf);
+      const hasGoodCheck = checks.some(c => !c.isWolf);
+
+      lines.push("<situational_tips>");
+      if (hasWolfCheck && state.day === 1) {
+        lines.push("【当前情境】你首验查杀！这是强信息。");
+        lines.push("【可选策略】");
+        lines.push("- 跳身份带节奏，报出查杀的座位号");
+        lines.push("- 给出今日归票建议");
+        lines.push("- 准备好应对可能的狼人对跳");
+      } else if (hasGoodCheck && !hasWolfCheck) {
+        lines.push("【当前情境】你目前只有金水（好人验），信息量有限。");
+        lines.push("【可选策略】");
+        lines.push("- 潜水观察，等待更多信息后再跳");
+        lines.push("- 或跳身份报金水，争取话语权");
+        lines.push("- 观察是否有人对跳，判断真假预言家");
+      } else if (hasWolfCheck && state.day > 1) {
+        lines.push("【当前情境】你有查杀记录。");
+        lines.push("【可选策略】");
+        lines.push("- 继续推进查杀目标出局");
+        lines.push("- 结合新的查验结果分析局势");
+      }
+      lines.push("</situational_tips>");
     }
-    
-    const hasWolfCheck = checks.some(c => c.isWolf);
-    const hasGoodCheck = checks.some(c => !c.isWolf);
-    const latestCheck = checks[checks.length - 1];
-    const latestTarget = state.players.find(p => p.seat === latestCheck.targetSeat);
-    
-    lines.push("<situational_tips>");
-    if (hasWolfCheck && state.day === 1) {
-      lines.push("【当前情境】你首验查杀！这是强信息。");
-      lines.push("【可选策略】");
-      lines.push("- 跳身份带节奏，报出查杀的座位号");
-      lines.push("- 给出今日归票建议");
-      lines.push("- 准备好应对可能的狼人对跳");
-    } else if (hasGoodCheck && !hasWolfCheck) {
-      lines.push("【当前情境】你目前只有金水（好人验），信息量有限。");
-      lines.push("【可选策略】");
-      lines.push("- 潜水观察，等待更多信息后再跳");
-      lines.push("- 或跳身份报金水，争取话语权");
-      lines.push("- 观察是否有人对跳，判断真假预言家");
-    } else if (hasWolfCheck && state.day > 1) {
-      lines.push("【当前情境】你有查杀记录。");
-      lines.push("【可选策略】");
-      lines.push("- 继续推进查杀目标出局");
-      lines.push("- 结合新的查验结果分析局势");
-    }
-    lines.push("</situational_tips>");
   }
-  
+
   if (isWolfRole(player.role)) {
     const aliveWolves = state.players.filter(p => isWolfRole(p.role) && p.alive);
     const isLastWolf = aliveWolves.length === 1;
-    
+
     lines.push("<situational_tips>");
     if (isLastWolf) {
       lines.push("【当前情境】你是最后一只狼！");
@@ -139,30 +138,136 @@ export const buildSituationalStrategy = (state: GameState, player: Player): stri
     }
     lines.push("</situational_tips>");
   }
-  
+
   if (player.role === "Witch") {
     const hasHeal = !state.roleAbilities.witchHealUsed;
     const hasPoison = !state.roleAbilities.witchPoisonUsed;
-    
-    if (!hasHeal && !hasPoison) {
-      return "";
+
+    if (hasHeal || hasPoison) {
+      lines.push("<situational_tips>");
+      lines.push("【当前情境】你是女巫。");
+      if (hasHeal && hasPoison) {
+        lines.push("- 解药和毒药都还在，谨慎使用");
+      } else if (hasHeal) {
+        lines.push("- 解药还在，留给关键好人");
+      } else if (hasPoison) {
+        lines.push("- 毒药还在，留给确认的狼人");
+      }
+      lines.push("- 你知道谁被刀了，这是重要信息");
+      lines.push("</situational_tips>");
     }
-    
-    lines.push("<situational_tips>");
-    lines.push("【当前情境】你是女巫。");
-    if (hasHeal && hasPoison) {
-      lines.push("- 解药和毒药都还在，谨慎使用");
-    } else if (hasHeal) {
-      lines.push("- 解药还在，留给关键好人");
-    } else if (hasPoison) {
-      lines.push("- 毒药还在，留给确认的狼人");
-    }
-    lines.push("- 你知道谁被刀了，这是重要信息");
-    lines.push("</situational_tips>");
   }
-  
+
+  // === Part 2: Public-info perspective hint (all roles) ===
+  // Give each player a unique analytical angle based on their observable game situation.
+  // This creates speech diversity without prescribing output format.
+  const perspectiveHint = buildPerspectiveHint(state, player);
+  if (perspectiveHint) {
+    lines.push(perspectiveHint);
+  }
+
   return lines.join("\n");
 };
+
+/**
+ * Generate a unique "perspective hint" for a player based on public game information.
+ * Each player gets a different analytical angle to think from, producing natural diversity
+ * in AI speeches without prescriptive output formatting.
+ */
+function buildPerspectiveHint(state: GameState, player: Player): string {
+  const hints: string[] = [];
+
+  // --- 1. Mentioned by others: if other players named you, react to it ---
+  const dayStartIndex = getDayStartIndex(state);
+  const mentionedBy: number[] = [];
+  const seatStr = `${player.seat + 1}号`;
+  for (let i = dayStartIndex; i < state.messages.length; i++) {
+    const m = state.messages[i];
+    if (m.isSystem || m.playerId === player.playerId) continue;
+    if (m.content.includes(seatStr)) {
+      const speaker = state.players.find(p => p.playerId === m.playerId);
+      if (speaker && speaker.alive) mentionedBy.push(speaker.seat);
+    }
+  }
+  if (mentionedBy.length > 0) {
+    const who = [...new Set(mentionedBy)].map(s => `${s + 1}号`).join("、");
+    hints.push(`你被${who}点名提到了——考虑是否需要回应或反驳`);
+  }
+
+  // --- 2. Adjacent to a dead player: you have a spatial observation ---
+  const deadToday = state.players.filter(p => !p.alive);
+  const totalSeats = state.players.length;
+  const isAdjacentToDead = deadToday.some(d => {
+    const diff = Math.abs(d.seat - player.seat);
+    return diff === 1 || diff === totalSeats - 1;
+  });
+  if (isAdjacentToDead && deadToday.length > 0) {
+    hints.push("你和出局的玩家座位相邻——你可以聊聊你对这个刀口的看法");
+  }
+
+  // --- 3. Sheriff-related: different angles depending on badge status ---
+  const sheriffSeat = state.badge.holderSeat;
+  if (sheriffSeat !== null && sheriffSeat === player.seat) {
+    hints.push("你是警长，你的归票建议有引导力——给出明确的方向");
+  } else if (sheriffSeat !== null) {
+    // Non-sheriff: randomly suggest either supporting or questioning the sheriff
+    // Use seat number as a deterministic "random" seed for consistency
+    if (player.seat % 2 === 0) {
+      hints.push("关注警长的归票建议，想想你是否认同");
+    } else {
+      hints.push("不要盲从警长——如果你有不同看法，可以质疑他的判断");
+    }
+  }
+
+  // --- 4. Voting pattern awareness (day 2+): who voted together yesterday? ---
+  if (state.day >= 2 && state.voteHistory) {
+    const yesterdayVotes = state.voteHistory[state.day - 1];
+    if (yesterdayVotes) {
+      // Find who voted the same target as the player yesterday
+      const myVote = yesterdayVotes[player.playerId];
+      if (myVote !== undefined) {
+        const sameVoters = Object.entries(yesterdayVotes)
+          .filter(([id, target]) => target === myVote && id !== player.playerId)
+          .map(([id]) => state.players.find(p => p.playerId === id))
+          .filter((p): p is Player => !!p && p.alive);
+        if (sameVoters.length > 0) {
+          const names = sameVoters.slice(0, 2).map(p => `${p.seat + 1}号`).join("、");
+          hints.push(`昨天${names}和你投了同一个目标——思考一下这意味着什么`);
+        }
+      }
+    }
+  }
+
+  // --- 5. First speaker vs late speaker: different information burden ---
+  // Count how many have already spoken today
+  const todaySpeakers = new Set<string>();
+  for (let i = dayStartIndex; i < state.messages.length; i++) {
+    const m = state.messages[i];
+    if (!m.isSystem && m.playerId && m.playerId !== player.playerId) {
+      todaySpeakers.add(m.playerId);
+    }
+  }
+  const aliveCount = state.players.filter(p => p.alive).length;
+  const spokenRatio = todaySpeakers.size / Math.max(1, aliveCount - 1);
+
+  if (spokenRatio === 0) {
+    // First speaker
+    hints.push("你是第一个发言——没有人可以参考，大胆抛出你自己的分析");
+  } else if (spokenRatio >= 0.7) {
+    // Late speaker
+    hints.push("你已经听了大部分人的发言——可以指出前面发言中你发现的矛盾或破绽");
+  }
+
+  if (hints.length === 0) return "";
+
+  // Pick at most 2 hints to keep it focused (use seat + day as deterministic selector)
+  const selected = hints.length <= 2 ? hints : [
+    hints[(player.seat + state.day) % hints.length],
+    hints[(player.seat + state.day + 1) % hints.length],
+  ].filter((v, i, a) => a.indexOf(v) === i); // deduplicate
+
+  return `<focus_angle>\n【你的视角】\n${selected.map(h => `- ${h}`).join("\n")}\n</focus_angle>`;
+}
 
 /**
  * Build difficulty hint for speech generation.
