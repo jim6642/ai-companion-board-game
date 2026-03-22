@@ -243,26 +243,44 @@ export function useDayPhase(
     const prefetchedSegments = consumePrefetchedSpeech(prefetchCriteria);
     if (prefetchedSegments && prefetchedSegments.length > 0) {
       currentSpeakingPlayerRef.current = player.playerId;
-      setIsWaitingForAI(false);
-      initSpeechQueue(
-        prefetchedSegments,
-        player,
-        options?.afterSpeech as ((s: unknown) => Promise<void>) | undefined
-      );
 
-      try {
-        const firstSegment = prefetchedSegments[0];
-        if (firstSegment) {
-          const task = {
-            id: makeAudioTaskId(voiceId, firstSegment),
-            text: firstSegment,
-            voiceId,
-            playerId: player.playerId,
-          };
-          audioManager.prefetchTasks([task], { concurrency: 1 }).catch(() => {});
+      const ttsEnabled = audioManager.isEnabled();
+      const firstSegment = prefetchedSegments[0];
+
+      if (ttsEnabled && firstSegment) {
+        // Wait for first segment TTS before showing text
+        setDialogue(player.displayName, t("dayPhase.organizing"), true);
+        const task = {
+          id: makeAudioTaskId(voiceId, firstSegment),
+          text: firstSegment,
+          voiceId,
+          playerId: player.playerId,
+        };
+        try {
+          await audioManager.ensureReady(task);
+        } catch {
+          // TTS failed, continue without audio
         }
-      } catch {
-        // ignore tts prefetch errors
+        setIsWaitingForAI(false);
+        initSpeechQueue(
+          prefetchedSegments,
+          player,
+          options?.afterSpeech as ((s: unknown) => Promise<void>) | undefined
+        );
+        audioManager.addToQueue(task);
+        // Prefetch remaining segments
+        for (let i = 1; i < prefetchedSegments.length; i++) {
+          const seg = prefetchedSegments[i];
+          const segTask = { id: makeAudioTaskId(voiceId, seg), text: seg, voiceId, playerId: player.playerId };
+          audioManager.ensureReady(segTask).then(() => audioManager.addToQueue(segTask)).catch(() => {});
+        }
+      } else {
+        setIsWaitingForAI(false);
+        initSpeechQueue(
+          prefetchedSegments,
+          player,
+          options?.afterSpeech as ((s: unknown) => Promise<void>) | undefined
+        );
       }
 
       currentSpeakingPlayerRef.current = null;
@@ -306,26 +324,43 @@ export function useDayPhase(
           }
           streamingSegmentsRef.current.push(segment);
 
-          // 第一个段落到达时，立即显示
+          const task = {
+            id: makeAudioTaskId(voiceId, segment),
+            text: segment,
+            voiceId,
+            playerId: player.playerId,
+          };
+
+          const ttsEnabled = audioManager.isEnabled();
+
           if (!hasReceivedFirstSegment) {
             hasReceivedFirstSegment = true;
-            setIsWaitingForAI(false);
-          }
-
-          // 添加到发言队列
-          appendToSpeechQueue(segment);
-
-          // 异步预取音频
-          try {
-            const task = {
-              id: makeAudioTaskId(voiceId, segment),
-              text: segment,
-              voiceId,
-              playerId: player.playerId,
-            };
-            audioManager.prefetchTasks([task], { concurrency: 1 }).catch(() => {});
-          } catch {
-            // ignore tts prefetch errors
+            if (ttsEnabled) {
+              // First segment: wait for TTS to be ready before showing text
+              // so the user sees "organizing" until audio is synthesized
+              audioManager.ensureReady(task).then(() => {
+                if (isTimedOut) return;
+                setIsWaitingForAI(false);
+                appendToSpeechQueue(segment);
+                audioManager.addToQueue(task);
+              }).catch(() => {
+                // TTS failed, show text anyway
+                setIsWaitingForAI(false);
+                appendToSpeechQueue(segment);
+              });
+            } else {
+              // No TTS: show text immediately
+              setIsWaitingForAI(false);
+              appendToSpeechQueue(segment);
+            }
+          } else {
+            // Subsequent segments: show text immediately, prefetch audio in background
+            appendToSpeechQueue(segment);
+            if (ttsEnabled) {
+              audioManager.ensureReady(task).then(() => {
+                audioManager.addToQueue(task);
+              }).catch(() => {});
+            }
           }
         },
         onComplete: () => {

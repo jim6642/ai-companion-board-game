@@ -20,8 +20,9 @@ class AudioManager {
   private currentAudio: HTMLAudioElement | null = null;
   private state: PlayState = "idle";
   private cache = new Map<string, { blob: Blob; durationMs?: number }>();
+  private inFlight = new Map<string, Promise<void>>();
   private enabled = false;
-  
+
   // Callbacks
   private onPlayStart: ((playerId: string) => void) | null = null;
   private onPlayEnd: ((playerId: string) => void) | null = null;
@@ -55,6 +56,11 @@ class AudioManager {
     return this.cache.get(taskId)?.durationMs;
   }
 
+  /** Check if audio for a task is already cached (ready to play). */
+  isCached(taskId: string): boolean {
+    return this.cache.has(taskId);
+  }
+
   setEnabled(value: boolean) {
     if (this.enabled === value) return;
     this.enabled = value;
@@ -65,6 +71,28 @@ class AudioManager {
     }
   }
 
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
+  /**
+   * Ensure a task's audio is fetched (deduplicated).
+   * Returns a promise that resolves when audio is cached.
+   */
+  async ensureReady(task: AudioTask): Promise<void> {
+    if (!this.enabled) return;
+    if (this.cache.has(task.id)) return;
+
+    const existing = this.inFlight.get(task.id);
+    if (existing) return existing;
+
+    const promise = this.fetchAndCache(task).finally(() => {
+      this.inFlight.delete(task.id);
+    });
+    this.inFlight.set(task.id, promise);
+    return promise;
+  }
+
   async prefetchTasks(tasks: AudioTask[], options?: { concurrency?: number }) {
     if (!this.enabled) return;
     const concurrency = Math.max(1, options?.concurrency ?? 3);
@@ -73,15 +101,15 @@ class AudioManager {
       while (queue.length > 0) {
         const t = queue.shift();
         if (!t) return;
-        await this.prefetchTask(t);
+        await this.ensureReady(t);
       }
     });
     await Promise.all(workers);
   }
 
-  private async prefetchTask(task: AudioTask) {
-    if (this.cache.has(task.id)) return;
+  private async fetchAndCache(task: AudioTask) {
     const headers = await this.buildTtsHeaders();
+
     const response = await fetch("/api/tts", {
       method: "POST",
       headers,
@@ -175,29 +203,15 @@ class AudioManager {
     this.state = "loading";
 
     try {
-      let blob = this.cache.get(task.id)?.blob;
-      if (!blob) {
-        // 1. 请求音频
-        const ttsHeaders = await this.buildTtsHeaders();
-        const response = await fetch("/api/tts", {
-          method: "POST",
-          headers: ttsHeaders,
-          body: JSON.stringify({
-            text: task.text,
-            voiceId: task.voiceId,
-          }),
-        });
+      // Use ensureReady for deduplicated fetching
+      await this.ensureReady(task);
 
-        if (!response.ok) {
-          const body = await response.text().catch(() => "");
-          throw new Error(`TTS request failed: ${response.status} ${body.slice(0, 600)}`);
-        }
-
-        blob = await response.blob();
-        this.cache.set(task.id, { blob });
+      const cached = this.cache.get(task.id);
+      if (!cached?.blob) {
+        throw new Error("TTS cache miss after ensureReady");
       }
 
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(cached.blob);
 
       // 检查此时是否已经被切歌了（例如在加载过程中用户按了跳过）
       if (this.currentTask !== task) {
@@ -218,7 +232,7 @@ class AudioManager {
           this.cache.set(task.id, { ...existing, durationMs: Math.round(sec * 1000) });
         }
       };
-      
+
       audio.onended = () => {
         this.onAudioEnded(task, url);
       };

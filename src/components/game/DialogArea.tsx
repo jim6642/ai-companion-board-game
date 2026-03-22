@@ -18,8 +18,7 @@ import LoadingMiniGame from "./MiniGame/LoadingMiniGame";
 import type { GameState, Player, ChatMessage, Phase } from "@/types/game";
 import { isWolfRole } from "@/types/game";
 import { cn } from "@/lib/utils";
-import { audioManager, makeAudioTaskId } from "@/lib/audio-manager";
-import { resolveVoiceId, type AppLocale } from "@/lib/voice-constants";
+import { audioManager } from "@/lib/audio-manager";
 import { getLocale } from "@/i18n/locale-store";
 import { useTranslations } from "next-intl";
 
@@ -412,36 +411,9 @@ export function DialogArea({
     return () => audioManager.clearQueue();
   }, []);
 
-  // 语音播放跟随消息框（currentDialogue），而不是消息记录（messages）
-  useEffect(() => {
-    if (!currentDialogue) return;
-    if (!currentDialogue.isStreaming) return;
-    if (!isSoundEnabled || !isAiVoiceEnabled) return;
-
-    const player = gameState.players.find((p) => p.displayName === currentDialogue.speaker);
-    if (!player) return;
-    if (player.playerId === humanPlayer?.playerId) return;
-
-    const text = currentDialogue.text;
-    if (!text || !text.trim()) return;
-    // “思考中”阶段不播
-    if (text.includes(t("dayPhase.organizing")) || text.includes(t("ui.generatingVoice"))) return;
-
-    const locale = getLocale() as AppLocale;
-    const voiceId = resolveVoiceId(
-      player.agentProfile?.persona?.voiceId,
-      player.agentProfile?.persona?.gender,
-      player.agentProfile?.persona?.age,
-      locale
-    );
-
-    audioManager.addToQueue({
-      id: makeAudioTaskId(voiceId, text),
-      text,
-      playerId: player.playerId,
-      voiceId,
-    });
-  }, [currentDialogue, gameState.players, humanPlayer?.playerId, isSoundEnabled, isAiVoiceEnabled]);
+  // TTS playback is now driven entirely by useDayPhase's prefetch path.
+  // When a segment's audio is ready, useDayPhase calls addToQueue after prefetch completes.
+  // This avoids the previous duplicate request issue (prefetch + DialogArea both hitting /api/tts).
 
   // 处理跳过/继续：截断语音并进入下一句
   const handleAdvance = useCallback(() => {
