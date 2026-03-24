@@ -17,7 +17,7 @@ export interface LLMMessage {
   reasoning_details?: unknown;
 }
 
-type Provider = "zenmux" | "dashscope" | "newapi";
+type Provider = "zenmux" | "dashscope" | "tokendance";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -49,7 +49,7 @@ export function resolveApiKeySource(model: string): ApiKeySource {
    if (provider === "dashscope") {
      return getDashscopeApiKey() ? "user" : "project";
    }
-   if (provider === "newapi") {
+   if (provider === "tokendance") {
      return "project";
    }
    return getZenmuxApiKey() ? "user" : "project";
@@ -223,6 +223,11 @@ async function fetchWithRetry(
 
   if (lastResponse) return lastResponse;
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
+}
+
+/** 剥离 MiniMax 等模型在 content 中嵌入的 <think>...</think> 思考块 */
+function stripThinkBlocks(text: string): string {
+  return text.replace(/<think>[\s\S]*?<\/think>\n*/g, "").trim();
 }
 
 export function stripMarkdownCodeFences(text: string): string {
@@ -505,7 +510,7 @@ export async function generateCompletion(
   });
 
   return {
-    content: assistantMessage.content,
+    content: stripThinkBlocks(assistantMessage.content),
     reasoning_details: assistantMessage.reasoning_details,
     raw: result,
   };
@@ -636,6 +641,10 @@ export async function* generateCompletionStream(
   let buffer = "";
   let totalOutputChars = 0;
 
+  // <think> 块剥离状态机（用于 MiniMax 等把思考嵌在 content 里的模型）
+  let thinkStripped = false;
+  let thinkBuffer = "";
+
   // 计算输入字符数
   const inputChars = options.messages.reduce((sum, m) => {
     if (typeof m.content === "string") return sum + m.content.length;
@@ -662,8 +671,30 @@ export async function* generateCompletionStream(
         const json = JSON.parse(trimmed.slice(6));
         const delta = json.choices?.[0]?.delta?.content;
         if (delta) {
-          totalOutputChars += delta.length;
-          yield delta;
+          if (thinkStripped) {
+            totalOutputChars += delta.length;
+            yield delta;
+          } else {
+            thinkBuffer += delta;
+            const endIdx = thinkBuffer.indexOf("</think>");
+            if (endIdx !== -1) {
+              // 找到 </think>，丢弃之前内容，从之后开始输出
+              const after = thinkBuffer.slice(endIdx + 8).replace(/^\n+/, "");
+              thinkStripped = true;
+              thinkBuffer = "";
+              if (after) {
+                totalOutputChars += after.length;
+                yield after;
+              }
+            } else if (!thinkBuffer.startsWith("<") && thinkBuffer.length >= 1) {
+              // 确认不是 <think> 块，直接透传
+              thinkStripped = true;
+              totalOutputChars += thinkBuffer.length;
+              yield thinkBuffer;
+              thinkBuffer = "";
+            }
+            // 否则继续缓冲，等待 </think> 或确认非 think 块
+          }
         }
       } catch {
         // Skip malformed JSON

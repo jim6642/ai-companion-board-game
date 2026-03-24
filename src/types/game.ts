@@ -66,7 +66,7 @@ export type Alignment = "village" | "wolf";
  }
 
 export interface ModelRef {
-  provider: "zenmux" | "dashscope" | "newapi";
+  provider: "zenmux" | "dashscope" | "tokendance";
   model: string;
   /** Override call-time temperature for this model (e.g. some models only support 1) */
   temperature?: number;
@@ -257,9 +257,12 @@ export const MODEL_IDS = {
   dashscope: {
     deepseek: "deepseek-v3.2",
   },
-  newapi: {
-    gemini3FlashPreview: "gemini-3-flash-preview",
-    gemini3ProPreview: "gemini-3-pro-preview",
+  tokendance: {
+    minimaxM27: "minimax-m2.7",
+    qwen3Max: "qwen3-max",
+    glm47: "glm-4.7",
+    kimiK25: "kimi-k2.5",
+    deepseekV32: "deepseek-v3.2",
   },
 } as const;
 
@@ -285,14 +288,22 @@ export const BUILTIN_PLAYER_MODELS: ModelRef[] = [
   // { provider: "zenmux", model: MODEL_IDS.zenmux.kimiK2 },
   // { provider: "zenmux", model: MODEL_IDS.zenmux.qwen3Max },
   // { provider: "zenmux", model: MODEL_IDS.zenmux.doubaoSeed },
-  // { provider: "newapi", model: MODEL_IDS.newapi.gemini3FlashPreview }, // agent-wiki 服务挂了，临时注释
+  { provider: "tokendance", model: MODEL_IDS.tokendance.minimaxM27, temperature: 1 },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.qwen3Max },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.glm47, temperature: 1 },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.kimiK25 },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.deepseekV32 },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
 ];
 
 // Default built-in models exposed to the app when custom key is not enabled.
 // This list includes system defaults plus the small built-in player pool.
 export const AVAILABLE_MODELS: ModelRef[] = [
-  // { provider: "newapi", model: MODEL_IDS.newapi.gemini3FlashPreview }, // agent-wiki 服务挂了，临时注释
+  { provider: "tokendance", model: MODEL_IDS.tokendance.minimaxM27, temperature: 1 },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.qwen3Max },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.glm47, temperature: 1 },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.kimiK25 },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.deepseekV32 },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
 ];
 
@@ -300,7 +311,6 @@ export const AVAILABLE_MODELS: ModelRef[] = [
 // These are intentionally not exposed in the custom-key model selector.
 export const PROJECT_MODELS: ModelRef[] = [
   ...AVAILABLE_MODELS,
-  // { provider: "newapi", model: MODEL_IDS.newapi.gemini3FlashPreview }, // agent-wiki 服务挂了，临时注释
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
   // Generator / summary / review system models (zenmux)
   { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashLite },

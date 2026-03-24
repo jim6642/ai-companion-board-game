@@ -9,7 +9,7 @@ const DASHSCOPE_CHAT_COMPLETIONS_URL = `${DASHSCOPE_API_BASE_URL}/chat/completio
 // API 调用超时时间（毫秒）
 const API_TIMEOUT_MS = 60000;
 
-type Provider = "zenmux" | "dashscope" | "newapi";
+type Provider = "zenmux" | "dashscope" | "tokendance";
 
 function getProviderForModel(model: string): Provider | null {
   const modelRef =
@@ -18,7 +18,7 @@ function getProviderForModel(model: string): Provider | null {
   return modelRef?.provider ?? null;
 }
 
-function getNewapiUrl(baseUrl: string): string {
+function getTokendanceUrl(baseUrl: string): string {
   const trimmed = baseUrl.trim();
   if (!trimmed) return "";
   const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
@@ -189,8 +189,8 @@ async function runBatchItem(
   payload: ChatRequestPayload,
   headerApiKey: string | null,
   headerDashscopeKey: string | null,
-  headerNewapiKey: string | null,
-  headerNewapiBaseUrl: string | null
+  headerTokendanceKey: string | null,
+  headerTokendanceBaseUrl: string | null
 ): Promise<{ ok: true; data: unknown } | { ok: false; status: number; error: string; details?: unknown }> {
   const {
     model,
@@ -209,7 +209,7 @@ async function runBatchItem(
   }
 
   const modelProvider: Provider | null =
-    provider === "dashscope" || provider === "zenmux" || provider === "newapi" ? provider : getProviderForModel(model);
+    provider === "dashscope" || provider === "zenmux" || provider === "tokendance" ? provider : getProviderForModel(model);
   if (!modelProvider) {
     return { ok: false, status: 400, error: `Unknown model: ${String(model ?? "").trim() || "unknown"}` };
   }
@@ -222,12 +222,12 @@ async function runBatchItem(
     if (modelProvider === "dashscope" && !headerDashscopeKey) {
       return { ok: false, status: 401, error: "此模型需要您提供百炼 API Key" };
     }
-    if (modelProvider === "newapi" && (!headerNewapiKey || !headerNewapiBaseUrl)) {
-      return { ok: false, status: 401, error: "此模型需要您提供 New API Key 和 Base URL" };
+    if (modelProvider === "tokendance" && (!headerTokendanceKey || !headerTokendanceBaseUrl)) {
+      return { ok: false, status: 401, error: "此模型需要您提供 TokenDance Key 和 Base URL" };
     }
   }
 
-  const hasAnyCustomKeyHeader = Boolean((headerApiKey ?? "").trim() || (headerDashscopeKey ?? "").trim() || (headerNewapiKey ?? "").trim());
+  const hasAnyCustomKeyHeader = Boolean((headerApiKey ?? "").trim() || (headerDashscopeKey ?? "").trim() || (headerTokendanceKey ?? "").trim());
 
   const modelRefOverride = getModelRef(model);
   const normalizedTemperature =
@@ -324,19 +324,19 @@ async function runBatchItem(
     return { ok: true, data: result };
   }
 
-  if (modelProvider === "newapi") {
-    if (hasAnyCustomKeyHeader && (!headerNewapiKey || !headerNewapiBaseUrl)) {
-      return { ok: false, status: 401, error: "已启用自定义 Key，但未提供 New API Key 或 Base URL（已拒绝回退到系统 Key）" };
+  if (modelProvider === "tokendance") {
+    if (hasAnyCustomKeyHeader && (!headerTokendanceKey || !headerTokendanceBaseUrl)) {
+      return { ok: false, status: 401, error: "已启用自定义 Key，但未提供 TokenDance Key 或 Base URL（已拒绝回退到系统 Key）" };
     }
-    const newapiApiKey = headerNewapiKey || process.env.NEWAPI_API_KEY;
-    const newapiBaseUrl = headerNewapiBaseUrl || process.env.NEWAPI_BASE_URL;
-    if (!newapiApiKey || !newapiBaseUrl) {
-      return { ok: false, status: 500, error: "NEWAPI_API_KEY or NEWAPI_BASE_URL not configured on server" };
+    const tokendanceApiKey = headerTokendanceKey || process.env.TOKENDANCE_API_KEY;
+    const tokendanceBaseUrl = headerTokendanceBaseUrl || process.env.TOKENDANCE_BASE_URL;
+    if (!tokendanceApiKey || !tokendanceBaseUrl) {
+      return { ok: false, status: 500, error: "TOKENDANCE_API_KEY or TOKENDANCE_BASE_URL not configured on server" };
     }
 
-    const newapiUrl = getNewapiUrl(newapiBaseUrl);
-    if (!newapiUrl) {
-      return { ok: false, status: 500, error: "Invalid New API Base URL" };
+    const tokendanceUrl = getTokendanceUrl(tokendanceBaseUrl);
+    if (!tokendanceUrl) {
+      return { ok: false, status: 500, error: "Invalid TokenDance Base URL" };
     }
 
     const requestBody: Record<string, unknown> = {
@@ -349,6 +349,12 @@ async function runBatchItem(
       requestBody.max_tokens = Math.max(16, Math.floor(max_tokens));
     }
 
+    // GLM-4.7 / Kimi K2.5 默认开启思考，API 参数可关闭（已实测有效）
+    const modelLower = model.toLowerCase();
+    if (modelLower.includes("glm") || modelLower.includes("kimi")) {
+      requestBody.thinking = { type: "disabled" };
+    }
+
     if (response_format && supportsResponseFormat(model)) {
       requestBody.response_format = response_format;
     }
@@ -358,10 +364,10 @@ async function runBatchItem(
 
     let response: Response;
     try {
-      response = await fetch(newapiUrl, {
+      response = await fetch(tokendanceUrl, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${newapiApiKey}`,
+          Authorization: `Bearer ${tokendanceApiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
@@ -382,7 +388,7 @@ async function runBatchItem(
       return {
         ok: false,
         status: response.status,
-        error: `New API error: ${response.status}`,
+        error: `TokenDance error: ${response.status}`,
         details: parsed ?? errorText,
       };
     }
@@ -475,11 +481,11 @@ export async function POST(request: NextRequest) {
     if (Array.isArray(body?.requests)) {
       const headerApiKey = request.headers.get("x-zenmux-api-key")?.trim() || null;
       const headerDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim() || null;
-      const headerNewapiKey = request.headers.get("x-newapi-api-key")?.trim() || null;
-      const headerNewapiBaseUrl = request.headers.get("x-newapi-base-url")?.trim() || null;
+      const headerTokendanceKey = request.headers.get("x-tokendance-api-key")?.trim() || null;
+      const headerTokendanceBaseUrl = request.headers.get("x-tokendance-base-url")?.trim() || null;
       const requests = body.requests as ChatRequestPayload[];
       const results = await Promise.all(
-        requests.map((req) => runBatchItem(req, headerApiKey, headerDashscopeKey, headerNewapiKey, headerNewapiBaseUrl))
+        requests.map((req) => runBatchItem(req, headerApiKey, headerDashscopeKey, headerTokendanceKey, headerTokendanceBaseUrl))
       );
       return NextResponse.json({ results });
     }
@@ -495,7 +501,7 @@ export async function POST(request: NextRequest) {
       provider,
     } = body;
     const modelProvider: Provider | null =
-      provider === "dashscope" || provider === "zenmux" || provider === "newapi" ? provider : getProviderForModel(model);
+      provider === "dashscope" || provider === "zenmux" || provider === "tokendance" ? provider : getProviderForModel(model);
     if (!modelProvider) {
       // Reject unknown models early to avoid mis-routing.
       return NextResponse.json(
@@ -505,9 +511,9 @@ export async function POST(request: NextRequest) {
     }
     const headerApiKey = request.headers.get("x-zenmux-api-key")?.trim();
     const headerDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim();
-    const headerNewapiKey = request.headers.get("x-newapi-api-key")?.trim();
-    const headerNewapiBaseUrl = request.headers.get("x-newapi-base-url")?.trim();
-    const hasAnyCustomKeyHeader = Boolean((headerApiKey ?? "").trim() || (headerDashscopeKey ?? "").trim() || (headerNewapiKey ?? "").trim());
+    const headerTokendanceKey = request.headers.get("x-tokendance-api-key")?.trim();
+    const headerTokendanceBaseUrl = request.headers.get("x-tokendance-base-url")?.trim();
+    const hasAnyCustomKeyHeader = Boolean((headerApiKey ?? "").trim() || (headerDashscopeKey ?? "").trim() || (headerTokendanceKey ?? "").trim());
     const isDefaultModel = PROJECT_MODELS.some((ref) => ref.model === model);
 
     const modelRefOverride = getModelRef(model);
@@ -556,9 +562,9 @@ export async function POST(request: NextRequest) {
           { status: 401 }
         );
       }
-      if (modelProvider === "newapi" && (!headerNewapiKey || !headerNewapiBaseUrl)) {
+      if (modelProvider === "tokendance" && (!headerTokendanceKey || !headerTokendanceBaseUrl)) {
         return NextResponse.json(
-          { error: "此模型需要您提供 New API Key 和 Base URL" },
+          { error: "此模型需要您提供 TokenDance Key 和 Base URL" },
           { status: 401 }
         );
       }
@@ -655,27 +661,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     }
 
-    if (modelProvider === "newapi") {
-      if (hasAnyCustomKeyHeader && (!headerNewapiKey || !headerNewapiBaseUrl)) {
+    if (modelProvider === "tokendance") {
+      if (hasAnyCustomKeyHeader && (!headerTokendanceKey || !headerTokendanceBaseUrl)) {
         return NextResponse.json(
-          { error: "已启用自定义 Key，但未提供 New API Key 或 Base URL（已拒绝回退到系统 Key）" },
+          { error: "已启用自定义 Key，但未提供 TokenDance Key 或 Base URL（已拒绝回退到系统 Key）" },
           { status: 401 }
         );
       }
 
-      const newapiApiKey = headerNewapiKey || process.env.NEWAPI_API_KEY;
-      const newapiBaseUrl = headerNewapiBaseUrl || process.env.NEWAPI_BASE_URL;
-      if (!newapiApiKey || !newapiBaseUrl) {
+      const tokendanceApiKey = headerTokendanceKey || process.env.TOKENDANCE_API_KEY;
+      const tokendanceBaseUrl = headerTokendanceBaseUrl || process.env.TOKENDANCE_BASE_URL;
+      if (!tokendanceApiKey || !tokendanceBaseUrl) {
         return NextResponse.json(
-          { error: "NEWAPI_API_KEY or NEWAPI_BASE_URL not configured on server" },
+          { error: "TOKENDANCE_API_KEY or TOKENDANCE_BASE_URL not configured on server" },
           { status: 500 }
         );
       }
 
-      const newapiUrl = getNewapiUrl(newapiBaseUrl);
-      if (!newapiUrl) {
+      const tokendanceUrl = getTokendanceUrl(tokendanceBaseUrl);
+      if (!tokendanceUrl) {
         return NextResponse.json(
-          { error: "Invalid New API Base URL" },
+          { error: "Invalid TokenDance Base URL" },
           { status: 500 }
         );
       }
@@ -694,6 +700,12 @@ export async function POST(request: NextRequest) {
         requestBody.stream = true;
       }
 
+      // GLM-4.7 / Kimi K2.5 默认开启思考，API 参数可关闭（已实测有效）
+      const modelLower = model.toLowerCase();
+      if (modelLower.includes("glm") || modelLower.includes("kimi")) {
+        requestBody.thinking = { type: "disabled" };
+      }
+
       if (response_format && supportsResponseFormat(model)) {
         requestBody.response_format = response_format;
       }
@@ -703,10 +715,10 @@ export async function POST(request: NextRequest) {
 
       let response: Response;
       try {
-        response = await fetch(newapiUrl, {
+        response = await fetch(tokendanceUrl, {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${newapiApiKey}`,
+            Authorization: `Bearer ${tokendanceApiKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(requestBody),
@@ -726,7 +738,7 @@ export async function POST(request: NextRequest) {
         }
         return NextResponse.json(
           {
-            error: `New API error: ${response.status}`,
+            error: `TokenDance error: ${response.status}`,
             details: parsed ?? errorText,
           },
           { status: response.status }

@@ -6,7 +6,7 @@ const DASHSCOPE_CHAT_COMPLETIONS_URL = "https://dashscope.aliyuncs.com/compatibl
 
 const VALIDATION_TIMEOUT_MS = 15000;
 
-type Provider = "zenmux" | "dashscope" | "newapi";
+type Provider = "zenmux" | "dashscope" | "tokendance";
 
 interface ValidationResult {
   provider: Provider;
@@ -112,21 +112,21 @@ async function validateZenmuxKey(apiKey: string): Promise<ValidationResult> {
   }
 }
 
-function getNewapiUrl(baseUrl: string): string {
+function getTokendanceUrl(baseUrl: string): string {
   const trimmed = baseUrl.trim();
   if (!trimmed) return "";
   const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
   return `${withoutTrailingSlash}/chat/completions`;
 }
 
-async function validateNewapiKey(apiKey: string, baseUrl: string): Promise<ValidationResult> {
+async function validateTokendanceKey(apiKey: string, baseUrl: string): Promise<ValidationResult> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), VALIDATION_TIMEOUT_MS);
 
-  const newapiUrl = getNewapiUrl(baseUrl);
-  if (!newapiUrl) {
+  const tokendanceUrl = getTokendanceUrl(baseUrl);
+  if (!tokendanceUrl) {
     return {
-      provider: "newapi",
+      provider: "tokendance",
       valid: false,
       error: "无效的 Base URL",
       errorCode: "invalid_base_url",
@@ -134,14 +134,14 @@ async function validateNewapiKey(apiKey: string, baseUrl: string): Promise<Valid
   }
 
   try {
-    const response = await fetch(newapiUrl, {
+    const response = await fetch(tokendanceUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gemini-3-flash-preview",
+        model: "minimax-m2.7",
         messages: [{ role: "user", content: "hi" }],
         max_tokens: 1,
       }),
@@ -151,7 +151,7 @@ async function validateNewapiKey(apiKey: string, baseUrl: string): Promise<Valid
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      return { provider: "newapi", valid: true };
+      return { provider: "tokendance", valid: true };
     }
 
     const errorText = await response.text().catch(() => "");
@@ -168,7 +168,7 @@ async function validateNewapiKey(apiKey: string, baseUrl: string): Promise<Valid
 
     if (response.status === 401 || response.status === 403) {
       return {
-        provider: "newapi",
+        provider: "tokendance",
         valid: false,
         error: "API Key 无效或已过期",
         errorCode: "invalid_key",
@@ -186,7 +186,7 @@ async function validateNewapiKey(apiKey: string, baseUrl: string): Promise<Valid
 
       if (isQuotaError || response.status === 402) {
         return {
-          provider: "newapi",
+          provider: "tokendance",
           valid: false,
           error: "API Key 余额不足",
           errorCode: "insufficient_quota",
@@ -194,7 +194,7 @@ async function validateNewapiKey(apiKey: string, baseUrl: string): Promise<Valid
       }
 
       return {
-        provider: "newapi",
+        provider: "tokendance",
         valid: false,
         error: "请求频率超限，请稍后再试",
         errorCode: "rate_limit",
@@ -202,7 +202,7 @@ async function validateNewapiKey(apiKey: string, baseUrl: string): Promise<Valid
     }
 
     return {
-      provider: "newapi",
+      provider: "tokendance",
       valid: false,
       error: `验证失败: ${response.status} - ${errorMessage || errorText}`,
       errorCode: "unknown",
@@ -211,14 +211,14 @@ async function validateNewapiKey(apiKey: string, baseUrl: string): Promise<Valid
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === "AbortError") {
       return {
-        provider: "newapi",
+        provider: "tokendance",
         valid: false,
         error: "验证超时，请检查网络连接或 Base URL 是否正确",
         errorCode: "timeout",
       };
     }
     return {
-      provider: "newapi",
+      provider: "tokendance",
       valid: false,
       error: `网络错误: ${String(error)}`,
       errorCode: "network_error",
@@ -328,10 +328,10 @@ export async function POST(request: NextRequest) {
   try {
     const zenmuxKey = request.headers.get("x-zenmux-api-key")?.trim() || "";
     const dashscopeKey = request.headers.get("x-dashscope-api-key")?.trim() || "";
-    const newapiKey = request.headers.get("x-newapi-api-key")?.trim() || "";
-    const newapiBaseUrl = request.headers.get("x-newapi-base-url")?.trim() || "";
+    const tokendanceKey = request.headers.get("x-tokendance-api-key")?.trim() || "";
+    const tokendanceBaseUrl = request.headers.get("x-tokendance-base-url")?.trim() || "";
 
-    if (!zenmuxKey && !dashscopeKey && !newapiKey) {
+    if (!zenmuxKey && !dashscopeKey && !tokendanceKey) {
       return NextResponse.json(
         { error: "未提供任何 API Key", valid: false },
         { status: 400 }
@@ -347,13 +347,13 @@ export async function POST(request: NextRequest) {
     if (dashscopeKey) {
       validationPromises.push(validateDashscopeKey(dashscopeKey));
     }
-    if (newapiKey && newapiBaseUrl) {
-      validationPromises.push(validateNewapiKey(newapiKey, newapiBaseUrl));
-    } else if (newapiKey && !newapiBaseUrl) {
+    if (tokendanceKey && tokendanceBaseUrl) {
+      validationPromises.push(validateTokendanceKey(tokendanceKey, tokendanceBaseUrl));
+    } else if (tokendanceKey && !tokendanceBaseUrl) {
       results.push({
-        provider: "newapi",
+        provider: "tokendance",
         valid: false,
-        error: "未提供 New API Base URL",
+        error: "未提供 TokenDance Base URL",
         errorCode: "missing_base_url",
       });
     }
