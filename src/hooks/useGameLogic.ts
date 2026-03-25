@@ -413,7 +413,6 @@ export function useGameLogic() {
         return {
           ...state,
           dailySummaries: { ...state.dailySummaries, [state.day]: summary.bullets },
-          dailySummaryFacts: { ...state.dailySummaryFacts, [state.day]: summary.facts },
           dailySummaryVoteData: {
             ...(state.dailySummaryVoteData ?? {}),
             ...(summary.voteData ? { [state.day]: summary.voteData } : {}),
@@ -431,7 +430,7 @@ export function useGameLogic() {
     const dayStartIndex = (() => {
       for (let i = state.messages.length - 1; i >= 0; i--) {
         const m = state.messages[i];
-        if (m.isSystem && m.content === t("gameLogicMessages.dayBreak")) return i;
+        if (m.isSystem && m.content === t("system.dayBreak")) return i;
       }
       return 0;
     })();
@@ -439,7 +438,7 @@ export function useGameLogic() {
     const voteStartIndex = (() => {
       for (let i = state.messages.length - 1; i >= 0; i--) {
         const m = state.messages[i];
-        if (m.isSystem && m.content === t("gameLogicMessages.voteStart")) return i;
+        if (m.isSystem && m.content === t("system.voteStart")) return i;
       }
       return state.messages.length;
     })();

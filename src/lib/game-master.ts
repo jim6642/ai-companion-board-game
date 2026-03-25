@@ -9,7 +9,6 @@ import {
   type Phase,
   type ChatMessage,
   type Alignment,
-  type DailySummaryFact,
   type DailySummaryVoteData,
   isWolfRole,
   GENERATOR_MODEL,
@@ -636,17 +635,17 @@ function extractVoteDataFromDayMessages(
 
 export async function generateDailySummary(
   state: GameState
-): Promise<{ bullets: string[]; facts: DailySummaryFact[]; voteData?: DailySummaryVoteData }> {
+): Promise<{ bullets: string[]; voteData?: DailySummaryVoteData }> {
   const { t } = getI18n();
   const startTime = Date.now();
   const summaryModel = getSummaryModel();
-  const dayBreakShort = t("system.dayBreakShort");
+  const dayBreakText = t("system.dayBreak");
   const systemSpeaker = t("speakers.system");
 
   const dayStartIndex = (() => {
     for (let i = state.messages.length - 1; i >= 0; i--) {
       const m = state.messages[i];
-      if (m.isSystem && m.content === dayBreakShort) return i;
+      if (m.isSystem && m.content === dayBreakText) return i;
     }
     return 0;
   })();
@@ -706,12 +705,12 @@ export async function generateDailySummary(
       
       // Handle bullets array format (expected from AI)
       if (obj.bullets && Array.isArray(obj.bullets) && obj.bullets.length > 0) {
-        return { bullets: obj.bullets.map(b => String(b)), facts: [], voteData };
+        return { bullets: obj.bullets.map(b => String(b)), voteData };
       }
-      
+
       // Handle summary string format (fallback)
       if (typeof obj.summary === "string" && obj.summary.trim()) {
-        return { bullets: [obj.summary.trim()], facts: [], voteData };
+        return { bullets: [obj.summary.trim()], voteData };
       }
     }
   } catch {
@@ -723,7 +722,7 @@ export async function generateDailySummary(
     .replace(/```json\s*|\s*```/g, "")
     .trim();
 
-  return { bullets: fallback ? [fallback] : [], facts: [], voteData };
+  return { bullets: fallback ? [fallback] : [], voteData };
 }
 
 export async function* generateAISpeechStream(

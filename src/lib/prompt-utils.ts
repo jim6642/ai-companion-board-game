@@ -389,8 +389,7 @@ export const getDayStartIndex = (state: GameState): number => {
   const systemMessages = getSystemMessages();
   for (let i = state.messages.length - 1; i >= 0; i--) {
     const m = state.messages[i];
-    // Match both Chinese and English versions
-    if (m.isSystem && (m.content === "天亮了" || m.content === "Dawn breaks, please open your eyes" || m.content === systemMessages.dayBreak)) return i;
+    if (m.isSystem && m.content === systemMessages.dayBreak) return i;
   }
   return 0;
 };
@@ -399,8 +398,7 @@ export const getVoteStartIndex = (state: GameState): number => {
   const systemMessages = getSystemMessages();
   for (let i = state.messages.length - 1; i >= 0; i--) {
     const m = state.messages[i];
-    // Match both Chinese and English versions
-    if (m.isSystem && (m.content === "进入投票环节" || m.content === "发言结束，开始投票。" || m.content === "Discussion ends, voting begins." || m.content === systemMessages.voteStart)) return i;
+    if (m.isSystem && m.content === systemMessages.voteStart) return i;
   }
   return state.messages.length;
 };
@@ -427,10 +425,7 @@ export const checkNeedsMidDaySummary = (state: GameState, threshold: number = 60
     .map((m) => m.content)
     .join("\n");
 
-  const hasSummary = !!(
-    (state.dailySummaryFacts?.[state.day]?.length ?? 0) > 0 ||
-    (state.dailySummaries?.[state.day]?.length ?? 0) > 0
-  );
+  const hasSummary = (state.dailySummaries?.[state.day]?.length ?? 0) > 0;
 
   return {
     transcriptLength: transcript.length,
@@ -491,13 +486,8 @@ export const buildTodayTranscript = (
   if (!transcript) return "";
   if (transcript.length <= maxChars) return transcript;
 
-  const summaryFacts = state.dailySummaryFacts?.[state.day];
-  const summaryBullets = state.dailySummaries?.[state.day];
-  const summaryItems =
-    summaryFacts && summaryFacts.length > 0
-      ? summaryFacts.map((f) => f.fact).filter(Boolean)
-      : summaryBullets || [];
-  
+  const summaryItems = state.dailySummaries?.[state.day] || [];
+
   if (summaryItems.length > 0) {
     const separator = t("promptUtils.gameContext.semicolon");
     const maxSummaryChars = Math.min(1200, Math.max(300, Math.floor(maxChars * 0.4)));
