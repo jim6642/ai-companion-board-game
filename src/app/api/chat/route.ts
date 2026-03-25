@@ -369,6 +369,8 @@ async function runBatchItem(
         headers: {
           Authorization: `Bearer ${tokendanceApiKey}`,
           "Content-Type": "application/json",
+          "X-App-Name": "Wolfcha",
+          "X-Site-URL": "https://wolf-cha.com",
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
@@ -720,6 +722,8 @@ export async function POST(request: NextRequest) {
           headers: {
             Authorization: `Bearer ${tokendanceApiKey}`,
             "Content-Type": "application/json",
+            "X-App-Name": "Wolfcha",
+            "X-Site-URL": "https://wolf-cha.com",
           },
           body: JSON.stringify(requestBody),
           signal: controller.signal,
