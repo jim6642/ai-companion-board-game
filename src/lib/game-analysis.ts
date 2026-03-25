@@ -1445,39 +1445,7 @@ function generateFallbackAIData(state: GameState, humanPlayer: Player): AIAnalys
 }
 
 export function extractSpeeches(state: GameState, day: number): PlayerSpeech[] {
-  // First try dailySummaryFacts for structured per-player speech info
-  const facts = state.dailySummaryFacts?.[day];
-  if (facts && facts.length > 0) {
-    const speechMap = new Map<number, { key: string[]; other: string[] }>();
-    const keyTypes = new Set(["claim", "vote", "suspicion", "alignment"]);
-    
-    for (const fact of facts) {
-      if (fact.speakerSeat !== undefined && fact.speakerSeat !== null) {
-        const seat = fact.speakerSeat + 1;
-        if (!speechMap.has(seat)) {
-          speechMap.set(seat, { key: [], other: [] });
-        }
-        const bucket = speechMap.get(seat)!;
-        if (fact.type && keyTypes.has(fact.type)) {
-          bucket.key.push(fact.fact);
-        } else {
-          bucket.other.push(fact.fact);
-        }
-      }
-    }
-    
-    if (speechMap.size > 0) {
-      return Array.from(speechMap.entries())
-        .sort((a, b) => a[0] - b[0])
-        .map(([seat, { key, other }]) => {
-          const selected = key.length > 0 ? key.slice(0, 2) : other.slice(0, 1);
-          const content = convertToFirstPerson(selected.join("，") || "过");
-          return { seat, content };
-        });
-    }
-  }
-  
-  // Fallback: parse dailySummaries bullets to extract per-player info
+  // Parse dailySummaries bullets to extract per-player info
   const bullets = state.dailySummaries?.[day];
   if (bullets && bullets.length > 0) {
     const speechMap = new Map<number, string[]>();
