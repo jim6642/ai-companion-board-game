@@ -260,7 +260,7 @@ export const MODEL_IDS = {
   tokendance: {
     minimaxM27: "minimax-m2.7",
     qwen3Max: "qwen3-max",
-    glm47: "glm-4.7",
+    glm5: "glm-5",
     kimiK25: "kimi-k2.5",
     deepseekV32: "deepseek-v3.2",
   },
@@ -290,7 +290,7 @@ export const BUILTIN_PLAYER_MODELS: ModelRef[] = [
   // { provider: "zenmux", model: MODEL_IDS.zenmux.doubaoSeed },
   { provider: "tokendance", model: MODEL_IDS.tokendance.minimaxM27, temperature: 1 },
   { provider: "tokendance", model: MODEL_IDS.tokendance.qwen3Max },
-  { provider: "tokendance", model: MODEL_IDS.tokendance.glm47, temperature: 1 },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.glm5, temperature: 1 },
   { provider: "tokendance", model: MODEL_IDS.tokendance.kimiK25 },
   { provider: "tokendance", model: MODEL_IDS.tokendance.deepseekV32 },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
@@ -301,7 +301,7 @@ export const BUILTIN_PLAYER_MODELS: ModelRef[] = [
 export const AVAILABLE_MODELS: ModelRef[] = [
   { provider: "tokendance", model: MODEL_IDS.tokendance.minimaxM27, temperature: 1 },
   { provider: "tokendance", model: MODEL_IDS.tokendance.qwen3Max },
-  { provider: "tokendance", model: MODEL_IDS.tokendance.glm47, temperature: 1 },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.glm5, temperature: 1 },
   { provider: "tokendance", model: MODEL_IDS.tokendance.kimiK25 },
   { provider: "tokendance", model: MODEL_IDS.tokendance.deepseekV32 },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
