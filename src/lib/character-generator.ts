@@ -4,6 +4,7 @@ import {
   ALL_MODELS,
   GENERATOR_MODEL,
   PLAYER_MODELS,
+  PROJECT_MODELS,
   filterPlayerModels,
   type GameScenario,
   type ModelRef,
@@ -48,12 +49,20 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
+function getModelRefForModel(model: string): ModelRef {
+  return (
+    PROJECT_MODELS.find((ref) => ref.model === model) ??
+    ALL_MODELS.find((ref) => ref.model === model) ??
+    { provider: "zenmux" as const, model }
+  );
+}
+
 export const sampleModelRefs = (count: number): ModelRef[] => {
   // Default pool when custom key is not enabled
   const defaultPool =
     PLAYER_MODELS.length > 0
       ? PLAYER_MODELS
-      : [{ provider: "zenmux" as const, model: GENERATOR_MODEL }];
+      : [getModelRefForModel(GENERATOR_MODEL)];
 
   const pool = (() => {
     if (!isCustomKeyEnabled()) return defaultPool;

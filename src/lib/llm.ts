@@ -95,6 +95,7 @@ export interface ReasoningOptions {
 
 export interface GenerateOptions {
   model: string;
+  provider?: Provider;
   messages: LLMMessage[];
   temperature?: number;
   max_tokens?: number;
@@ -110,6 +111,7 @@ export function mergeOptionsFromModelRef<T extends GenerateOptions>(
 ): T {
   if (!modelRef) return options;
   const out = { ...options } as T;
+  (out as GenerateOptions).provider = modelRef.provider;
   if (modelRef.temperature !== undefined) (out as GenerateOptions).temperature = modelRef.temperature;
   if (modelRef.reasoning !== undefined) (out as GenerateOptions).reasoning = modelRef.reasoning;
   return out;
@@ -226,8 +228,34 @@ async function fetchWithRetry(
 }
 
 /** 剥离 MiniMax 等模型在 content 中嵌入的 <think>...</think> 思考块 */
-function stripThinkBlocks(text: string): string {
-  return text.replace(/<think>[\s\S]*?<\/think>\n*/g, "").trim();
+const REASONING_TAG_NAMES = ["think", "thinking", "analysis", "reasoning", "thought"];
+const REASONING_TAG_PATTERN = REASONING_TAG_NAMES.join("|");
+
+/** Remove model reasoning artifacts that may be embedded in assistant content. */
+export function stripReasoningArtifacts(text: string): string {
+  if (!text) return text;
+
+  return text
+    .replace(
+      new RegExp(
+        `<\\s*(${REASONING_TAG_PATTERN})\\b[^>]*>[\\s\\S]*?<\\s*\\/\\s*\\1\\s*>\\s*`,
+        "gi"
+      ),
+      ""
+    )
+    .replace(new RegExp(`<\\s*\\/?\\s*(${REASONING_TAG_PATTERN})\\b[^>]*>`, "gi"), "")
+    .trim();
+}
+
+function findReasoningEnd(text: string): { end: number } | null {
+  const match = new RegExp(`<\\s*\\/\\s*(${REASONING_TAG_PATTERN})\\s*>`, "i").exec(text);
+  return match ? { end: match.index + match[0].length } : null;
+}
+
+function couldBeReasoningStart(text: string): boolean {
+  if (!text.startsWith("<")) return false;
+  const lowered = text.toLowerCase();
+  return REASONING_TAG_NAMES.some((name) => `<${name}`.startsWith(lowered) || lowered.startsWith(`<${name}`));
 }
 
 export function stripMarkdownCodeFences(text: string): string {
@@ -455,6 +483,7 @@ export async function generateCompletion(
       },
       body: JSON.stringify({
         model: modelToUse,
+        ...(options.provider ? { provider: options.provider } : {}),
         messages: options.messages,
         temperature: options.temperature ?? 0.7,
         max_tokens: maxTokens,
@@ -510,7 +539,7 @@ export async function generateCompletion(
   });
 
   return {
-    content: stripThinkBlocks(assistantMessage.content),
+    content: stripReasoningArtifacts(assistantMessage.content),
     reasoning_details: assistantMessage.reasoning_details,
     raw: result,
   };
@@ -573,7 +602,7 @@ export async function generateCompletionBatch(
     }
     return {
       ok: true,
-      content: assistantMessage.content,
+      content: stripReasoningArtifacts(assistantMessage.content),
       reasoning_details: assistantMessage.reasoning_details,
       raw,
     };
@@ -615,6 +644,7 @@ export async function* generateCompletionStream(
       },
       body: JSON.stringify({
         model: modelToUse,
+        ...(options.provider ? { provider: options.provider } : {}),
         messages: options.messages,
         temperature: options.temperature ?? 0.7,
         max_tokens: maxTokens,
@@ -672,25 +702,27 @@ export async function* generateCompletionStream(
         const delta = json.choices?.[0]?.delta?.content;
         if (delta) {
           if (thinkStripped) {
-            totalOutputChars += delta.length;
-            yield delta;
+            const cleaned = stripReasoningArtifacts(delta);
+            totalOutputChars += cleaned.length;
+            if (cleaned) yield cleaned;
           } else {
             thinkBuffer += delta;
-            const endIdx = thinkBuffer.indexOf("</think>");
-            if (endIdx !== -1) {
+            const reasoningEnd = findReasoningEnd(thinkBuffer);
+            if (reasoningEnd) {
               // 找到 </think>，丢弃之前内容，从之后开始输出
-              const after = thinkBuffer.slice(endIdx + 8).replace(/^\n+/, "");
+              const after = stripReasoningArtifacts(thinkBuffer.slice(reasoningEnd.end).replace(/^\n+/, ""));
               thinkStripped = true;
               thinkBuffer = "";
               if (after) {
                 totalOutputChars += after.length;
                 yield after;
               }
-            } else if (!thinkBuffer.startsWith("<") && thinkBuffer.length >= 1) {
+            } else if (!couldBeReasoningStart(thinkBuffer) && thinkBuffer.length >= 1) {
               // 确认不是 <think> 块，直接透传
               thinkStripped = true;
-              totalOutputChars += thinkBuffer.length;
-              yield thinkBuffer;
+              const cleaned = stripReasoningArtifacts(thinkBuffer);
+              totalOutputChars += cleaned.length;
+              if (cleaned) yield cleaned;
               thinkBuffer = "";
             }
             // 否则继续缓冲，等待 </think> 或确认非 think 块

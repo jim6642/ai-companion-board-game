@@ -250,7 +250,6 @@ export const MODEL_IDS = {
     claudeHaiku45: "anthropic/claude-haiku-4.5",
     claudeSonnet45: "anthropic/claude-sonnet-4.5",
     claudeOpus45: "anthropic/claude-opus-4.5",
-    deepseekV4Pro: "deepseek/deepseek-v4-pro",
     deepseekV4Flash: "deepseek/deepseek-v4-flash",
     grok4: "x-ai/grok-4",
     glm47: "z-ai/glm-4.7",
@@ -265,13 +264,14 @@ export const MODEL_IDS = {
     glm5: "glm-5",
     kimiK25: "kimi-k2.5",
     deepseekV32: "deepseek-v3.2",
+    deepseekV4Flash: "deepseek-v4-flash",
   },
 } as const;
 
 export const DEFAULT_MODEL_CONFIG = {
-  generator: MODEL_IDS.zenmux.geminiFlashLite,
-  summary: MODEL_IDS.zenmux.geminiFlashLite,
-  review: MODEL_IDS.zenmux.geminiFlashPreview,
+  generator: MODEL_IDS.tokendance.deepseekV4Flash,
+  summary: MODEL_IDS.tokendance.deepseekV4Flash,
+  review: MODEL_IDS.tokendance.deepseekV4Flash,
   validation: {
     zenmux: MODEL_IDS.zenmux.geminiFlashLite,
     dashscope: MODEL_IDS.dashscope.deepseek,
@@ -295,6 +295,7 @@ export const BUILTIN_PLAYER_MODELS: ModelRef[] = [
   { provider: "tokendance", model: MODEL_IDS.tokendance.glm5, temperature: 1 },
   { provider: "tokendance", model: MODEL_IDS.tokendance.kimiK25 },
   { provider: "tokendance", model: MODEL_IDS.tokendance.deepseekV32 },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.deepseekV4Flash },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
 ];
 
@@ -306,6 +307,7 @@ export const AVAILABLE_MODELS: ModelRef[] = [
   { provider: "tokendance", model: MODEL_IDS.tokendance.glm5, temperature: 1 },
   { provider: "tokendance", model: MODEL_IDS.tokendance.kimiK25 },
   { provider: "tokendance", model: MODEL_IDS.tokendance.deepseekV32 },
+  { provider: "tokendance", model: MODEL_IDS.tokendance.deepseekV4Flash },
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
 ];
 
@@ -313,8 +315,7 @@ export const AVAILABLE_MODELS: ModelRef[] = [
 // These are intentionally not exposed in the custom-key model selector.
 export const PROJECT_MODELS: ModelRef[] = [
   ...AVAILABLE_MODELS,
-  { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
-  // Generator / summary / review system models (zenmux)
+  // Legacy system models kept available for older persisted settings.
   { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashLite },
   { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashPreview },
 ];
@@ -324,7 +325,6 @@ export const ALL_MODELS: ModelRef[] = [
   { provider: "dashscope", model: MODEL_IDS.dashscope.deepseek },
   { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashLite },
   { provider: "zenmux", model: MODEL_IDS.zenmux.deepseek },
-  { provider: "zenmux", model: MODEL_IDS.zenmux.deepseekV4Pro },
   { provider: "zenmux", model: MODEL_IDS.zenmux.deepseekV4Flash },
   { provider: "zenmux", model: MODEL_IDS.zenmux.geminiFlashPreview },
   { provider: "zenmux", model: MODEL_IDS.zenmux.gpt52Chat },
@@ -336,11 +336,18 @@ export const ALL_MODELS: ModelRef[] = [
   { provider: "zenmux", model: MODEL_IDS.zenmux.minimaxM21, temperature: 1, reasoning: { enabled: false } },
 ];
 
-// Models not allowed for in-game players (summary & generation only)
-export const NON_PLAYER_MODELS: string[] = [GENERATOR_MODEL, SUMMARY_MODEL, REVIEW_MODEL];
+// Models not allowed for in-game players (summary & generation only).
+// Compare provider + model so a project system model does not accidentally
+// exclude the same model ID from a playable provider pool.
+export const NON_PLAYER_MODELS: ModelRef[] = [];
 
 export function filterPlayerModels(models: ModelRef[]): ModelRef[] {
-  return models.filter((ref) => !NON_PLAYER_MODELS.includes(ref.model));
+  return models.filter(
+    (ref) =>
+      !NON_PLAYER_MODELS.some(
+        (blocked) => blocked.provider === ref.provider && blocked.model === ref.model,
+      ),
+  );
 }
 
 // Built-in player model pool used when custom key is disabled.

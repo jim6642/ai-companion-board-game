@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { cookies, headers } from "next/headers";
 import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next"
 import { I18nProvider } from "@/i18n/I18nProvider";
-import { defaultLocale, localeToHtmlLang } from "@/i18n/config";
+import { STORAGE_KEY, defaultLocale, isSupportedLocale, localeToHtmlLang, type AppLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/messages";
 import { JsonLd, getGameJsonLd, getWebsiteJsonLd, getOrganizationJsonLd } from "@/components/seo/JsonLd";
 
@@ -85,13 +86,26 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+function resolveInitialLocale(pathname: string | null, cookieLocale: string | undefined): AppLocale {
+  if (pathname && /^\/zh(\/|$)/.test(pathname)) return "zh";
+  if (isSupportedLocale(cookieLocale)) return cookieLocale;
+  return defaultLocale;
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const requestHeaders = await headers();
+  const cookieStore = await cookies();
+  const initialLocale = resolveInitialLocale(
+    requestHeaders.get("x-wolfcha-pathname"),
+    cookieStore.get(STORAGE_KEY)?.value
+  );
+
   return (
-    <html lang={localeToHtmlLang[defaultLocale]} suppressHydrationWarning>
+    <html lang={localeToHtmlLang[initialLocale]} suppressHydrationWarning>
       <Analytics />
       <head>
         <Script
@@ -111,7 +125,7 @@ export default function RootLayout({
         <JsonLd data={getWebsiteJsonLd()} />
         <JsonLd data={getGameJsonLd()} />
         <JsonLd data={getOrganizationJsonLd()} />
-        <I18nProvider>
+        <I18nProvider initialLocale={initialLocale}>
           <Toaster position="top-center" closeButton />
           {children}
         </I18nProvider>

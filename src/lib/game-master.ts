@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { generateCompletion, generateCompletionBatch, generateCompletionStream, mergeOptionsFromModelRef, stripMarkdownCodeFences, type LLMMessage } from "./llm";
+import { generateCompletion, generateCompletionBatch, generateCompletionStream, mergeOptionsFromModelRef, stripMarkdownCodeFences, stripReasoningArtifacts, type LLMMessage } from "./llm";
 import type { ChatCompletionResponse } from "./llm";
 import { StreamingSpeechParser } from "./streaming-speech-parser";
 import {
@@ -11,9 +11,9 @@ import {
   type Alignment,
   type DailySummaryVoteData,
   isWolfRole,
-  GENERATOR_MODEL,
-  SUMMARY_MODEL,
+  ALL_MODELS,
   PLAYER_MODELS,
+  PROJECT_MODELS,
   type ModelRef,
 } from "@/types/game";
 import { GAME_TEMPERATURE } from "./ai-config";
@@ -39,7 +39,7 @@ function getRandomModelRef(): ModelRef {
   if (fallback) return fallback;
   if (PLAYER_MODELS.length === 0) {
     // Fallback to GENERATOR_MODEL if no models available
-    return { provider: "zenmux" as const, model: getGeneratorModel() };
+    return getModelRefForModel(getGeneratorModel());
   }
   const randomIndex = Math.floor(Math.random() * PLAYER_MODELS.length);
   return PLAYER_MODELS[randomIndex];
@@ -47,11 +47,19 @@ function getRandomModelRef(): ModelRef {
 
 const phaseManager = new PhaseManager();
 
+function getModelRefForModel(model: string): ModelRef {
+  return (
+    PROJECT_MODELS.find((ref) => ref.model === model) ??
+    ALL_MODELS.find((ref) => ref.model === model) ??
+    { provider: "zenmux" as const, model }
+  );
+}
+
 function sanitizeModelArtifacts(text: string): string {
   const raw = String(text ?? "");
   if (!raw) return raw;
 
-  return raw
+  return stripReasoningArtifacts(raw)
     .replace(/<\|begin▁of▁sentence\|>/g, "")
     .replace(/<\|end▁of▁sentence\|>/g, "")
     .replace(/<｜begin▁of▁sentence｜>/g, "")
@@ -1004,7 +1012,7 @@ export async function generateAISpeechSegmentsStream(
   const parser = new StreamingSpeechParser({
     onSegmentReceived: (segment, index) => {
       const sanitized = sanitizeSeatMentions(sanitizeModelArtifacts(segment), state.players);
-      if (!emittedSegments.has(sanitized)) {
+      if (sanitized && !emittedSegments.has(sanitized)) {
         emittedSegments.add(sanitized);
         options.onSegmentReceived?.(sanitized, emittedCount++);
       }

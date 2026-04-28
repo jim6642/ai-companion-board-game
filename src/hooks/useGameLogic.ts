@@ -20,7 +20,7 @@ import { useLocalStorageState } from "ahooks";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
-import { PLAYER_MODELS, isWolfRole, type GameState, type Player, type Phase, type Role, type DevPreset, type ModelRef, type StartGameOptions } from "@/types/game";
+import { ALL_MODELS, PLAYER_MODELS, PROJECT_MODELS, isWolfRole, type GameState, type Player, type Phase, type Role, type DevPreset, type ModelRef, type StartGameOptions } from "@/types/game";
 import { gameStateAtom, isValidTransition, clearPersistedGameState, isGameInProgress } from "@/store/game-machine";
 import { getGeneratorModel } from "@/lib/api-keys";
 import {
@@ -61,12 +61,20 @@ import { useDayPhase } from "./game-phases/useDayPhase";
 import { useBadgePhase } from "./game-phases/useBadgePhase";
 import { useSpecialEvents } from "./game-phases/useSpecialEvents";
 
+function getModelRefForModel(model: string): ModelRef {
+  return (
+    PROJECT_MODELS.find((ref) => ref.model === model) ??
+    ALL_MODELS.find((ref) => ref.model === model) ??
+    { provider: "zenmux" as const, model }
+  );
+}
+
 function getRandomModelRef(): ModelRef {
   const fallback = sampleModelRefs(1)[0];
   if (fallback) return fallback;
   if (PLAYER_MODELS.length === 0) {
     // Fallback to GENERATOR_MODEL if no models available
-    return { provider: "zenmux" as const, model: getGeneratorModel() };
+    return getModelRefForModel(getGeneratorModel());
   }
   const randomIndex = Math.floor(Math.random() * PLAYER_MODELS.length);
   return PLAYER_MODELS[randomIndex];

@@ -4,6 +4,9 @@ const LOCALE_COOKIE = "wolfcha.locale";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-wolfcha-pathname", pathname);
+  const continueWithPathname = () => NextResponse.next({ request: { headers: requestHeaders } });
 
   // Skip static files, API routes, and paths that already have locale
   if (
@@ -12,7 +15,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.includes(".")
   ) {
-    return NextResponse.next();
+    return continueWithPathname();
   }
 
   // Check if user has a saved locale preference (cookie)
@@ -24,7 +27,7 @@ export function middleware(request: NextRequest) {
   }
   if (savedLocale === "en") {
     // User explicitly chose English, stay on current path
-    return NextResponse.next();
+    return continueWithPathname();
   }
 
   // No saved preference: detect browser language from Accept-Language header
@@ -39,7 +42,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  return continueWithPathname();
 }
 
 export const config = {

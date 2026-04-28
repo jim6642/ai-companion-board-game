@@ -51,7 +51,7 @@ const getLocaleFromPathname = (pathname: string): AppLocale => {
   return hasZhPrefix(pathname) ? "zh" : "en";
 };
 
-const resolvePreferredLocale = (): AppLocale => {
+const resolvePreferredLocale = (fallback: AppLocale = currentLocale): AppLocale => {
   if (typeof window !== "undefined") {
     try {
       const urlLocale = getLocaleFromPathname(window.location.pathname);
@@ -67,7 +67,7 @@ const resolvePreferredLocale = (): AppLocale => {
   const cookie = readLocaleFromCookie();
   if (cookie) return cookie;
 
-  return currentLocale;
+  return fallback;
 };
 
 export const getLocale = (): AppLocale => {
@@ -116,10 +116,13 @@ export const subscribeLocale = (listener: (locale: AppLocale) => void): (() => v
   return () => listeners.delete(listener);
 };
 
-export const loadLocaleFromStorage = (): AppLocale => {
-  if (typeof window === "undefined") return currentLocale;
+export const loadLocaleFromStorage = (fallback: AppLocale = currentLocale): AppLocale => {
+  if (typeof window === "undefined") {
+    currentLocale = fallback;
+    return currentLocale;
+  }
   try {
-    const preferred = resolvePreferredLocale();
+    const preferred = resolvePreferredLocale(fallback);
     currentLocale = preferred;
   } catch {
     // Ignore storage errors
