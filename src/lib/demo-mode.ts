@@ -5,7 +5,7 @@
  * read through `demo-config` modules, not from this file.
  */
 
-const GUEST_ID_STORAGE_KEY = "wolfcha_guest_id";
+const GUEST_ID_STORAGE_KEY = "aicb_guest_id";
 const GUEST_ID_PREFIX = "guest_";
 
 function generateFingerprint(): string {

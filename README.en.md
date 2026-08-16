@@ -1,10 +1,10 @@
-# Wolfcha
+# AI Companion Board Game
 
 <div align="center">
-  <img src="public/logo.png" alt="Wolfcha Logo" width="240" />
+  <img src="public/logo.png" alt="AI Companion Board Game Logo" width="240" />
   <h3>Play Werewolf with AI — a full table, no party required</h3>
   <p>
-    <a href="https://wolf-cha.com">Play Online (wolf-cha.com)</a>
+    <a href="https://github.com/jim6642/ai-companion-board-game">Play Online (https://github.com/jim6642/ai-companion-board-game)</a>
   </p>
 </div>
 
@@ -22,7 +22,7 @@ Current sponsors:
 
 > **Note**: This project was born at the **"Guancha + ModelScope Global Hackathon"** as an AI-native game.
 > 
-> "Wolfcha" combines Wolf (Werewolf) + Cha (猹, a character from Chinese literature). It's a nod to the hackathon host while also capturing the fun of watching AI characters interact — like spectating a show.
+> "AI Companion Board Game" combines Wolf (Werewolf) + Cha (猹, a character from Chinese literature). It's a nod to the hackathon host while also capturing the fun of watching AI characters interact — like spectating a show.
 
 ## 📖 Background
 
@@ -84,8 +84,8 @@ To run this project locally:
 1.  **Clone the repository**
 
 ```bash
-git clone https://github.com/oil-oil/wolfcha.git
-cd wolfcha
+git clone https://github.com/oil-oil/aicb.git
+cd aicb
 ```
 
 2.  **Install dependencies**

@@ -8,10 +8,10 @@ import { LandingFaq } from "@/components/seo/landing/LandingFaq";
 import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLinks";
 
 export const metadata: Metadata = {
-  title: "Social Deduction Games: The Complete Genre Guide | Wolfcha",
+  title: "Social Deduction Games: The Complete Genre Guide | AI Companion Board Game",
   description: "Explore social deduction games like Werewolf, Mafia, and more. Learn about the genre, popular titles, and why hidden role games are so engaging.",
   keywords: ["social deduction games", "hidden role games", "games like werewolf", "party deception games"],
-  alternates: { canonical: "https://wolf-cha.com/guides/social-deduction-games" },
+  alternates: { canonical: "https://github.com/jim6642/ai-companion-board-game/guides/social-deduction-games" },
 };
 
 const faqItems = [

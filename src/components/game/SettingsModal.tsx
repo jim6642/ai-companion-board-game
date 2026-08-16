@@ -190,7 +190,7 @@ export function SettingsModal({
       const safeGameId = (gameState.gameId || "").replace(/[^a-zA-Z0-9_-]/g, "");
       const ts = new Date().toISOString().replace(/[:.]/g, "-");
       a.href = url;
-      a.download = `wolfcha-log-${safeGameId || "game"}-${ts}.json`;
+      a.download = `aicb-log-${safeGameId || "game"}-${ts}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();

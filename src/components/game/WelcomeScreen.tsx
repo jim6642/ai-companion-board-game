@@ -24,6 +24,7 @@ import { useCustomCharacters } from "@/hooks/useCustomCharacters";
 import { useCredits } from "@/hooks/useCredits";
 import { difficultyAtom, playerCountAtom, preferredRoleAtom } from "@/store/settings";
 import { getGeneratorModel, hasDashscopeKey, hasTokendanceKey, hasZenmuxKey, isCustomKeyEnabled } from "@/lib/api-keys";
+import { PERSONAL_PROTOTYPE_MODE } from "@/lib/prototype-mode";
 import { useAppLocale } from "@/i18n/useAppLocale";
 import {
   SPRING_CAMPAIGN_CODE,
@@ -51,7 +52,7 @@ type SponsorCardProps = {
   children?: React.ReactNode;
 };
 
-const CUSTOM_CHARACTER_SELECTION_STORAGE_KEY = "wolfcha_custom_character_selection";
+const CUSTOM_CHARACTER_SELECTION_STORAGE_KEY = "aicb_custom_character_selection";
 
 // Track sponsor click
 async function trackSponsorClick(sponsorId: string) {
@@ -88,8 +89,8 @@ function SponsorCard({
   // Add ref parameter to href for tracking on sponsor's side
   // Special handling for OpenCreator: use promo parameter instead of ref
   const hrefWithRef = sponsorId === "opencreator"
-    ? (href.includes("?") ? `${href}&promo=wolfcha` : `${href}?promo=wolfcha`)
-    : (href.includes("?") ? `${href}&ref=wolfcha` : `${href}?ref=wolfcha`);
+    ? (href.includes("?") ? `${href}&promo=aicb` : `${href}?promo=aicb`)
+    : (href.includes("?") ? `${href}&ref=aicb` : `${href}?ref=aicb`);
 
   return (
     <motion.a
@@ -330,7 +331,7 @@ export function WelcomeScreen({
     : 0;
   const hasSpringQuota = springCampaignActiveNow && effectiveSpringRemainingQuota > 0;
   const mayHaveUnclaimedSpringQuota = springCampaignActiveNow && !isSpringCampaignForToday;
-  const springFestivalSeenKey = `wolfcha:${SPRING_CAMPAIGN_CODE}:welcome_seen`;
+  const springFestivalSeenKey = `aicb:${SPRING_CAMPAIGN_CODE}:welcome_seen`;
 
   useEffect(() => {
     if (locale === "en") setIsGroupOpen(false);
@@ -384,7 +385,7 @@ export function WelcomeScreen({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onStorage = (e: StorageEvent) => {
-      if (e.key !== "wolfcha_custom_key_enabled") return;
+      if (e.key !== "aicb_custom_key_enabled") return;
       setCustomKeyEnabled(isCustomKeyEnabled());
     };
     window.addEventListener("storage", onStorage);
@@ -428,7 +429,7 @@ export function WelcomeScreen({
 
   // Fetch GitHub stars
   useEffect(() => {
-    fetch('https://api.github.com/repos/oil-oil/wolfcha')
+    fetch('https://api.github.com/repos/oil-oil/aicb')
       .then(res => res.json())
       .then(data => {
         if (data.stargazers_count !== undefined) {
@@ -699,11 +700,11 @@ export function WelcomeScreen({
       return;
     }
 
-    const latestDemoConfig = await refreshDemoConfig(true);
-    const demoModeActive = latestDemoConfig.active;
+    const latestDemoConfig = PERSONAL_PROTOTYPE_MODE ? null : await refreshDemoConfig(true);
+    const demoModeActive = latestDemoConfig?.active ?? false;
 
     // Demo mode: allow guests and skip credit checks
-    if (!user && !demoModeActive) {
+    if (!user && !demoModeActive && !PERSONAL_PROTOTYPE_MODE) {
       setIsAuthOpen(true);
       toast(t("welcome.toast.signInFirst"));
       return;
@@ -713,6 +714,7 @@ export function WelcomeScreen({
 
     if (
       !demoModeActive &&
+      !PERSONAL_PROTOTYPE_MODE &&
       !hasUserKey &&
       credits !== null &&
       credits <= LOW_CREDIT_THRESHOLD &&
@@ -723,7 +725,7 @@ export function WelcomeScreen({
       return;
     }
 
-    await startGameWithCreditGuard(demoModeActive || hasUserKey);
+    await startGameWithCreditGuard(PERSONAL_PROTOTYPE_MODE || demoModeActive || hasUserKey);
   };
 
   const handleOpenPayAsYouGo = () => {
@@ -732,9 +734,9 @@ export function WelcomeScreen({
   };
 
   const handleStartGameFromLowCreditModal = async () => {
-    const latestDemoConfig = await refreshDemoConfig(true);
+    const latestDemoConfig = PERSONAL_PROTOTYPE_MODE ? null : await refreshDemoConfig(true);
     const hasUserKey = hasUserProvidedLlmKey();
-    await startGameWithCreditGuard(latestDemoConfig.active || hasUserKey);
+    await startGameWithCreditGuard(PERSONAL_PROTOTYPE_MODE || Boolean(latestDemoConfig?.active) || hasUserKey);
   };
 
   const handleOpenGroup = () => {
@@ -1017,7 +1019,7 @@ export function WelcomeScreen({
               )}
               <Button asChild variant="outline" className="justify-start">
                 <a
-                  href="https://github.com/oil-oil/wolfcha"
+                  href="https://github.com/oil-oil/aicb"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -1077,7 +1079,7 @@ export function WelcomeScreen({
           <div className="hidden sm:flex items-center gap-2">
             <LocaleSwitcher className="shrink-0" />
             <a
-              href="https://github.com/oil-oil/wolfcha"
+              href="https://github.com/oil-oil/aicb"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-1.5 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] px-2 py-1 text-[11px] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all group"
@@ -1226,7 +1228,7 @@ export function WelcomeScreen({
             {/* Mobile: inline sponsor stamps at top of paper */}
             <div className="wc-paper-sponsors sm:hidden">
               <a
-                href="https://bailian.console.aliyun.com/?ref=wolfcha"
+                href="https://bailian.console.aliyun.com/?ref=aicb"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="wc-paper-stamp"
@@ -1237,7 +1239,7 @@ export function WelcomeScreen({
                 <span className="wc-paper-stamp__name">百炼</span>
               </a>
               <a
-                href="https://tokendance.agent-universe.cn/?ref=wolfcha"
+                href="https://tokendance.agent-universe.cn/?ref=aicb"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="wc-paper-stamp wc-paper-stamp--tokendance"
@@ -1249,7 +1251,7 @@ export function WelcomeScreen({
               </a>
               {/* Temporarily hidden: Watcha paper stamp
               <a
-                href="https://watcha.cn/?ref=wolfcha"
+                href="https://watcha.cn/?ref=aicb"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="wc-paper-stamp"
@@ -1263,7 +1265,7 @@ export function WelcomeScreen({
             </div>
 
             <div className="mt-2 text-center">
-              <div className="wc-contract-title">WOLFCHA</div>
+              <div className="wc-contract-title">AI COMPANION BOARD GAME</div>
               <div className="wc-contract-subtitle">{t("welcome.subtitle")}</div>
             </div>
 
@@ -1299,7 +1301,7 @@ export function WelcomeScreen({
             {/* Temporarily hidden: Watcha official rating badge
             <div className="mt-5 flex justify-center">
               <a
-                href="https://watcha.cn/products/wolfcha?tab=review&utm_source=product-badge&utm_content=review"
+                href="https://watcha.cn/products/aicb?tab=review&utm_source=product-badge&utm_content=review"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="wc-watcha-paper-badge"
@@ -1307,7 +1309,7 @@ export function WelcomeScreen({
                 title={t("welcome.watchaRating.title")}
               >
                 <img
-                  src="https://watcha.cn/api/v2/products/wolfcha/badge?style=1&dark=false"
+                  src="https://watcha.cn/api/v2/products/aicb/badge?style=1&dark=false"
                   alt={t("welcome.watchaRating.title")}
                   width={360}
                   loading="lazy"

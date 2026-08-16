@@ -1,18 +1,18 @@
 import { ALL_MODELS, GENERATOR_MODEL, SUMMARY_MODEL, REVIEW_MODEL } from "@/types/game";
 
-const ZENMUX_API_KEY_STORAGE = "wolfcha_zenmux_api_key";
-const DASHSCOPE_API_KEY_STORAGE = "wolfcha_dashscope_api_key";
-const TOKENDANCE_API_KEY_STORAGE = "wolfcha_tokendance_api_key";
-const MINIMAX_API_KEY_STORAGE = "wolfcha_minimax_api_key";
-const MINIMAX_GROUP_ID_STORAGE = "wolfcha_minimax_group_id";
-const CUSTOM_KEY_ENABLED_STORAGE = "wolfcha_custom_key_enabled";
-const SELECTED_MODELS_STORAGE = "wolfcha_selected_models";
-const GENERATOR_MODEL_STORAGE = "wolfcha_generator_model";
-const SUMMARY_MODEL_STORAGE = "wolfcha_summary_model";
-const REVIEW_MODEL_STORAGE = "wolfcha_review_model";
-const VALIDATED_ZENMUX_KEY_STORAGE = "wolfcha_validated_zenmux_key";
-const VALIDATED_DASHSCOPE_KEY_STORAGE = "wolfcha_validated_dashscope_key";
-const VALIDATED_TOKENDANCE_KEY_STORAGE = "wolfcha_validated_tokendance_key";
+const ZENMUX_API_KEY_STORAGE = "aicb_zenmux_api_key";
+const DASHSCOPE_API_KEY_STORAGE = "aicb_dashscope_api_key";
+const TOKENDANCE_API_KEY_STORAGE = "aicb_tokendance_api_key";
+const MINIMAX_API_KEY_STORAGE = "aicb_minimax_api_key";
+const MINIMAX_GROUP_ID_STORAGE = "aicb_minimax_group_id";
+const CUSTOM_KEY_ENABLED_STORAGE = "aicb_custom_key_enabled";
+const SELECTED_MODELS_STORAGE = "aicb_selected_models";
+const GENERATOR_MODEL_STORAGE = "aicb_generator_model";
+const SUMMARY_MODEL_STORAGE = "aicb_summary_model";
+const REVIEW_MODEL_STORAGE = "aicb_review_model";
+const VALIDATED_ZENMUX_KEY_STORAGE = "aicb_validated_zenmux_key";
+const VALIDATED_DASHSCOPE_KEY_STORAGE = "aicb_validated_dashscope_key";
+const VALIDATED_TOKENDANCE_KEY_STORAGE = "aicb_validated_tokendance_key";
 export const TOKENDANCE_BASE_URL = "https://tokendance.agent-universe.cn/gateway/v1";
 
 function canUseStorage(): boolean {
@@ -279,8 +279,8 @@ export function clearApiKeys() {
   window.localStorage.removeItem(VALIDATED_ZENMUX_KEY_STORAGE);
   window.localStorage.removeItem(VALIDATED_DASHSCOPE_KEY_STORAGE);
   window.localStorage.removeItem(VALIDATED_TOKENDANCE_KEY_STORAGE);
-  window.localStorage.removeItem("wolfcha_tokendance_base_url");
-  window.localStorage.removeItem("wolfcha_validated_tokendance_base_url");
+  window.localStorage.removeItem("aicb_tokendance_base_url");
+  window.localStorage.removeItem("aicb_validated_tokendance_base_url");
 }
 
 export interface KeyValidationResult {

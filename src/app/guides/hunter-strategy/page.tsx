@@ -8,11 +8,11 @@ import { LandingFaq } from "@/components/seo/landing/LandingFaq";
 import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLinks";
 
 export const metadata: Metadata = {
-  title: "Hunter Strategy Guide: Death Shot Tactics in Werewolf | Wolfcha",
+  title: "Hunter Strategy Guide: Death Shot Tactics in Werewolf | AI Companion Board Game",
   description: "Master the Hunter role in Werewolf. Learn when to reveal, who to shoot, timing your death shot, and turning elimination into victory.",
   keywords: ["werewolf hunter strategy", "hunter role werewolf", "hunter shot tactics", "mafia vigilante"],
-  alternates: { canonical: "https://wolf-cha.com/guides/hunter-strategy" },
-  openGraph: { title: "Hunter Strategy: Turn Death Into Victory | Wolfcha", url: "https://wolf-cha.com/guides/hunter-strategy", type: "article" },
+  alternates: { canonical: "https://github.com/jim6642/ai-companion-board-game/guides/hunter-strategy" },
+  openGraph: { title: "Hunter Strategy: Turn Death Into Victory | AI Companion Board Game", url: "https://github.com/jim6642/ai-companion-board-game/guides/hunter-strategy", type: "article" },
 };
 
 const faqItems = [

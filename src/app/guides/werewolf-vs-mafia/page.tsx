@@ -8,10 +8,10 @@ import { LandingFaq } from "@/components/seo/landing/LandingFaq";
 import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLinks";
 
 export const metadata: Metadata = {
-  title: "Werewolf vs Mafia: What's the Difference? Complete Comparison | Wolfcha",
+  title: "Werewolf vs Mafia: What's the Difference? Complete Comparison | AI Companion Board Game",
   description: "Compare Werewolf and Mafia party games. Learn the differences in rules, roles, themes, and gameplay. Understand which version is right for you.",
   keywords: ["werewolf vs mafia", "mafia vs werewolf", "werewolf mafia difference", "mafia game comparison"],
-  alternates: { canonical: "https://wolf-cha.com/guides/werewolf-vs-mafia" },
+  alternates: { canonical: "https://github.com/jim6642/ai-companion-board-game/guides/werewolf-vs-mafia" },
 };
 
 const faqItems = [

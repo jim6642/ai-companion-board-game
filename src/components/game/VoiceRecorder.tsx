@@ -12,6 +12,9 @@ interface VoiceRecorderProps {
   disabled?: boolean;
   isNight?: boolean;
   onTranscript: (text: string) => void;
+  sttApiKey?: string;
+  sttEnabled?: boolean;
+  holdToTalk?: boolean;
 }
 
 export interface VoiceRecorderHandle {
@@ -91,7 +94,8 @@ function audioBufferToWav(buffer: AudioBuffer): ArrayBuffer {
 
 async function decodeToWav(blob: Blob): Promise<Uint8Array> {
   const ab = await blob.arrayBuffer();
-  const AudioContextCtor = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext | undefined;
+  const browserWindow = window as Window & { webkitAudioContext?: typeof AudioContext };
+  const AudioContextCtor = window.AudioContext || browserWindow.webkitAudioContext;
   if (!AudioContextCtor) {
     throw new Error("AudioContext is not supported in this browser");
   }
@@ -126,7 +130,17 @@ function WaveBars({ tone }: { tone: "gold" | "danger" }) {
 }
 
 export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>(
-  function VoiceRecorder({ disabled = false, isNight = false, onTranscript }, ref) {
+  function VoiceRecorder(
+    {
+      disabled = false,
+      isNight = false,
+      onTranscript,
+      sttApiKey = "",
+      sttEnabled = true,
+      holdToTalk = false,
+    },
+    ref,
+  ) {
     const t = useTranslations();
     const [status, setStatus] = useState<RecorderStatus>("idle");
     const [error, setError] = useState<string | null>(null);
@@ -141,7 +155,6 @@ export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>
 
     const isRecording = status === "recording";
   const isBusy = status !== "idle";
-  const sttEnabled = false;
   const sttDisabled = disabled || !sttEnabled;
 
   const canUse = useMemo(() => {
@@ -199,7 +212,7 @@ export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>
       cleanupMedia();
       stopStreamNow();
     };
-  }, [cleanupMedia, stopStreamNow, sttEnabled]);
+  }, [cleanupMedia, stopStreamNow, sttEnabled, t]);
 
   const acquireStream = useCallback(async (): Promise<MediaStream> => {
     if (streamRef.current) {
@@ -226,7 +239,7 @@ export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>
       .catch((e) => {
         setError(e instanceof Error ? e.message : t("voiceRecorder.errors.micUnavailable"));
       });
-  }, [acquireStream, canUse, scheduleReleaseStream, status, sttDisabled]);
+  }, [acquireStream, canUse, scheduleReleaseStream, status, sttDisabled, t]);
 
   const start = useCallback(async () => {
     if (!canUse) return;
@@ -290,19 +303,30 @@ export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>
           const wavBytes = await decodeToWav(blob);
           const b64 = bytesToBase64(wavBytes);
 
+          const headers: Record<string, string> = { "Content-Type": "application/json" };
+          if (sttApiKey.trim()) headers["X-SiliconFlow-Api-Key"] = sttApiKey.trim();
+
           const resp = await fetch("/api/stt", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers,
             body: JSON.stringify({ audio: b64, format: "wav" }),
           });
 
           if (!resp.ok) {
-            const text = await resp.text();
-            throw new Error(text || `HTTP ${resp.status}`);
+            const raw = await resp.text();
+            let message = "";
+            try {
+              const parsed = JSON.parse(raw) as { error?: unknown; message?: unknown };
+              if (typeof parsed.error === "string") message = parsed.error;
+              else if (typeof parsed.message === "string") message = parsed.message;
+            } catch {
+              message = raw;
+            }
+            throw new Error(message || `HTTP ${resp.status}`);
           }
 
-          const json = (await resp.json()) as any;
-          const transcript = typeof json?.text === "string" ? json.text.trim() : "";
+          const json = (await resp.json()) as { text?: unknown };
+          const transcript = typeof json.text === "string" ? json.text.trim() : "";
           if (!transcript) {
             setError(t("voiceRecorder.errors.noTranscript"));
           } else {
@@ -328,7 +352,7 @@ export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>
       cleanupMedia();
       scheduleReleaseStream();
     }
-  }, [acquireStream, canUse, cleanupMedia, isBusy, onTranscript, scheduleReleaseStream, sttDisabled]);
+  }, [acquireStream, canUse, cleanupMedia, isBusy, onTranscript, scheduleReleaseStream, sttApiKey, sttDisabled, t]);
 
   const stop = useCallback(() => {
     if (status === "idle") return;
@@ -379,7 +403,35 @@ export const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>
     <div className="relative">
       <button
         type="button"
-        onClick={isRecording ? stop : start}
+        onClick={holdToTalk ? undefined : isRecording ? stop : start}
+        onPointerDown={holdToTalk ? (event) => {
+          event.preventDefault();
+          event.currentTarget.setPointerCapture(event.pointerId);
+          prepare();
+          void start();
+        } : undefined}
+        onPointerUp={holdToTalk ? (event) => {
+          event.preventDefault();
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+          }
+          stop();
+        } : undefined}
+        onPointerCancel={holdToTalk ? stop : undefined}
+        onKeyDown={holdToTalk ? (event) => {
+          if ((event.key === " " || event.key === "Enter") && !event.repeat) {
+            event.preventDefault();
+            prepare();
+            void start();
+          }
+        } : undefined}
+        onKeyUp={holdToTalk ? (event) => {
+          if (event.key === " " || event.key === "Enter") {
+            event.preventDefault();
+            stop();
+          }
+        } : undefined}
+        onContextMenu={holdToTalk ? (event) => event.preventDefault() : undefined}
         disabled={sttDisabled || status === "transcribing"}
         className={buttonClassName}
         title={

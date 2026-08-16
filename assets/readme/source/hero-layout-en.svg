@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="480" viewBox="0 0 1280 480" role="img" aria-labelledby="title desc">
-  <title id="title">Wolfcha — Play Werewolf solo</title>
-  <desc id="desc">A moonlit Wolfcha banner with an AI game master and an eight-seat deduction table.</desc>
+  <title id="title">AI Companion Board Game — Play Werewolf solo</title>
+  <desc id="desc">A moonlit AI Companion Board Game banner with an AI game master and an eight-seat deduction table.</desc>
   <defs>
     <linearGradient id="night" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#080809"/>
@@ -47,7 +47,7 @@
     <path d="M71 82 H142" stroke="#b3222c" stroke-width="3"/>
     <text x="158" y="87" fill="#d7aa50" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" font-weight="700" letter-spacing="4">AI SOCIAL DEDUCTION</text>
 
-    <text x="68" y="238" fill="#f6ead1" font-family="Georgia, 'Times New Roman', serif" font-size="104" font-weight="700" letter-spacing="-4">WOLFCHA</text>
+    <text x="68" y="238" fill="#f6ead1" font-family="Georgia, 'Times New Roman', serif" font-size="104" font-weight="700" letter-spacing="-4">AI COMPANION BOARD GAME</text>
     <circle cx="594" cy="215" r="8" fill="#b3222c"/>
 
     <text x="72" y="294" fill="#f6ead1" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="700">Play Werewolf.</text>

@@ -64,7 +64,7 @@ function buildSoftwareAppJsonLd({
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: `${name} AI in Wolfcha`,
+    name: `${name} AI in AI Companion Board Game`,
     description,
     url,
     applicationCategory: "Game",
@@ -112,8 +112,8 @@ export async function generateMetadata({
   // Check if it's a comparison page
   const comparisonData = getModelComparisonData(model);
   if (comparisonData) {
-    const canonical = `https://wolf-cha.com/models/${comparisonData.key}`;
-    const title = `${comparisonData.modelA.name} vs ${comparisonData.modelB.name} — AI Werewolf Comparison | Wolfcha`;
+    const canonical = `https://github.com/jim6642/ai-companion-board-game/models/${comparisonData.key}`;
+    const title = `${comparisonData.modelA.name} vs ${comparisonData.modelB.name} — AI Werewolf Comparison | AI Companion Board Game`;
     
     return {
       title,
@@ -130,10 +130,10 @@ export async function generateMetadata({
         type: "article",
         images: [
           {
-            url: "https://wolf-cha.com/og-image.png",
+            url: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
             width: 1200,
             height: 630,
-            alt: "Wolfcha - AI Werewolf Game",
+            alt: "AI Companion Board Game - AI Werewolf Game",
           },
         ],
       },
@@ -146,8 +146,8 @@ export async function generateMetadata({
     return {};
   }
 
-  const canonical = `https://wolf-cha.com/models/${data.key}`;
-  const title = `${data.displayName} AI in Werewolf — Personality & Play Style | Wolfcha`;
+  const canonical = `https://github.com/jim6642/ai-companion-board-game/models/${data.key}`;
+  const title = `${data.displayName} AI in Werewolf — Personality & Play Style | AI Companion Board Game`;
 
   return {
     title,
@@ -166,10 +166,10 @@ export async function generateMetadata({
       type: "article",
       images: [
         {
-          url: "https://wolf-cha.com/og-image.png",
+          url: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
           width: 1200,
           height: 630,
-          alt: "Wolfcha - AI Werewolf Game",
+          alt: "AI Companion Board Game - AI Werewolf Game",
         },
       ],
     },
@@ -178,7 +178,7 @@ export async function generateMetadata({
 
 // Comparison Page Component
 function ModelComparisonPage({ data }: { data: NonNullable<ReturnType<typeof getModelComparisonData>> }) {
-  const canonical = `https://wolf-cha.com/models/${data.key}`;
+  const canonical = `https://github.com/jim6642/ai-companion-board-game/models/${data.key}`;
   
   return (
     <MarketingPageWrapper>
@@ -354,7 +354,7 @@ function ModelComparisonPage({ data }: { data: NonNullable<ReturnType<typeof get
 
 // Single Model Page Component
 function SingleModelPage({ data }: { data: NonNullable<ReturnType<typeof getModelLandingData>> }) {
-  const canonical = `https://wolf-cha.com/models/${data.key}`;
+  const canonical = `https://github.com/jim6642/ai-companion-board-game/models/${data.key}`;
   const relatedHub = data.related.hub;
   const relatedModels = data.related.models.filter((l) => l.href !== `/models/${data.key}`);
 
@@ -486,7 +486,7 @@ function SingleModelPage({ data }: { data: NonNullable<ReturnType<typeof getMode
         <LandingDialogueExamples examples={data.dialogues} />
       </LandingSection>
 
-      <LandingSection id="faq" title="Frequently asked questions" subtitle={`Common questions about ${data.displayName} in Wolfcha.`}>
+      <LandingSection id="faq" title="Frequently asked questions" subtitle={`Common questions about ${data.displayName} in AI Companion Board Game.`}>
         <LandingFaq items={data.faqs} />
       </LandingSection>
 

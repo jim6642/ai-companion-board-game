@@ -754,12 +754,10 @@ function ensureRoleRevealForGameEnd(state: GameState): GameState {
       .slice()
       .sort((a, b) => a.seat - b.seat)
       .map((p) => ({
-        playerId: p.playerId,
         seat: p.seat,
         name: p.displayName,
         role: p.role,
         isHuman: p.isHuman,
-        modelRef: p.agentProfile?.modelRef,
       })),
   };
   return addSystemMessage(nextState, `[ROLE_REVEAL]${JSON.stringify(roleRevealPayload)}`);
@@ -822,12 +820,10 @@ export function applyForwardJumpAuto(
           .slice()
           .sort((a, b) => a.seat - b.seat)
           .map((p) => ({
-            playerId: p.playerId,
             seat: p.seat,
             name: p.displayName,
             role: p.role,
             isHuman: p.isHuman,
-            modelRef: p.agentProfile?.modelRef,
           })),
       };
       newState = addSystemMessage(newState, `[ROLE_REVEAL]${JSON.stringify(roleRevealPayload)}`);
@@ -1073,7 +1069,6 @@ export function applySmartJump(
   }
 
   let newState: GameState;
-  let needsManualFill = false;
 
   if (analysis.direction === "backward") {
     // 回滚不需要补全，直接执行

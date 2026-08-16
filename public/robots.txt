@@ -1,11 +1,11 @@
-# Robots.txt for Wolfcha - AI Werewolf Game
-# https://wolf-cha.com
+# Robots.txt for AI Companion Board Game - AI Werewolf Game
+# https://github.com/jim6642/ai-companion-board-game
 
 User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://wolf-cha.com/sitemap.xml
+Sitemap: https://github.com/jim6642/ai-companion-board-game/sitemap.xml
 
 # Disallow API routes
 Disallow: /api/

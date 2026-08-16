@@ -8,7 +8,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Play Werewolf Alone",
     tagline: "No party required. Just you and 11 AI opponents.",
     heroDescription:
-      "Want to play Werewolf but don't have a group? Wolfcha lets you experience the full social deduction game solo. Every other seat at the table is an AI opponent with a distinct personality, reasoning style, and agenda. Start a game in seconds—no scheduling, no waiting.",
+      "Want to play Werewolf but don't have a group? AI Companion Board Game lets you experience the full social deduction game solo. Every other seat at the table is an AI opponent with a distinct personality, reasoning style, and agenda. Start a game in seconds—no scheduling, no waiting.",
     problemsSolved: [
       "No friends available to play right now",
       "Can't gather enough people for a full game (8–12 players)",
@@ -17,7 +17,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       "Just want a quick game without social coordination",
     ],
     howItWorks: [
-      { step: "Open Wolfcha", description: "No download, no account required. Works in any modern browser." },
+      { step: "Open AI Companion Board Game", description: "No download, no account required. Works in any modern browser." },
       { step: "Choose your settings", description: "Pick game speed, voice acting preferences, and role distribution." },
       { step: "Get assigned a role", description: "You might be a Villager, Werewolf, Seer, Witch, Hunter, or Guard." },
       { step: "Play day and night phases", description: "Discuss, vote, and use abilities just like a real game." },
@@ -30,11 +30,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "No waiting", description: "Games start instantly. No lobby, no matchmaking queue." },
     ],
     comparisonTable: [
-      { feature: "Players needed", traditional: "8–12 humans", wolfcha: "Just you" },
-      { feature: "Setup time", traditional: "10–30 minutes", wolfcha: "30 seconds" },
-      { feature: "Scheduling", traditional: "Coordinate calendars", wolfcha: "Play anytime" },
-      { feature: "Game length", traditional: "30–60 minutes", wolfcha: "15–30 minutes" },
-      { feature: "Learning curve", traditional: "Need patient friends", wolfcha: "Practice vs AI" },
+      { feature: "Players needed", traditional: "8–12 humans", aicb: "Just you" },
+      { feature: "Setup time", traditional: "10–30 minutes", aicb: "30 seconds" },
+      { feature: "Scheduling", traditional: "Coordinate calendars", aicb: "Play anytime" },
+      { feature: "Game length", traditional: "30–60 minutes", aicb: "15–30 minutes" },
+      { feature: "Learning curve", traditional: "Need patient friends", aicb: "Practice vs AI" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -63,7 +63,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { question: "How long does a solo game take?", answer: "Typically 15–30 minutes depending on your reading speed and game settings." },
       { question: "Do I need to create an account?", answer: "No account required. You can start playing immediately." },
       { question: "Can I choose my role?", answer: "Roles are assigned randomly to maintain game balance and surprise." },
-      { question: "What if I don't know the rules?", answer: "Wolfcha includes guidance and the AI narrator helps you through each phase." },
+      { question: "What if I don't know the rules?", answer: "AI Companion Board Game includes guidance and the AI narrator helps you through each phase." },
       { question: "Is it free to play?", answer: "Yes, basic play is free." },
     ],
     related: { hub: hubLinks, cluster: soloClusterLinks.filter((l) => l.href !== "/play-werewolf-alone") },
@@ -75,7 +75,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Play Werewolf with AI",
     tagline: "AI opponents that actually think, argue, and bluff.",
     heroDescription:
-      "Wolfcha puts you at a table with AI players powered by state-of-the-art language models. Each AI has a unique personality—some are aggressive accusers, others are careful analysts, and some are skilled manipulators. Experience Werewolf with opponents who actually reason.",
+      "AI Companion Board Game puts you at a table with AI players powered by state-of-the-art language models. Each AI has a unique personality—some are aggressive accusers, others are careful analysts, and some are skilled manipulators. Experience Werewolf with opponents who actually reason.",
     problemsSolved: [
       "Human players can be unpredictable or frustrating",
       "Want consistent, challenging opponents",
@@ -97,11 +97,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "Transparent reasoning", description: "Watch AI players explain their logic in natural dialogue." },
     ],
     comparisonTable: [
-      { feature: "Opponent quality", traditional: "Varies by group", wolfcha: "Consistently challenging" },
-      { feature: "Availability", traditional: "When friends are free", wolfcha: "24/7" },
-      { feature: "Toxicity", traditional: "Sometimes", wolfcha: "Never" },
-      { feature: "Learning opportunity", traditional: "Limited feedback", wolfcha: "See AI reasoning" },
-      { feature: "Game variety", traditional: "Same group dynamics", wolfcha: "Different AI each game" },
+      { feature: "Opponent quality", traditional: "Varies by group", aicb: "Consistently challenging" },
+      { feature: "Availability", traditional: "When friends are free", aicb: "24/7" },
+      { feature: "Toxicity", traditional: "Sometimes", aicb: "Never" },
+      { feature: "Learning opportunity", traditional: "Limited feedback", aicb: "See AI reasoning" },
+      { feature: "Game variety", traditional: "Same group dynamics", aicb: "Different AI each game" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -141,7 +141,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Werewolf Game with AI Opponents",
     tagline: "A full table of intelligent adversaries, ready when you are.",
     heroDescription:
-      "Experience the classic Werewolf (Mafia) game against 11 AI opponents. Each opponent has unique reasoning patterns, communication styles, and strategic tendencies. No human coordination needed—just open Wolfcha and start playing.",
+      "Experience the classic Werewolf (Mafia) game against 11 AI opponents. Each opponent has unique reasoning patterns, communication styles, and strategic tendencies. No human coordination needed—just open AI Companion Board Game and start playing.",
     problemsSolved: [
       "Need 8–12 players for a proper game",
       "Human players cancel or flake",
@@ -163,11 +163,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "No toxic players", description: "AI opponents are challenging but never rude or unfair." },
     ],
     comparisonTable: [
-      { feature: "Player count", traditional: "Need 8–12 humans", wolfcha: "Always 12 (you + 11 AI)" },
-      { feature: "Game availability", traditional: "When group is free", wolfcha: "Instant, anytime" },
-      { feature: "Social pressure", traditional: "Can be stressful", wolfcha: "Play at your pace" },
-      { feature: "Consistency", traditional: "Varies by group", wolfcha: "Reliable AI behavior" },
-      { feature: "Practice value", traditional: "Limited", wolfcha: "Excellent for skill building" },
+      { feature: "Player count", traditional: "Need 8–12 humans", aicb: "Always 12 (you + 11 AI)" },
+      { feature: "Game availability", traditional: "When group is free", aicb: "Instant, anytime" },
+      { feature: "Social pressure", traditional: "Can be stressful", aicb: "Play at your pace" },
+      { feature: "Consistency", traditional: "Varies by group", aicb: "Reliable AI behavior" },
+      { feature: "Practice value", traditional: "Limited", aicb: "Excellent for skill building" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -207,7 +207,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Solo Mafia Game",
     tagline: "The classic party game, playable alone.",
     heroDescription:
-      "Mafia (also known as Werewolf) is one of the greatest social deduction games ever created. But gathering 8–12 people is hard. Wolfcha solves this by letting you play the full Mafia experience solo, against AI opponents who argue, bluff, and vote just like humans.",
+      "Mafia (also known as Werewolf) is one of the greatest social deduction games ever created. But gathering 8–12 people is hard. AI Companion Board Game solves this by letting you play the full Mafia experience solo, against AI opponents who argue, bluff, and vote just like humans.",
     problemsSolved: [
       "Love Mafia but can't find players",
       "Party game with no party available",
@@ -216,7 +216,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       "Miss playing Mafia and want a quick fix",
     ],
     howItWorks: [
-      { step: "Load Wolfcha", description: "Works in any browser, no app download needed." },
+      { step: "Load AI Companion Board Game", description: "Works in any browser, no app download needed." },
       { step: "Start a game", description: "One click to launch a full 12-player Mafia match." },
       { step: "Get your role", description: "Mafia member, Civilian, or a special role like Detective." },
       { step: "Survive the nights", description: "Mafia kills at night; town debates and votes by day." },
@@ -229,11 +229,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "AI that bluffs", description: "Mafia AI will lie, deflect, and manipulate—just like human players." },
     ],
     comparisonTable: [
-      { feature: "Game type", traditional: "Party game", wolfcha: "Solo browser game" },
-      { feature: "Minimum players", traditional: "8 humans", wolfcha: "1 (you)" },
-      { feature: "Hosting effort", traditional: "Significant", wolfcha: "None" },
-      { feature: "Rule enforcement", traditional: "Manual (moderator)", wolfcha: "Automatic" },
-      { feature: "Game length", traditional: "30–90 minutes", wolfcha: "15–30 minutes" },
+      { feature: "Game type", traditional: "Party game", aicb: "Solo browser game" },
+      { feature: "Minimum players", traditional: "8 humans", aicb: "1 (you)" },
+      { feature: "Hosting effort", traditional: "Significant", aicb: "None" },
+      { feature: "Rule enforcement", traditional: "Manual (moderator)", aicb: "Automatic" },
+      { feature: "Game length", traditional: "30–90 minutes", aicb: "15–30 minutes" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -273,7 +273,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Single Player Social Deduction Game",
     tagline: "Deduction, bluffing, and strategy—no group required.",
     heroDescription:
-      "Social deduction games like Werewolf, Mafia, and Among Us are built around reading people and managing information. Wolfcha brings this experience to single player by surrounding you with AI opponents who reason, suspect, and scheme.",
+      "Social deduction games like Werewolf, Mafia, and Among Us are built around reading people and managing information. AI Companion Board Game brings this experience to single player by surrounding you with AI opponents who reason, suspect, and scheme.",
     problemsSolved: [
       "Love social deduction but play alone",
       "Among Us requires lobbies and wait times",
@@ -282,7 +282,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       "Need a thinking game that's not chess or puzzles",
     ],
     howItWorks: [
-      { step: "Choose Wolfcha", description: "A social deduction game designed for one player." },
+      { step: "Choose AI Companion Board Game", description: "A social deduction game designed for one player." },
       { step: "Face AI opponents", description: "11 AI players with distinct personalities and strategies." },
       { step: "Deduce and deceive", description: "Use information, voting, and discussion to win." },
       { step: "Experience the genre", description: "All the tension of multiplayer, none of the coordination." },
@@ -295,11 +295,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "Reading AI behavior", description: "Learn to spot AI tells and reasoning patterns." },
     ],
     comparisonTable: [
-      { feature: "Genre", traditional: "Multiplayer social deduction", wolfcha: "Single player social deduction" },
-      { feature: "Examples", traditional: "Among Us, Secret Hitler, Mafia", wolfcha: "Wolfcha (AI Werewolf)" },
-      { feature: "Player requirement", traditional: "4–12 humans", wolfcha: "Just you" },
-      { feature: "Social skill practice", traditional: "High", wolfcha: "High (vs AI)" },
-      { feature: "Replayability", traditional: "Depends on group", wolfcha: "Unlimited" },
+      { feature: "Genre", traditional: "Multiplayer social deduction", aicb: "Single player social deduction" },
+      { feature: "Examples", traditional: "Among Us, Secret Hitler, Mafia", aicb: "AI Companion Board Game (AI Werewolf)" },
+      { feature: "Player requirement", traditional: "4–12 humans", aicb: "Just you" },
+      { feature: "Social skill practice", traditional: "High", aicb: "High (vs AI)" },
+      { feature: "Replayability", traditional: "Depends on group", aicb: "Unlimited" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -326,7 +326,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { question: "What makes this a social deduction game?", answer: "Players have hidden roles with conflicting goals. Deduction, persuasion, and deception determine the winner." },
       { question: "How is this different from puzzle games?", answer: "Puzzle games have fixed solutions. Social deduction is dynamic—outcomes depend on persuasion and adapting." },
       { question: "Can AI opponents really bluff?", answer: "Yes. AI wolves lie, deflect suspicion, and coordinate kills. They play to win." },
-      { question: "Is this like Among Us?", answer: "Similar genre, different format. Among Us adds action; Wolfcha is pure discussion and voting." },
+      { question: "Is this like Among Us?", answer: "Similar genre, different format. Among Us adds action; AI Companion Board Game is pure discussion and voting." },
       { question: "How long is a game?", answer: "15–30 minutes typically. Shorter than most multiplayer social deduction." },
       { question: "Will I get better at social deduction?", answer: "Absolutely. Playing against AI helps you recognize patterns that transfer to human games." },
     ],
@@ -339,7 +339,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Werewolf Game No Friends Needed",
     tagline: "Finally play Werewolf without organizing a party.",
     heroDescription:
-      "You've heard Werewolf is amazing. But you need 8–12 friends who are free at the same time, and that's impossible to arrange. Wolfcha removes the social barrier—play the complete Werewolf experience solo, against AI opponents who provide a genuine challenge.",
+      "You've heard Werewolf is amazing. But you need 8–12 friends who are free at the same time, and that's impossible to arrange. AI Companion Board Game removes the social barrier—play the complete Werewolf experience solo, against AI opponents who provide a genuine challenge.",
     problemsSolved: [
       "Don't have a gaming group",
       "Friends aren't into social deduction games",
@@ -349,7 +349,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     ],
     howItWorks: [
       { step: "Forget scheduling", description: "No group chat, no polls, no cancellations." },
-      { step: "Open Wolfcha", description: "Browser-based, instant access, no barriers." },
+      { step: "Open AI Companion Board Game", description: "Browser-based, instant access, no barriers." },
       { step: "Play a real game", description: "11 AI opponents, full rules, authentic experience." },
       { step: "Learn and improve", description: "No judgment, no pressure, play at your own pace." },
       { step: "Enjoy whenever", description: "Morning, night, 5 minutes or 30—your choice." },
@@ -361,11 +361,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "Complete experience", description: "Same game you'd play with friends, just with AI." },
     ],
     comparisonTable: [
-      { feature: "Friends required", traditional: "8–12", wolfcha: "0" },
-      { feature: "Scheduling", traditional: "Coordinate calendars", wolfcha: "None" },
-      { feature: "Cancellation risk", traditional: "High", wolfcha: "Zero" },
-      { feature: "Social anxiety", traditional: "Can be a factor", wolfcha: "Not applicable" },
-      { feature: "Game quality", traditional: "Depends on group", wolfcha: "Consistently good" },
+      { feature: "Friends required", traditional: "8–12", aicb: "0" },
+      { feature: "Scheduling", traditional: "Coordinate calendars", aicb: "None" },
+      { feature: "Cancellation risk", traditional: "High", aicb: "Zero" },
+      { feature: "Social anxiety", traditional: "Can be a factor", aicb: "Not applicable" },
+      { feature: "Game quality", traditional: "Depends on group", aicb: "Consistently good" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -405,7 +405,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Practice Werewolf Online",
     tagline: "Sharpen your skills before game night.",
     heroDescription:
-      "Want to get better at Werewolf before playing with your group? Wolfcha is the perfect practice environment. Play against AI opponents who use real strategies, learn role mechanics, and develop your deduction skills—all without pressure.",
+      "Want to get better at Werewolf before playing with your group? AI Companion Board Game is the perfect practice environment. Play against AI opponents who use real strategies, learn role mechanics, and develop your deduction skills—all without pressure.",
     problemsSolved: [
       "New to Werewolf and want to learn",
       "Know the rules but want to improve strategy",
@@ -427,11 +427,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "Strategy testing", description: "Try risky plays and see what happens." },
     ],
     comparisonTable: [
-      { feature: "Learning mode", traditional: "Trial by fire", wolfcha: "Safe practice space" },
-      { feature: "Feedback speed", traditional: "One game per session", wolfcha: "Many games per hour" },
-      { feature: "Experimentation", traditional: "Risky (affects rep)", wolfcha: "Consequence-free" },
-      { feature: "Rule clarification", traditional: "Ask friends", wolfcha: "Game enforces rules" },
-      { feature: "Availability", traditional: "When group meets", wolfcha: "Always" },
+      { feature: "Learning mode", traditional: "Trial by fire", aicb: "Safe practice space" },
+      { feature: "Feedback speed", traditional: "One game per session", aicb: "Many games per hour" },
+      { feature: "Experimentation", traditional: "Risky (affects rep)", aicb: "Consequence-free" },
+      { feature: "Rule clarification", traditional: "Ask friends", aicb: "Game enforces rules" },
+      { feature: "Availability", traditional: "When group meets", aicb: "Always" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -471,7 +471,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Learn Werewolf Strategy",
     tagline: "Master the game through AI-powered practice.",
     heroDescription:
-      "Werewolf rewards strategic thinking, social awareness, and information management. Wolfcha is the best way to learn these skills—play against AI opponents who demonstrate effective strategies, then develop your own through practice.",
+      "Werewolf rewards strategic thinking, social awareness, and information management. AI Companion Board Game is the best way to learn these skills—play against AI opponents who demonstrate effective strategies, then develop your own through practice.",
     problemsSolved: [
       "Know the rules but lose consistently",
       "Don't understand why good players win",
@@ -493,11 +493,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "Feedback through outcomes", description: "Wins and losses tell you what works." },
     ],
     comparisonTable: [
-      { feature: "Learning method", traditional: "Figure it out live", wolfcha: "Practice and observe" },
-      { feature: "Teacher", traditional: "Experienced friends", wolfcha: "AI reasoning on display" },
-      { feature: "Mistakes", traditional: "Embarrassing", wolfcha: "Private learning" },
-      { feature: "Repetition", traditional: "Limited by group", wolfcha: "Unlimited games" },
-      { feature: "Strategy depth", traditional: "Varies by group", wolfcha: "Consistently strategic AI" },
+      { feature: "Learning method", traditional: "Figure it out live", aicb: "Practice and observe" },
+      { feature: "Teacher", traditional: "Experienced friends", aicb: "AI reasoning on display" },
+      { feature: "Mistakes", traditional: "Embarrassing", aicb: "Private learning" },
+      { feature: "Repetition", traditional: "Limited by group", aicb: "Unlimited games" },
+      { feature: "Strategy depth", traditional: "Varies by group", aicb: "Consistently strategic AI" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -537,7 +537,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Werewolf Game in Browser",
     tagline: "No download. No app. Just open and play.",
     heroDescription:
-      "Wolfcha runs entirely in your web browser. No installation, no app store, no waiting. Open the site, click Play, and you're in a full Werewolf game with 11 AI opponents. Works on desktop, tablet, and mobile.",
+      "AI Companion Board Game runs entirely in your web browser. No installation, no app store, no waiting. Open the site, click Play, and you're in a full Werewolf game with 11 AI opponents. Works on desktop, tablet, and mobile.",
     problemsSolved: [
       "Don't want to download another app",
       "Limited storage on your device",
@@ -547,7 +547,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     ],
     howItWorks: [
       { step: "Open your browser", description: "Chrome, Safari, Firefox, Edge—any modern browser works." },
-      { step: "Visit Wolfcha", description: "Type the URL or click a link." },
+      { step: "Visit AI Companion Board Game", description: "Type the URL or click a link." },
       { step: "Click Play", description: "No account required. No setup wizard." },
       { step: "Game loads instantly", description: "Optimized for fast load times." },
       { step: "Play anywhere", description: "Same experience on any device." },
@@ -559,11 +559,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "Instant access", description: "Bookmark it and you're one click from a game." },
     ],
     comparisonTable: [
-      { feature: "Installation", traditional: "Download app (100MB+)", wolfcha: "None" },
-      { feature: "Updates", traditional: "Manual or auto-download", wolfcha: "Automatic (web)" },
-      { feature: "Device switching", traditional: "Install on each device", wolfcha: "Just open browser" },
-      { feature: "Storage used", traditional: "Varies (often 100MB+)", wolfcha: "Minimal (cached)" },
-      { feature: "Offline play", traditional: "Sometimes", wolfcha: "Requires internet" },
+      { feature: "Installation", traditional: "Download app (100MB+)", aicb: "None" },
+      { feature: "Updates", traditional: "Manual or auto-download", aicb: "Automatic (web)" },
+      { feature: "Device switching", traditional: "Install on each device", aicb: "Just open browser" },
+      { feature: "Storage used", traditional: "Varies (often 100MB+)", aicb: "Minimal (cached)" },
+      { feature: "Offline play", traditional: "Sometimes", aicb: "Requires internet" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -602,7 +602,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Free Werewolf Game Online",
     tagline: "Play unlimited games at no cost.",
     heroDescription:
-      "Wolfcha offers free access to the complete Werewolf experience. No paywall, no premium-only features for core gameplay, no ads interrupting your game. Just open the site and start playing against AI opponents—as many games as you want.",
+      "AI Companion Board Game offers free access to the complete Werewolf experience. No paywall, no premium-only features for core gameplay, no ads interrupting your game. Just open the site and start playing against AI opponents—as many games as you want.",
     problemsSolved: [
       "Don't want to pay for a casual game",
       "Hate pay-to-win mechanics",
@@ -611,7 +611,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       "Looking for free entertainment that's quality",
     ],
     howItWorks: [
-      { step: "Visit Wolfcha", description: "No payment information required." },
+      { step: "Visit AI Companion Board Game", description: "No payment information required." },
       { step: "Play immediately", description: "Full game access from the start." },
       { step: "No limits", description: "Play as many games as you want." },
       { step: "Optional support", description: "Premium features for those who want to support development." },
@@ -624,11 +624,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "Fair premium model", description: "Optional extras for supporters, but free users get the real game." },
     ],
     comparisonTable: [
-      { feature: "Base price", traditional: "Varies ($0–$30)", wolfcha: "Free" },
-      { feature: "Ads", traditional: "Often", wolfcha: "No in-game ads" },
-      { feature: "Pay-to-win", traditional: "Sometimes", wolfcha: "Never" },
-      { feature: "Energy/lives system", traditional: "Common", wolfcha: "None" },
-      { feature: "Full experience", traditional: "Often requires purchase", wolfcha: "Free" },
+      { feature: "Base price", traditional: "Varies ($0–$30)", aicb: "Free" },
+      { feature: "Ads", traditional: "Often", aicb: "No in-game ads" },
+      { feature: "Pay-to-win", traditional: "Sometimes", aicb: "Never" },
+      { feature: "Energy/lives system", traditional: "Common", aicb: "None" },
+      { feature: "Full experience", traditional: "Often requires purchase", aicb: "Free" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -653,7 +653,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     ],
     faqs: [
       { question: "Is it really free?", answer: "Yes. Play unlimited games without paying. No tricks, no hidden costs." },
-      { question: "How does Wolfcha make money?", answer: "Optional premium features and supporter tiers for those who want extras or want to support development." },
+      { question: "How does AI Companion Board Game make money?", answer: "Optional premium features and supporter tiers for those who want extras or want to support development." },
       { question: "Will free features ever become paid?", answer: "Core gameplay will always be free. We're committed to that." },
       { question: "Are there ads?", answer: "No ads interrupt your gameplay. We believe ads ruin the experience." },
       { question: "What do premium features include?", answer: "Extra voice options, themes, and supporter badges. Nothing that affects gameplay balance." },
@@ -668,7 +668,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Online Werewolf Game",
     tagline: "Play classic Werewolf online with AI opponents anytime.",
     heroDescription:
-      "Looking for an online Werewolf game that starts instantly and still feels strategic? Wolfcha gives you the full social deduction loop in your browser: hidden roles, day debates, night actions, and tense final votes. You play as one seat, while 11 AI players handle the rest.",
+      "Looking for an online Werewolf game that starts instantly and still feels strategic? AI Companion Board Game gives you the full social deduction loop in your browser: hidden roles, day debates, night actions, and tense final votes. You play as one seat, while 11 AI players handle the rest.",
     problemsSolved: [
       "Want an online Werewolf game without organizing a group",
       "Need quick matches you can start any time",
@@ -677,7 +677,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       "Need a game that works on both desktop and mobile",
     ],
     howItWorks: [
-      { step: "Open Wolfcha in your browser", description: "No installation or launcher needed." },
+      { step: "Open AI Companion Board Game in your browser", description: "No installation or launcher needed." },
       { step: "Start a new online match", description: "Game setup takes seconds." },
       { step: "Receive your role", description: "Villager, Werewolf, Seer, Witch, Hunter, or Guard." },
       { step: "Play day/night cycles", description: "Debate, vote, and use role abilities like a real Werewolf table." },
@@ -690,11 +690,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "Optional voice mode", description: "Enable narration and AI voices for immersion." },
     ],
     comparisonTable: [
-      { feature: "Start time", traditional: "Wait for players", wolfcha: "Instant online start" },
-      { feature: "Player availability", traditional: "Depends on friends", wolfcha: "Always available" },
-      { feature: "Platform", traditional: "Often app-based", wolfcha: "Browser-first" },
-      { feature: "Match quality", traditional: "Can be chaotic", wolfcha: "Consistent AI logic" },
-      { feature: "Practice value", traditional: "Low repetition", wolfcha: "Unlimited repeatable practice" },
+      { feature: "Start time", traditional: "Wait for players", aicb: "Instant online start" },
+      { feature: "Player availability", traditional: "Depends on friends", aicb: "Always available" },
+      { feature: "Platform", traditional: "Often app-based", aicb: "Browser-first" },
+      { feature: "Match quality", traditional: "Can be chaotic", aicb: "Consistent AI logic" },
+      { feature: "Practice value", traditional: "Low repetition", aicb: "Unlimited repeatable practice" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -718,10 +718,10 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       },
     ],
     faqs: [
-      { question: "Is this a real online Werewolf game?", answer: "Yes. Wolfcha includes full Werewolf mechanics: hidden roles, day discussion, night actions, and voting." },
+      { question: "Is this a real online Werewolf game?", answer: "Yes. AI Companion Board Game includes full Werewolf mechanics: hidden roles, day discussion, night actions, and voting." },
       { question: "Can I play online without friends?", answer: "Yes. You play solo against 11 AI opponents, so no group setup is needed." },
       { question: "How long is one online match?", answer: "Most games take around 15-30 minutes depending on settings and reading speed." },
-      { question: "Does it run on mobile browsers?", answer: "Yes. Wolfcha is optimized for modern mobile and desktop browsers." },
+      { question: "Does it run on mobile browsers?", answer: "Yes. AI Companion Board Game is optimized for modern mobile and desktop browsers." },
       { question: "Is this browser game free?", answer: "Yes, the core experience is free to play." },
       { question: "Can I improve at Werewolf by playing online here?", answer: "Absolutely. Repeated matches help you practice reads, claims, and vote control." },
     ],
@@ -734,7 +734,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Werewolf Game Online Free",
     tagline: "Free online Werewolf matches with full AI gameplay.",
     heroDescription:
-      "Wolfcha is a free online Werewolf game where you can play unlimited rounds in your browser. No download, no mandatory account, no match queue. Start a game immediately and face AI opponents who bluff, accuse, and adapt like real players.",
+      "AI Companion Board Game is a free online Werewolf game where you can play unlimited rounds in your browser. No download, no mandatory account, no match queue. Start a game immediately and face AI opponents who bluff, accuse, and adapt like real players.",
     problemsSolved: [
       "Need a free Werewolf game that still feels complete",
       "Don't want ad-heavy or paywalled social deduction apps",
@@ -756,11 +756,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "Competitive deduction depth", description: "AI reasoning creates meaningful decisions every match." },
     ],
     comparisonTable: [
-      { feature: "Cost to start", traditional: "Often paid or gated", wolfcha: "Free" },
-      { feature: "Ads during match", traditional: "Common", wolfcha: "No in-game ad interruption" },
-      { feature: "Game access", traditional: "Limited daily plays", wolfcha: "Unlimited core rounds" },
-      { feature: "Setup friction", traditional: "Install + sign-up", wolfcha: "Open and play" },
-      { feature: "Match consistency", traditional: "Varies", wolfcha: "Stable AI-driven quality" },
+      { feature: "Cost to start", traditional: "Often paid or gated", aicb: "Free" },
+      { feature: "Ads during match", traditional: "Common", aicb: "No in-game ad interruption" },
+      { feature: "Game access", traditional: "Limited daily plays", aicb: "Unlimited core rounds" },
+      { feature: "Setup friction", traditional: "Install + sign-up", aicb: "Open and play" },
+      { feature: "Match consistency", traditional: "Varies", aicb: "Stable AI-driven quality" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -800,7 +800,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     title: "Mafia Werewolf Game Online",
     tagline: "Play the Mafia/Werewolf social deduction format online, solo.",
     heroDescription:
-      "Mafia and Werewolf are two names for the same hidden-role party game. Wolfcha brings that format online for solo players: no host needed, no waiting room, and no scheduling. You still get all the essentials: deception, vote pressure, and high-stakes endgames.",
+      "Mafia and Werewolf are two names for the same hidden-role party game. AI Companion Board Game brings that format online for solo players: no host needed, no waiting room, and no scheduling. You still get all the essentials: deception, vote pressure, and high-stakes endgames.",
     problemsSolved: [
       "Searching for Mafia-style Werewolf gameplay online",
       "Can't gather a full party for classic Mafia nights",
@@ -809,7 +809,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       "Prefer instant browser sessions over long setup",
     ],
     howItWorks: [
-      { step: "Open Wolfcha online", description: "No app installation required." },
+      { step: "Open AI Companion Board Game online", description: "No app installation required." },
       { step: "Start a Mafia/Werewolf match", description: "You join a 12-seat game instantly." },
       { step: "Play your hidden role", description: "Town, wolf, and power-role dynamics are preserved." },
       { step: "Debate and vote", description: "Push narratives, challenge claims, and read contradictions." },
@@ -822,11 +822,11 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
       { title: "Strategic AI personalities", description: "Each seat reasons differently, creating fresh table dynamics." },
     ],
     comparisonTable: [
-      { feature: "Required players", traditional: "8-12 humans", wolfcha: "1 human + 11 AI" },
-      { feature: "Moderator needs", traditional: "Human host", wolfcha: "Built-in game flow" },
-      { feature: "Start delay", traditional: "Often long", wolfcha: "Immediate" },
-      { feature: "Lobby toxicity", traditional: "Possible", wolfcha: "None" },
-      { feature: "Practice frequency", traditional: "Occasional", wolfcha: "Anytime, unlimited" },
+      { feature: "Required players", traditional: "8-12 humans", aicb: "1 human + 11 AI" },
+      { feature: "Moderator needs", traditional: "Human host", aicb: "Built-in game flow" },
+      { feature: "Start delay", traditional: "Often long", aicb: "Immediate" },
+      { feature: "Lobby toxicity", traditional: "Possible", aicb: "None" },
+      { feature: "Practice frequency", traditional: "Occasional", aicb: "Anytime, unlimited" },
     ],
     seats: baseSeats,
     dialogues: [
@@ -851,7 +851,7 @@ export const soloLandingDataByKey: Record<SoloLandingKey, SoloLandingData> = {
     ],
     faqs: [
       { question: "Is Mafia and Werewolf the same game?", answer: "They are closely related versions of the same social deduction formula: hidden factions, day voting, and deception." },
-      { question: "Can I play Mafia-style Werewolf online solo?", answer: "Yes. Wolfcha is designed for solo matches against AI opponents." },
+      { question: "Can I play Mafia-style Werewolf online solo?", answer: "Yes. AI Companion Board Game is designed for solo matches against AI opponents." },
       { question: "Do I need a host or moderator?", answer: "No. The game handles phases, role actions, and results automatically." },
       { question: "Is this competitive enough for practice?", answer: "Yes. The AI table provides repeatable pressure scenarios for improving reads and bluff timing." },
       { question: "How long does an online Mafia/Werewolf game take?", answer: "Typical sessions are around 15-30 minutes." },

@@ -28,7 +28,7 @@ type PasswordView = "sign_in" | "sign_up" | "forgot_password";
 export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const t = useTranslations();
   const EMAIL_SEND_COOLDOWN_SECONDS = 60;
-  const EMAIL_SEND_COOLDOWN_STORAGE_KEY = "wolfcha_auth_email_cooldown_until";
+  const EMAIL_SEND_COOLDOWN_STORAGE_KEY = "aicb_auth_email_cooldown_until";
 
   const [passwordView, setPasswordView] = useState<PasswordView>("sign_in");
   

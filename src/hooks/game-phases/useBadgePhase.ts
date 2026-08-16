@@ -84,6 +84,9 @@ export function useBadgePhase(
   gameStateRef.current = gameState;
   // Prevent concurrent AI signup runs
   const aiSignupPromiseRef = useRef<Promise<GameState> | null>(null);
+  // The restore task and the human click can both await the same AI batch.
+  // Only one caller may advance signup into the next phase for a given day.
+  const badgeSignupCompletedKeyRef = useRef<string | null>(null);
 
   /** 生成警长投票详情 */
   const generateBadgeVoteDetails = useCallback((
@@ -124,38 +127,50 @@ export function useBadgePhase(
 
   // 用于防止重复结算的标志
   const isResolvingBadgeElectionRef = useRef(false);
+  const badgePkStartedKeyRef = useRef<string | null>(null);
 
   /** 开始警徽PK发言 */
   const startBadgePkSpeech = useCallback(async (state: GameState, pkTargets: number[]) => {
+    const pkKey = `${state.gameId}:${state.day}:${state.badge.revoteCount || 0}:${[...pkTargets].sort((a, b) => a - b).join(",")}`;
+    if (badgePkStartedKeyRef.current === pkKey) return;
+    badgePkStartedKeyRef.current = pkKey;
     const texts = getTexts();
-    let currentState = transitionPhase(state, "DAY_PK_SPEECH");
-    const firstSeat = pkTargets[0] ?? null;
-    currentState = {
-      ...currentState,
-      pkTargets,
-      pkSource: "badge",
-      currentSpeakerSeat: firstSeat,
-      daySpeechStartSeat: firstSeat,
-      badge: {
-        ...currentState.badge,
-        candidates: pkTargets,
-        votes: {},
-      },
-    };
-    currentState = addSystemMessage(currentState, texts.t("badgePhase.tiePk"));
-    setGameState(currentState);
-    setDialogue(texts.speakerHost, texts.t("badgePhase.tiePk"), false);
+    try {
+      let currentState = transitionPhase(state, "DAY_PK_SPEECH");
+      const firstSeat = pkTargets[0] ?? null;
+      currentState = {
+        ...currentState,
+        pkTargets,
+        pkSource: "badge",
+        currentSpeakerSeat: firstSeat,
+        daySpeechStartSeat: firstSeat,
+        badge: {
+          ...currentState.badge,
+          candidates: pkTargets,
+          votes: {},
+        },
+      };
+      currentState = addSystemMessage(currentState, texts.t("badgePhase.tiePk"));
+      setGameState(currentState);
+      setDialogue(texts.speakerHost, texts.t("badgePhase.tiePk"), false);
 
-    await delay(DELAY_CONFIG.DIALOGUE);
-    await waitForUnpause();
+      await delay(DELAY_CONFIG.DIALOGUE);
+      await waitForUnpause();
+      clearDialogue();
 
-    const firstSpeaker = currentState.players.find((p) => p.seat === firstSeat);
-    if (firstSpeaker && !firstSpeaker.isHuman) {
-      await runAISpeech(currentState, firstSpeaker);
-    } else if (firstSpeaker?.isHuman) {
-      setDialogue(texts.speakerHint, texts.uiText.yourTurn, false);
+      const firstSpeaker = currentState.players.find((p) => p.seat === firstSeat);
+      if (firstSpeaker && !firstSpeaker.isHuman) {
+        await runAISpeech(currentState, firstSpeaker);
+      } else if (firstSpeaker?.isHuman) {
+        setDialogue(texts.speakerHint, texts.uiText.yourTurn, false);
+      } else {
+        throw new Error("Badge PK has no valid first speaker");
+      }
+    } catch (error) {
+      badgePkStartedKeyRef.current = null;
+      throw error;
     }
-  }, [setGameState, setDialogue, waitForUnpause, runAISpeech]);
+  }, [clearDialogue, setGameState, setDialogue, waitForUnpause, runAISpeech]);
 
   /** 结算警长竞选投票 */
   const maybeResolveBadgeElection = useCallback(async (state: GameState) => {
@@ -226,13 +241,15 @@ export function useBadgePhase(
         setDialogue(texts.speakerHost, badgeTieTearMessage, false);
 
         await delay(DELAY_CONFIG.DIALOGUE);
-        isResolvingBadgeElectionRef.current = false;
-        await onBadgeElectionComplete(nextState);
+        try {
+          await onBadgeElectionComplete(nextState);
+        } finally {
+          isResolvingBadgeElectionRef.current = false;
+        }
         return;
       }
 
       // 进入PK发言，累积当前轮投票到 allVotes
-      isResolvingBadgeElectionRef.current = false;
       const nextState: GameState = {
         ...state,
         badge: {
@@ -243,7 +260,11 @@ export function useBadgePhase(
           candidates: topSeats,
         },
       };
-      await startBadgePkSpeech(nextState, topSeats);
+      try {
+        await startBadgePkSpeech(nextState, topSeats);
+      } finally {
+        isResolvingBadgeElectionRef.current = false;
+      }
       return;
     }
 
@@ -273,9 +294,12 @@ export function useBadgePhase(
     setDialogue(texts.speakerHost, texts.systemMessages.badgeElected(winnerSeat + 1, winner?.displayName || "", votedCount), false);
 
     await delay(DELAY_CONFIG.DIALOGUE);
-    isResolvingBadgeElectionRef.current = false;
-    await onBadgeElectionComplete(nextState);
-  }, [setGameState, setDialogue, generateBadgeVoteDetails, onBadgeElectionComplete]);
+    try {
+      await onBadgeElectionComplete(nextState);
+    } finally {
+      isResolvingBadgeElectionRef.current = false;
+    }
+  }, [setGameState, setDialogue, generateBadgeVoteDetails, onBadgeElectionComplete, startBadgePkSpeech]);
 
   /** AI 报名决策（在用户决定后同时进行） */
   const resolveAIBadgeSignup = useCallback(async (state: GameState): Promise<GameState> => {
@@ -378,6 +402,10 @@ export function useBadgePhase(
     const signup = state.badge.signup || {};
     const allDecided = alivePlayers.every((p) => typeof signup[p.playerId] === "boolean");
     if (!allDecided) return;
+
+    const completionKey = `${state.gameId}:${state.day}`;
+    if (badgeSignupCompletedKeyRef.current === completionKey) return;
+    badgeSignupCompletedKeyRef.current = completionKey;
 
     const candidates = alivePlayers
       .filter((p) => signup[p.playerId] === true)
@@ -528,7 +556,13 @@ export function useBadgePhase(
       setDialogue(texts.speakerHost, texts.uiText.aiVoting, false);
     }
     setGameState(currentState);
-    const aiPlayers = currentState.players.filter((p) => p.alive && !p.isHuman && !candidates.includes(p.seat));
+    const aiPlayers = currentState.players.filter(
+      (p) =>
+        p.alive &&
+        !p.isHuman &&
+        !candidates.includes(p.seat) &&
+        typeof currentState.badge.votes[p.playerId] !== "number"
+    );
     try {
       for (const aiPlayer of aiPlayers) {
         setIsWaitingForAI(true);
@@ -536,7 +570,7 @@ export function useBadgePhase(
         try {
           targetSeat = await generateAIBadgeVote(currentState, aiPlayer);
         } catch (e) {
-          console.warn("[wolfcha] AI badge vote threw, treating as abstain", e);
+          console.warn("[aicb] AI badge vote threw, treating as abstain", e);
           targetSeat = BADGE_VOTE_ABSTAIN;
         }
 

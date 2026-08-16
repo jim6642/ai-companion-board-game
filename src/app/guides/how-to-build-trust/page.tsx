@@ -8,10 +8,10 @@ import { LandingFaq } from "@/components/seo/landing/LandingFaq";
 import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLinks";
 
 export const metadata: Metadata = {
-  title: "How to Build Trust in Werewolf: Establish Credibility | Wolfcha",
+  title: "How to Build Trust in Werewolf: Establish Credibility | AI Companion Board Game",
   description: "Learn to build trust and establish credibility in Werewolf. Master techniques for creating alliances, proving your alignment, and becoming a village leader.",
   keywords: ["werewolf trust building", "mafia credibility", "werewolf alliances", "prove innocent werewolf"],
-  alternates: { canonical: "https://wolf-cha.com/guides/how-to-build-trust" },
+  alternates: { canonical: "https://github.com/jim6642/ai-companion-board-game/guides/how-to-build-trust" },
 };
 
 const faqItems = [

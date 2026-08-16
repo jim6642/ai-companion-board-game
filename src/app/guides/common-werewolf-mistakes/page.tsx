@@ -8,11 +8,11 @@ import { LandingFaq } from "@/components/seo/landing/LandingFaq";
 import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLinks";
 
 export const metadata: Metadata = {
-  title: "Common Werewolf Mistakes: Avoid These Game-Losing Errors | Wolfcha",
+  title: "Common Werewolf Mistakes: Avoid These Game-Losing Errors | AI Companion Board Game",
   description: "Learn the most common mistakes in Werewolf and how to avoid them. Improve your gameplay by understanding what NOT to do as both village and wolf team.",
   keywords: ["werewolf mistakes", "werewolf tips", "common mafia errors", "werewolf beginner mistakes", "how to improve at werewolf"],
-  alternates: { canonical: "https://wolf-cha.com/guides/common-werewolf-mistakes" },
-  openGraph: { title: "Common Werewolf Mistakes to Avoid | Wolfcha", url: "https://wolf-cha.com/guides/common-werewolf-mistakes", type: "article" },
+  alternates: { canonical: "https://github.com/jim6642/ai-companion-board-game/guides/common-werewolf-mistakes" },
+  openGraph: { title: "Common Werewolf Mistakes to Avoid | AI Companion Board Game", url: "https://github.com/jim6642/ai-companion-board-game/guides/common-werewolf-mistakes", type: "article" },
 };
 
 const faqItems = [

@@ -1,6 +1,6 @@
-# Contributing to Wolfcha
+# Contributing to AI Companion Board Game
 
-感谢你对 Wolfcha 的贡献！
+感谢你对 AI Companion Board Game 的贡献！
 
 ## Development Setup
 

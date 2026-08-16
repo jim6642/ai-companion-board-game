@@ -143,8 +143,8 @@ const modelProfiles: Record<string, ModelInfo> = {
 };
 
 const hubLinks: LandingRelatedLink[] = [
-  { href: "/ai-models", label: "AI Models (Hub)", description: "Overview of all AI models in Wolfcha." },
-  { href: "/ai-werewolf", label: "AI Werewolf", description: "What Wolfcha is and how it works." },
+  { href: "/ai-models", label: "AI Models (Hub)", description: "Overview of all AI models in AI Companion Board Game." },
+  { href: "/ai-werewolf", label: "AI Werewolf", description: "What AI Companion Board Game is and how it works." },
   { href: "/how-to-play", label: "How to Play", description: "Rules and mechanics overview." },
 ];
 
@@ -215,7 +215,7 @@ export const modelComparisonDataByKey: Record<ModelComparisonKey, ModelCompariso
       { question: "Which model is harder to beat?", answer: "DeepSeek if you make logical mistakes; Qwen if you can't think long-term. Both require clean, consistent play." },
       { question: "Which is better at catching wolves?", answer: "DeepSeek catches wolves through immediate contradictions. Qwen catches wolves through voting pattern analysis over multiple days." },
       { question: "Which makes a better wolf?", answer: "Both are dangerous wolves. DeepSeek wolves are consistent; Qwen wolves plan ahead. Neither makes many mistakes." },
-      { question: "Can I play against both in the same game?", answer: "Yes! Wolfcha randomly assigns AI models to seats. You might face both DeepSeek and Qwen at the same table." },
+      { question: "Can I play against both in the same game?", answer: "Yes! AI Companion Board Game randomly assigns AI models to seats. You might face both DeepSeek and Qwen at the same table." },
       { question: "Which model is more fun?", answer: "DeepSeek creates tense, quick confrontations. Qwen creates strategic, slow-burn games. It depends on what you enjoy." },
     ],
     related: {

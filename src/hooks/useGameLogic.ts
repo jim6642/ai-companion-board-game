@@ -54,6 +54,8 @@ import { gameSessionTracker } from "@/lib/game-session-tracker";
 import { isCustomKeyEnabled } from "@/lib/api-keys";
 import { isQuotaExhaustedMessage } from "@/lib/llm";
 import { aiLogger } from "@/lib/ai-logger";
+import { isFinishSpeechIntent } from "@/lib/companion/speech-intent";
+import { COMPANION_CHARACTERS } from "@/lib/companion/characters";
 
 // 子模块
 import { useDialogueManager, type DialogueState } from "./useDialogueManager";
@@ -80,6 +82,28 @@ function getRandomModelRef(): ModelRef {
   return PLAYER_MODELS[randomIndex];
 }
 
+const COMPANION_MBTI: Record<string, string> = {
+  "lin-xia": "INFJ",
+  "su-yao": "ENTP",
+  "gu-qinglan": "INTJ",
+  "tang-guo": "ESFP",
+  "chen-hang": "ESTP",
+  "xiao-man": "ENFP",
+  "shen-ning": "ISFJ",
+};
+
+const DEFAULT_COMPANION_CHARACTERS = COMPANION_CHARACTERS.map((character) => ({
+  id: character.id,
+  display_name: character.name,
+  gender: character.gender,
+  age: character.age,
+  mbti: COMPANION_MBTI[character.id] ?? "",
+  basic_info: `${character.relationLabel}。${character.archetype}。桌游风格：${character.tableStyle}。和真人玩家的关系会影响语气，但绝不能代替阵营判断。只生成真正说出口的话，禁止任何括号动作、神态、语气和舞台提示，也不要输出自己的姓名或座位前缀。`,
+  style_label: character.speakingStyle,
+  avatar_seed: character.id,
+  voice_id: character.voiceId,
+}));
+
 // Re-export for backward compatibility
 export type { DialogueState };
 
@@ -90,7 +114,7 @@ export function useGameLogic() {
   // ============================================
   // 基础状态
   // ============================================
-  const [humanName, setHumanName] = useLocalStorageState<string>("wolfcha_human_name", {
+  const [humanName, setHumanName] = useLocalStorageState<string>("aicb_human_name", {
     defaultValue: "",
   });
   const [gameStarted, setGameStarted] = useState(false);
@@ -115,7 +139,7 @@ export function useGameLogic() {
     
     // Check if the current gameState is from a restored game in progress
     if (isGameInProgress(gameState) && gameState.players.length > 0) {
-      console.info("[wolfcha] Restoring game session from previous state");
+      console.info("[aicb] Restoring game session from previous state");
       setGameStarted(true);
       setShowTable(true);
     }
@@ -140,6 +164,7 @@ export function useGameLogic() {
   const prevDevPhaseJumpTsRef = useRef<number | undefined>(undefined);
   const runAISpeechRef = useRef<((state: GameState, player: Player) => Promise<void>) | null>(null);
   const handleVoteCompleteRef = useRef<((state: GameState, result: { seat: number; count: number } | null, token: ReturnType<typeof getToken>) => Promise<void>) | null>(null);
+  const resolveVotesSafelyRef = useRef<((state: GameState, token: ReturnType<typeof getToken>) => Promise<void>) | null>(null);
   const endGameRef = useRef<((state: GameState, winner: "village" | "wolf") => Promise<void>) | null>(null);
   const resolveNightRef = useRef<((state: GameState, token: ReturnType<typeof getToken>, onComplete: (resolvedState: GameState) => Promise<void>) => Promise<void>) | null>(null);
   const startDayPhaseInternalRef = useRef<((state: GameState, token: ReturnType<typeof getToken>, options?: { skipAnnouncements?: boolean }) => Promise<void>) | null>(null);
@@ -150,6 +175,12 @@ export function useGameLogic() {
   const onBadgeSpeechEndRef = useRef<((state: GameState) => Promise<void>) | null>(null);
   const onPkSpeechEndRef = useRef<((state: GameState) => Promise<void>) | null>(null);
   const wwkBoomCheckRef = useRef<((state: GameState, wwk: Player) => Promise<boolean>) | null>(null);
+  const nightPhaseRunRef = useRef<{ key: string; promise: Promise<void> } | null>(null);
+  const enteredDayKeyRef = useRef<string | null>(
+    gameState.phase.startsWith("DAY_") && gameState.phase !== "DAY_START"
+      ? `${gameState.gameId}:${gameState.day}`
+      : null
+  );
 
   // 游戏启动相关 refs
   const pendingStartStateRef = useRef<GameState | null>(null);
@@ -203,7 +234,7 @@ export function useGameLogic() {
   // ============================================
   const transitionPhase = useCallback((state: GameState, newPhase: Phase): GameState => {
     if (!isValidTransition(state.phase, newPhase)) {
-      console.warn(`[wolfcha] Invalid phase transition: ${state.phase} -> ${newPhase}`);
+      console.warn(`[aicb] Invalid phase transition: ${state.phase} -> ${newPhase}`);
     }
     return rawTransitionPhase(state, newPhase);
   }, []);
@@ -239,6 +270,10 @@ export function useGameLogic() {
       setIsWaitingForAI,
       waitForUnpause,
       isTokenValid,
+      onVotesReady: async (state: GameState) => {
+        const fn = resolveVotesSafelyRef.current;
+        if (fn) await fn(state, token);
+      },
       onVoteComplete: async (state: GameState, result: { seat: number; count: number } | null) => {
         const nextToken = getToken();
         const fn = handleVoteCompleteRef.current;
@@ -360,14 +395,53 @@ export function useGameLogic() {
 
   const runNightPhaseAction = useCallback(
     async (state: GameState, token: ReturnType<typeof getToken>, action: "START_NIGHT" | "CONTINUE_NIGHT_AFTER_GUARD" | "CONTINUE_NIGHT_AFTER_WOLF" | "CONTINUE_NIGHT_AFTER_WITCH") => {
+      const expectedPhase: Record<typeof action, Phase> = {
+        START_NIGHT: "NIGHT_START",
+        CONTINUE_NIGHT_AFTER_GUARD: "NIGHT_GUARD_ACTION",
+        CONTINUE_NIGHT_AFTER_WOLF: "NIGHT_WOLF_ACTION",
+        CONTINUE_NIGHT_AFTER_WITCH: "NIGHT_WITCH_ACTION",
+      };
+
+      const requestedKey = `${state.gameId}:${state.day}:${action}`;
+      const activeRun = nightPhaseRunRef.current;
+      if (activeRun) {
+        await activeRun.promise;
+        // Duplicate effects and double-clicks should share the same run. A
+        // different action, however, is the player's continuation request and
+        // must be re-checked after the previous role animation has settled.
+        if (activeRun.key === requestedKey) return;
+      }
+
+      if (!isTokenValid(token)) return;
+
+      // Always continue from the latest atom state. The state passed by the
+      // click handler can be one render behind while the preceding async night
+      // role is writing its checkpoint.
+      const liveState = gameStateRef.current;
+      if (
+        liveState.gameId !== state.gameId ||
+        liveState.day !== state.day ||
+        liveState.phase !== expectedPhase[action]
+      ) {
+        console.info(`[aicb] Ignored stale night action ${action} from ${state.phase}; live phase is ${liveState.phase}`);
+        return;
+      }
+
       const phaseImpl = phaseManagerRef.current.getPhase("NIGHT_START");
       if (!phaseImpl) return;
-      await phaseImpl.handleAction(
-        { state, phase: state.phase, extras: buildNightPhaseExtras(token) },
+      const run = phaseImpl.handleAction(
+        { state: liveState, phase: liveState.phase, extras: buildNightPhaseExtras(token) },
         { type: action }
       );
+      const runEntry = { key: requestedKey, promise: run };
+      nightPhaseRunRef.current = runEntry;
+      try {
+        await run;
+      } finally {
+        if (nightPhaseRunRef.current === runEntry) nightPhaseRunRef.current = null;
+      }
     },
-    [buildNightPhaseExtras]
+    [buildNightPhaseExtras, isTokenValid]
   );
 
   // ============================================
@@ -572,6 +646,18 @@ export function useGameLogic() {
     [buildVotePhaseExtras]
   );
 
+  const resumeVotePhase = useCallback(
+    async (state: GameState, token: ReturnType<typeof getToken>) => {
+      const phaseImpl = phaseManagerRef.current.getPhase("DAY_VOTE");
+      if (!phaseImpl) return;
+      await phaseImpl.handleAction(
+        { state, phase: "DAY_VOTE", extras: buildVotePhaseExtras(token) },
+        { type: "RESUME_VOTES" }
+      );
+    },
+    [buildVotePhaseExtras]
+  );
+
   const resolveVotesSafely = useCallback(async (
     state: GameState,
     token: ReturnType<typeof getToken>
@@ -584,6 +670,7 @@ export function useGameLogic() {
       isResolvingVotesRef.current = false;
     }
   }, [resolveVotePhase]);
+  resolveVotesSafelyRef.current = resolveVotesSafely;
 
   // ============================================
   // 白天阶段
@@ -746,6 +833,13 @@ export function useGameLogic() {
     token: ReturnType<typeof getToken>,
     options?: { skipAnnouncements?: boolean }
   ) => {
+    const dayKey = `${state.gameId}:${state.day}`;
+    if (enteredDayKeyRef.current === dayKey) {
+      console.info(`[aicb] Ignored duplicate day entry for ${dayKey}`);
+      return;
+    }
+    enteredDayKeyRef.current = dayKey;
+
     // 第一天：先进行警徽评选
     if (state.day === 1 && state.badge.holderSeat === null) {
       await badgePhase.startBadgeSignupPhase(state);
@@ -818,7 +912,7 @@ export function useGameLogic() {
     hasResumedFromCheckpointRef.current = true;
     const token = getToken();
 
-    console.info(`[wolfcha] Resuming from checkpoint at phase ${s.phase}, day ${s.day}`);
+    console.info(`[aicb] Resuming from checkpoint at phase ${s.phase}, day ${s.day}`);
 
     const uiText = getUiText();
     const speakerHint = t("speakers.hint");
@@ -1002,7 +1096,7 @@ export function useGameLogic() {
 
         // 若没有 speaker，说明状态异常，跳过遗言直接进入下一阶段
         if (s.currentSpeakerSeat === null) {
-          console.warn('[wolfcha] DAY_LAST_WORDS: currentSpeakerSeat is null, skipping last words');
+          console.warn('[aicb] DAY_LAST_WORDS: currentSpeakerSeat is null, skipping last words');
           void proceedToNight(s, token);
           break;
         }
@@ -1011,14 +1105,14 @@ export function useGameLogic() {
         
         // 遗言发言者必须存在（无论生死）
         if (!lastWordsSpeaker) {
-          console.warn('[wolfcha] DAY_LAST_WORDS: speaker not found, skipping last words');
+          console.warn('[aicb] DAY_LAST_WORDS: speaker not found, skipping last words');
           void proceedToNight(s, token);
           break;
         }
 
         // 遗言阶段的发言者应该是已死亡的玩家，如果还活着说明状态异常
         if (lastWordsSpeaker.alive) {
-          console.warn('[wolfcha] DAY_LAST_WORDS: speaker is still alive, this should not happen');
+          console.warn('[aicb] DAY_LAST_WORDS: speaker is still alive, this should not happen');
           void proceedToNight(s, token);
           break;
         }
@@ -1032,7 +1126,7 @@ export function useGameLogic() {
         // AI 遗言发言者：由于无法可靠判断是否已完整说完（可能只说了一部分就刷新了）
         // 因此不检查历史消息，直接重新触发 AI 发言
         // AI 会根据历史消息自行判断是否需要继续说，如果已经说过遗言，AI 会生成简短的补充或确认
-        console.info('[wolfcha] DAY_LAST_WORDS: Restoring AI last words, re-triggering speech');
+        console.info('[aicb] DAY_LAST_WORDS: Restoring AI last words, re-triggering speech');
         void runAISpeech(s, lastWordsSpeaker);
         break;
       }
@@ -1041,7 +1135,16 @@ export function useGameLogic() {
         // 如果已经全员投票，恢复后直接触发一次结算（否则维持现状）
         hasContinuedAfterRevealRef.current = true;
         isAwaitingRoleRevealRef.current = false;
-        void badgePhase.maybeResolveBadgeElection(s);
+        const candidates = Array.isArray(s.badge.candidates) ? s.badge.candidates : [];
+        const voterIds = s.players
+          .filter((p) => p.alive && !candidates.includes(p.seat))
+          .map((p) => p.playerId);
+        const allVoted = voterIds.every((id) => typeof s.badge.votes[id] === "number");
+        if (allVoted) {
+          void badgePhase.maybeResolveBadgeElection(s);
+        } else {
+          void badgePhase.startBadgeElectionPhase(s, { isRevote: true });
+        }
         break;
       }
 
@@ -1058,6 +1161,8 @@ export function useGameLogic() {
         const allVoted = voterIds.length > 0 && voterIds.every((id) => typeof s.votes[id] === "number");
         if (allVoted) {
           void resolveVotesSafely(s, token);
+        } else {
+          void resumeVotePhase(s, token);
         }
         // 否则等待剩余玩家投票（人类和AI）
         break;
@@ -1070,7 +1175,7 @@ export function useGameLogic() {
         break;
       }
     }
-  }, [badgePhase, getToken, runAISpeech, runDaySpeechAction, runNightPhaseAction, resolveNight, resolveVotesSafely, setDialogue, setWaitingForNextRound, startDayPhaseInternal, t]);
+  }, [badgePhase, getToken, resumeVotePhase, runAISpeech, runDaySpeechAction, runNightPhaseAction, resolveNight, resolveVotesSafely, setDialogue, setWaitingForNextRound, startDayPhaseInternal, t]);
 
   hunterDeathRef.current = async (state: GameState, hunter: Player, diedAtNight: boolean) => {
     const token = getToken();
@@ -1176,7 +1281,7 @@ export function useGameLogic() {
     const allVoted = voterIds.every((id) => typeof gameState.votes[id] === "number");
     
     if (allVoted && voterIds.length > 0) {
-      console.log("[wolfcha] useEffect: All votes detected, triggering resolveVotePhase as safety net");
+      console.log("[aicb] useEffect: All votes detected, triggering resolveVotePhase as safety net");
       const token = getToken();
       void resolveVotesSafely(gameState, token);
     }
@@ -1354,13 +1459,17 @@ export function useGameLogic() {
       fixedRoles,
       devPreset,
       difficulty = "normal",
-      playerCount = 10,
+      playerCount = 8,
       gameSessionId,
       isGenshinMode = false,
       isSpectatorMode = false,
-      customCharacters = [],
       preferredRole,
     } = options ?? {};
+
+    const requestedCustomCharacters = options?.customCharacters ?? [];
+    const customCharacters = requestedCustomCharacters.length > 0
+      ? requestedCustomCharacters
+      : DEFAULT_COMPANION_CHARACTERS;
 
     const totalPlayers = playerCount;
 
@@ -1457,19 +1566,45 @@ export function useGameLogic() {
 
       // Convert custom characters to GeneratedCharacter format
       const customCharsToUse = customCharacters.slice(0, numAiPlayers);
-      const customGeneratedCharacters: GeneratedCharacter[] = customCharsToUse.map((cc) => ({
-        displayName: cc.display_name,
-        persona: {
-          styleLabel: "",
-          voiceRules: cc.style_label?.trim() ? [cc.style_label.trim()] : [],
-          mbti: cc.mbti || "",
-          gender: cc.gender,
-          age: cc.age,
-          basicInfo: cc.basic_info?.trim() || undefined,
-          voiceId: undefined,
-        },
-        avatarSeed: cc.avatar_seed || undefined,
-      }));
+      const customGeneratedCharacters: GeneratedCharacter[] = customCharsToUse.map((cc) => {
+        const companion = COMPANION_CHARACTERS.find((candidate) => candidate.id === cc.id);
+        const profile = companion?.werewolfProfile;
+        const signatureRule = profile?.signatureLines.length
+          ? `可以自然借鉴这些标志性句式，但不要逐轮重复：${profile.signatureLines.join("；")}`
+          : undefined;
+        return {
+          displayName: cc.display_name,
+          persona: {
+            styleLabel: companion?.relationLabel || "",
+            voiceRules: [
+              cc.style_label?.trim(),
+              signatureRule,
+              profile?.forbiddenHabits,
+              "必须针对本轮刚发生的具体发言、票型或行动作出反应；禁止输出换个名字也能套用的通用狼人杀发言。",
+            ].filter((rule): rule is string => Boolean(rule)),
+            mbti: cc.mbti || "",
+            gender: cc.gender,
+            age: cc.age,
+            basicInfo: cc.basic_info?.trim() || undefined,
+            voiceId: cc.voice_id?.trim() || undefined,
+            relationships: companion
+              ? [`真人玩家是${companion.relationLabel}；可以亲近、拆台或轻微偏心，但证据明显时必须敢于怀疑和投票。`]
+              : undefined,
+            logicStyle: profile?.logicStyle,
+            socialHabit: companion?.tableStyle,
+            werewolfExperience: "熟悉标准八人局流程，但会按照自己的人设保留稳定的强项、盲区和失误。",
+            vocabularyStyle: profile?.vocabularyStyle,
+            reasoningStyle: profile?.logicStyle,
+            speechLengthHabit: profile?.speechLengthHabit,
+            pressureStyle: profile?.pressureStyle,
+            uncertaintyStyle: profile?.uncertaintyStyle,
+            mistakePattern: profile?.mistakePattern,
+            wolfDeceptionStyle: profile?.wolfDeceptionStyle,
+          },
+          playerMind: profile?.playerMind,
+          avatarSeed: cc.avatar_seed || undefined,
+        };
+      });
 
       const applyCustomCharactersToState = (customList: GeneratedCharacter[]) => {
         if (customList.length === 0) return;
@@ -1781,17 +1916,53 @@ export function useGameLogic() {
     if (!isMyTurn) return;
 
     const speech = inputText.trim();
+    const shouldFinishSpeaking = isFinishSpeechIntent(speech);
     setInputText("");
 
     const currentState = addPlayerMessage(gameStateRef.current, humanPlayer.playerId, speech);
     setGameState(currentState);
-  }, [inputText, humanPlayer, setGameState]);
+
+    if (!shouldFinishSpeaking) return;
+
+    clearDialogue();
+
+    if (currentState.phase === "DAY_LAST_WORDS") {
+      const next = afterLastWordsRef.current;
+      afterLastWordsRef.current = null;
+      if (next) {
+        await delay(180);
+        await next(gameStateRef.current);
+      }
+      return;
+    }
+
+    const startGameId = currentState.gameId;
+    const startPhase = currentState.phase;
+    await delay(180);
+
+    const liveState = gameStateRef.current;
+    if (liveState.gameId !== startGameId || liveState.phase !== startPhase) return;
+
+    const token = getToken();
+    await runDaySpeechAction(liveState, token, "ADVANCE_SPEAKER");
+  }, [inputText, humanPlayer, setGameState, getToken, runDaySpeechAction, clearDialogue]);
 
   /** 人类结束发言 */
   const handleFinishSpeaking = useCallback(async () => {
     if (!humanPlayer) return;
 
-    if (gameStateRef.current.phase === "DAY_LAST_WORDS") {
+    const current = gameStateRef.current;
+    const isHumanSpeechTurn = (
+      current.phase === "DAY_SPEECH" ||
+      current.phase === "DAY_LAST_WORDS" ||
+      current.phase === "DAY_BADGE_SPEECH" ||
+      current.phase === "DAY_PK_SPEECH"
+    ) && current.currentSpeakerSeat === humanPlayer.seat;
+    if (!isHumanSpeechTurn) return;
+
+    clearDialogue();
+
+    if (current.phase === "DAY_LAST_WORDS") {
       const next = afterLastWordsRef.current;
       afterLastWordsRef.current = null;
       if (next) {
@@ -1813,7 +1984,7 @@ export function useGameLogic() {
 
     const token = getToken();
     await runDaySpeechAction(liveState, token, "ADVANCE_SPEAKER");
-  }, [humanPlayer, getToken, runDaySpeechAction]);
+  }, [humanPlayer, getToken, runDaySpeechAction, clearDialogue]);
 
   /** 下一轮按钮 */
   const handleNextRound = useCallback(async () => {
@@ -1836,6 +2007,23 @@ export function useGameLogic() {
     await runDaySpeechAction(liveState, token, "ADVANCE_SPEAKER");
   }, [getToken, runDaySpeechAction, setWaitingForNextRound]);
 
+  /** Recover a speech phase whose announcement completed but speaker generation never started. */
+  const resumeCurrentSpeech = useCallback(async () => {
+    const state = gameStateRef.current;
+    if (!["DAY_SPEECH", "DAY_BADGE_SPEECH", "DAY_PK_SPEECH", "DAY_LAST_WORDS"].includes(state.phase)) return;
+    const speaker = state.players.find((player) => player.seat === state.currentSpeakerSeat);
+    if (!speaker) {
+      const token = getToken();
+      await runDaySpeechAction(state, token, "ADVANCE_SPEAKER");
+      return;
+    }
+    if (speaker.isHuman) {
+      setDialogue(t("speakers.hint"), getUiText().yourTurn, false);
+      return;
+    }
+    await runAISpeech(state, speaker);
+  }, [getToken, runAISpeech, runDaySpeechAction, setDialogue, t]);
+
   /** 人类投票 */
   const handleHumanVote = useCallback(async (targetSeat: number) => {
     if (!humanPlayer) return;
@@ -1854,7 +2042,7 @@ export function useGameLogic() {
       if (typeof baseState.badge.votes?.[humanPlayer.playerId] === "number") return;
       const candidates = baseState.badge.candidates || [];
       if (candidates.includes(humanPlayer.seat)) {
-        console.warn("[wolfcha] Candidate cannot vote in badge election");
+        console.warn("[aicb] Candidate cannot vote in badge election");
         return;
       }
 
@@ -1876,7 +2064,7 @@ export function useGameLogic() {
     if (typeof baseState.votes[humanPlayer.playerId] === "number") return;
     if (baseState.pkSource === "vote" && Array.isArray(baseState.pkTargets) && baseState.pkTargets.length > 0) {
       if (!baseState.pkTargets.includes(targetSeat)) {
-        console.warn("[wolfcha] Vote target not in PK list");
+        console.warn("[aicb] Vote target not in PK list");
         return;
       }
     }
@@ -1905,7 +2093,7 @@ export function useGameLogic() {
     const aliveIds = latestState.players.filter((p) => p.alive && p.playerId !== revealedIdiotId2).map((p) => p.playerId);
     const allVoted = aliveIds.every((id) => typeof latestState.votes[id] === "number");
     
-    console.log("[wolfcha] handleHumanVote: allVoted =", allVoted, "votes count =", Object.keys(latestState.votes).length, "alive count =", aliveIds.length);
+    console.log("[aicb] handleHumanVote: allVoted =", allVoted, "votes count =", Object.keys(latestState.votes).length, "alive count =", aliveIds.length);
     
     if (allVoted && !isWaitingForAI) {
       const token = getToken();
@@ -1982,6 +2170,10 @@ export function useGameLogic() {
         };
         setDialogue(t("speakers.system"), t("gameLogicMessages.usedPoison", { seat: targetSeat + 1, name: targetPlayer?.displayName || "" }), false);
       } else {
+        currentState = {
+          ...currentState,
+          nightActions: { ...currentState.nightActions, witchSave: false },
+        };
         setDialogue(t("speakers.system"), t("gameLogicMessages.noPotion"), false);
       }
       setGameState(currentState);
@@ -2281,6 +2473,7 @@ export function useGameLogic() {
     handleHumanBadgeTransfer,
     handleWhiteWolfKingBoom,
     handleNextRound,
+    resumeCurrentSpeech,
     scrollToBottom,
     advanceSpeech,
     togglePause,

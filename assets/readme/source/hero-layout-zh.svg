@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="480" viewBox="0 0 1280 480" role="img" aria-labelledby="title desc">
-  <title id="title">Wolfcha 猹杀 — 一个人也能玩狼人杀</title>
+  <title id="title">AI Companion Board Game 猹杀 — 一个人也能玩狼人杀</title>
   <desc id="desc">月夜下，狼人格主持人与八席 AI 玩家围绕圆桌展开推理。</desc>
   <defs>
     <linearGradient id="night" x1="0" y1="0" x2="1" y2="1">
@@ -47,7 +47,7 @@
     <path d="M71 82 H142" stroke="#b3222c" stroke-width="3"/>
     <text x="158" y="87" fill="#d7aa50" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" font-weight="700" letter-spacing="4">AI SOCIAL DEDUCTION</text>
 
-    <text x="68" y="225" fill="#f6ead1" font-family="Georgia, 'Times New Roman', serif" font-size="96" font-weight="700" letter-spacing="-4">WOLFCHA</text>
+    <text x="68" y="225" fill="#f6ead1" font-family="Georgia, 'Times New Roman', serif" font-size="96" font-weight="700" letter-spacing="-4">AI COMPANION BOARD GAME</text>
     <circle cx="558" cy="203" r="8" fill="#b3222c"/>
 
     <text x="72" y="294" fill="#f6ead1" font-family="'PingFang SC', 'Noto Sans CJK SC', Arial, sans-serif" font-size="31" font-weight="700">一个人，也能玩</text>

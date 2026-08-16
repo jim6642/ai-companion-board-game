@@ -9,11 +9,11 @@ import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLink
 import { LandingDialogueExamples, type LandingDialogueExample } from "@/components/seo/landing/LandingDialogueExamples";
 
 export const metadata: Metadata = {
-  title: "How to Win as Villager: Village Team Strategy Guide | Wolfcha",
+  title: "How to Win as Villager: Village Team Strategy Guide | AI Companion Board Game",
   description: "Master village team strategy in Werewolf. Learn discussion tactics, voting coordination, wolf identification, and how to lead the village to victory.",
   keywords: ["werewolf villager strategy", "how to win as villager", "village team werewolf", "find werewolves", "mafia town strategy"],
-  alternates: { canonical: "https://wolf-cha.com/guides/how-to-win-as-villager" },
-  openGraph: { title: "How to Win as Villager: Complete Strategy | Wolfcha", url: "https://wolf-cha.com/guides/how-to-win-as-villager", type: "article" },
+  alternates: { canonical: "https://github.com/jim6642/ai-companion-board-game/guides/how-to-win-as-villager" },
+  openGraph: { title: "How to Win as Villager: Complete Strategy | AI Companion Board Game", url: "https://github.com/jim6642/ai-companion-board-game/guides/how-to-win-as-villager", type: "article" },
 };
 
 const dialogueExamples: LandingDialogueExample[] = [

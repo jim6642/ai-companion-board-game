@@ -45,7 +45,7 @@ const baseSeats: LandingAiSeat[] = [
 ];
 
 const hubLinks: LandingRelatedLink[] = [
-  { href: "/ai-werewolf", label: "AI Werewolf (Hub)", description: "What Wolfcha is and why solo vs AI works." },
+  { href: "/ai-werewolf", label: "AI Werewolf (Hub)", description: "What AI Companion Board Game is and why solo vs AI works." },
   { href: "/how-to-play", label: "How to Play", description: "A quick rules overview for solo play." },
   { href: "/werewolf-game-with-ai-opponents", label: "AI Opponents", description: "How AI players fill the table." },
   { href: "/features", label: "Features", description: "Voice acting, classic roles, and more." },
@@ -65,7 +65,7 @@ export const roleLandingDataByKey: Record<RoleLandingKey, RoleLandingData> = {
     roleName: "Werewolf",
     tagline: "Hunt at night. Blend in by day.",
     heroDescription:
-      "As the Werewolf, your goal is to control the table narrative. Wolfcha turns classic Werewolf into a solo experience: every other seat is an AI opponent, which means every claim and every vote has a measurable consequence.",
+      "As the Werewolf, your goal is to control the table narrative. AI Companion Board Game turns classic Werewolf into a solo experience: every other seat is an AI opponent, which means every claim and every vote has a measurable consequence.",
     image: { src: "/roles/werewolf.png", alt: "Werewolf role art" },
     ability: "Each night, coordinate a kill target with the wolf team (in solo mode: the game handles coordination).",
     nightAction: "At night, decide who to eliminate. During the day, explain, deflect, and push a vote that benefits the wolves.",
@@ -150,7 +150,7 @@ export const roleLandingDataByKey: Record<RoleLandingKey, RoleLandingData> = {
     ],
     faqs: [
       {
-        question: "Can Werewolves coordinate in Wolfcha solo mode?",
+        question: "Can Werewolves coordinate in AI Companion Board Game solo mode?",
         answer:
           "Yes—coordination is simulated by the game flow. You still choose targets and manage day discussion like a classic table.",
       },
@@ -189,7 +189,7 @@ export const roleLandingDataByKey: Record<RoleLandingKey, RoleLandingData> = {
     roleName: "Seer",
     tagline: "Turn one check into a table-winning vote.",
     heroDescription:
-      "The Seer is the strongest information role—but only if you can convert knowledge into trust. In Wolfcha, AI opponents respond to consistent reasoning, well-timed reveals, and vote planning.",
+      "The Seer is the strongest information role—but only if you can convert knowledge into trust. In AI Companion Board Game, AI opponents respond to consistent reasoning, well-timed reveals, and vote planning.",
     image: { src: "/roles/seer.png", alt: "Seer role art" },
     ability: "Each night, check one player to learn whether they are a Werewolf or Villager-aligned.",
     nightAction:
@@ -270,7 +270,7 @@ export const roleLandingDataByKey: Record<RoleLandingKey, RoleLandingData> = {
     ],
     faqs: [
       {
-        question: "When should the Seer reveal in Wolfcha?",
+        question: "When should the Seer reveal in AI Companion Board Game?",
         answer:
           "There’s no single rule. Reveal when it improves your faction’s voting power: either to execute a confirmed wolf, or to create a ‘confirmed good’ anchor.",
       },
@@ -309,7 +309,7 @@ export const roleLandingDataByKey: Record<RoleLandingKey, RoleLandingData> = {
     roleName: "Witch",
     tagline: "Two potions. One perfect tempo swing.",
     heroDescription:
-      "The Witch is about timing. Your antidote and poison can flip the game, but using them too early can hand wolves a clear plan. In Wolfcha, AI opponents react sharply to potion tempo.",
+      "The Witch is about timing. Your antidote and poison can flip the game, but using them too early can hand wolves a clear plan. In AI Companion Board Game, AI opponents react sharply to potion tempo.",
     image: { src: "/roles/witch.png", alt: "Witch role art" },
     ability: "You have one antidote (save) and one poison (kill), each usable once.",
     nightAction:
@@ -424,7 +424,7 @@ export const roleLandingDataByKey: Record<RoleLandingKey, RoleLandingData> = {
     roleName: "Hunter",
     tagline: "If you fall, trade up.",
     heroDescription:
-      "The Hunter is a threat of immediate punishment. Your best games are the ones where wolves never get a clean kill on you. In Wolfcha, AI opponents adjust their risk when a Hunter is alive.",
+      "The Hunter is a threat of immediate punishment. Your best games are the ones where wolves never get a clean kill on you. In AI Companion Board Game, AI opponents adjust their risk when a Hunter is alive.",
     image: { src: "/roles/hunter.png", alt: "Hunter role art" },
     ability: "If you are eliminated (vote or night kill), you may shoot and eliminate one player (rules follow the game prompt).",
     nightAction:
@@ -534,7 +534,7 @@ export const roleLandingDataByKey: Record<RoleLandingKey, RoleLandingData> = {
     roleName: "Guard",
     tagline: "Protect the right seat—without exposing yourself.",
     heroDescription:
-      "The Guard is about prediction. You rarely ‘solve’ by yourself, but you can keep the village’s strongest information alive. In Wolfcha, AI opponents adapt to protection patterns quickly.",
+      "The Guard is about prediction. You rarely ‘solve’ by yourself, but you can keep the village’s strongest information alive. In AI Companion Board Game, AI opponents adapt to protection patterns quickly.",
     image: { src: "/roles/guard.png", alt: "Guard role art" },
     ability: "Each night, protect one player from a werewolf attack (typically cannot protect the same player on consecutive nights).",
     nightAction:

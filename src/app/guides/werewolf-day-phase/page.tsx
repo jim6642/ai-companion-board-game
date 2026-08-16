@@ -9,7 +9,7 @@ import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLink
 import { LandingDialogueExamples, type LandingDialogueExample } from "@/components/seo/landing/LandingDialogueExamples";
 
 export const metadata: Metadata = {
-  title: "Werewolf Day Phase Guide: Discussion, Voting & Strategy | Wolfcha",
+  title: "Werewolf Day Phase Guide: Discussion, Voting & Strategy | AI Companion Board Game",
   description:
     "Master the Werewolf day phase with our complete guide. Learn discussion strategies, voting tactics, sheriff elections, speech patterns, and how to identify wolves through behavior analysis.",
   keywords: [
@@ -23,15 +23,15 @@ export const metadata: Metadata = {
     "social deduction tips",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/guides/werewolf-day-phase",
+    canonical: "https://github.com/jim6642/ai-companion-board-game/guides/werewolf-day-phase",
   },
   openGraph: {
-    title: "Werewolf Day Phase Guide: Discussion & Voting Strategy | Wolfcha",
+    title: "Werewolf Day Phase Guide: Discussion & Voting Strategy | AI Companion Board Game",
     description:
       "Complete guide to the Werewolf day phase - discussion tactics, voting strategies, sheriff elections, and how to identify wolves.",
-    url: "https://wolf-cha.com/guides/werewolf-day-phase",
+    url: "https://github.com/jim6642/ai-companion-board-game/guides/werewolf-day-phase",
     type: "article",
-    images: [{ url: "https://wolf-cha.com/og-image.png", width: 1200, height: 630, alt: "Werewolf Day Phase Guide" }],
+    images: [{ url: "https://github.com/jim6642/ai-companion-board-game/og-image.png", width: 1200, height: 630, alt: "Werewolf Day Phase Guide" }],
   },
 };
 
@@ -40,12 +40,12 @@ const articleJsonLd = {
   "@type": "Article",
   headline: "Werewolf Day Phase Guide: Discussion, Voting & Strategy",
   description: "Complete guide to the Werewolf day phase including discussion strategies, voting tactics, and behavioral analysis.",
-  image: "https://wolf-cha.com/og-image.png",
-  author: { "@type": "Organization", name: "Wolfcha", url: "https://wolf-cha.com" },
-  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: "https://wolf-cha.com/logo.png" } },
+  image: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
+  author: { "@type": "Organization", name: "AI Companion Board Game", url: "https://github.com/jim6642/ai-companion-board-game" },
+  publisher: { "@type": "Organization", name: "AI Companion Board Game", logo: { "@type": "ImageObject", url: "https://github.com/jim6642/ai-companion-board-game/logo.png" } },
   datePublished: "2024-01-15",
   dateModified: new Date().toISOString().split("T")[0],
-  mainEntityOfPage: { "@type": "WebPage", "@id": "https://wolf-cha.com/guides/werewolf-day-phase" },
+  mainEntityOfPage: { "@type": "WebPage", "@id": "https://github.com/jim6642/ai-companion-board-game/guides/werewolf-day-phase" },
 };
 
 const dialogueExamples: LandingDialogueExample[] = [
@@ -517,7 +517,7 @@ export default function WerewolfDayPhasePage() {
             Put Your Skills to the Test
           </h2>
           <p className="text-[var(--text-secondary)] max-w-2xl mx-auto mb-8">
-            The best way to improve at Werewolf is through practice. Play against AI opponents in Wolfcha 
+            The best way to improve at Werewolf is through practice. Play against AI opponents in AI Companion Board Game 
             and experience realistic discussions, accusations, and voting without needing to gather a group.
           </p>
           <Link href="/" className="inline-block rounded-full bg-[var(--color-gold)] px-8 py-4 font-bold text-black hover:bg-[var(--color-gold-dark)]">

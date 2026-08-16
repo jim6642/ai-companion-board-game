@@ -69,12 +69,10 @@ export function useSpecialEvents(
         .slice()
         .sort((a, b) => a.seat - b.seat)
         .map((p) => ({
-          playerId: p.playerId,
           seat: p.seat,
           name: p.displayName,
           role: p.role,
           isHuman: p.isHuman,
-          modelRef: p.agentProfile?.modelRef,
         })),
     };
     currentState = addSystemMessage(currentState, `[ROLE_REVEAL]${JSON.stringify(roleRevealPayload)}`);

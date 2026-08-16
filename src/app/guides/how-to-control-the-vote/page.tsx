@@ -8,10 +8,10 @@ import { LandingFaq } from "@/components/seo/landing/LandingFaq";
 import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLinks";
 
 export const metadata: Metadata = {
-  title: "How to Control the Vote in Werewolf: Voting Strategy | Wolfcha",
+  title: "How to Control the Vote in Werewolf: Voting Strategy | AI Companion Board Game",
   description: "Master voting strategy in Werewolf. Learn to lead votes, build consensus, counter wolf manipulation, and ensure the village eliminates the right target.",
   keywords: ["werewolf voting strategy", "control vote mafia", "werewolf vote manipulation", "lead werewolf vote"],
-  alternates: { canonical: "https://wolf-cha.com/guides/how-to-control-the-vote" },
+  alternates: { canonical: "https://github.com/jim6642/ai-companion-board-game/guides/how-to-control-the-vote" },
 };
 
 const faqItems = [

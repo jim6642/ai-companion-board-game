@@ -3,6 +3,7 @@ import { authenticateRequest, hasAuthorizedActiveGameSession } from "@/lib/api-a
 import { ALL_MODELS, PROJECT_MODELS } from "@/types/game";
 import { TOKENDANCE_BASE_URL } from "@/lib/api-keys";
 import { Agent, setGlobalDispatcher } from "undici";
+import { PERSONAL_PROTOTYPE_MODE } from "@/lib/prototype-mode";
 
 // 将 undici 底层 TCP 连接超时从默认 10s 调高到 60s
 // 避免访问国内 API 网关（如 tokendance）时因建连慢而提前失败
@@ -11,12 +12,17 @@ setGlobalDispatcher(new Agent({ connectTimeout: 60_000 }));
 const ZENMUX_API_URL = "https://zenmux.ai/api/v1/chat/completions";
 const DASHSCOPE_API_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
 const DASHSCOPE_CHAT_COMPLETIONS_URL = `${DASHSCOPE_API_BASE_URL}/chat/completions`;
+const MINIMAX_OPENAI_BASE_URL = "https://api.minimaxi.com/v1";
 
 // API 调用超时时间（毫秒）
 const API_TIMEOUT_MS = 60000;
 const MAX_BATCH_REQUESTS = 12;
 
 type Provider = "zenmux" | "dashscope" | "tokendance";
+
+function isDirectMiniMaxModel(model: string): boolean {
+  return model === "M2-her";
+}
 
 function getProviderForModel(model: string): Provider | null {
   const modelRef =
@@ -89,10 +95,10 @@ function supportsAutomaticPrefixCaching(model: string): boolean {
   return lower.startsWith("deepseek/") || lower.startsWith("deepseek-");
 }
 
-const DEEPSEEK_STABLE_PREFIX_MARKER = "WOLFCHA_DEEPSEEK_CACHE_PREFIX_V1";
+const DEEPSEEK_STABLE_PREFIX_MARKER = "AI COMPANION BOARD GAME_DEEPSEEK_CACHE_PREFIX_V1";
 const DEEPSEEK_STABLE_PROMPT_CACHE_PREFIX = `${DEEPSEEK_STABLE_PREFIX_MARKER}
-【Wolfcha Stable Rules】
-以下是 Wolfcha 对 AI 玩家请求都相同的稳定规则摘要，用于提高 DeepSeek 前缀缓存命中。若这里的摘要与后续具体身份、阶段、上下文或输出格式要求冲突，请以后续具体要求为准。
+【AI Companion Board Game Stable Rules】
+以下是 AI Companion Board Game 对 AI 玩家请求都相同的稳定规则摘要，用于提高 DeepSeek 前缀缓存命中。若这里的摘要与后续具体身份、阶段、上下文或输出格式要求冲突，请以后续具体要求为准。
 
 - 你正在参与线上狼人杀，只能根据自己视角内的信息行动。
 - 不编造不存在的发言、投票、查验、死亡、身份声明或系统公告。
@@ -343,6 +349,7 @@ async function runBatchItem(
     const lower = typeof model === "string" ? model.toLowerCase() : "";
     const needZeroOne =
       modelProvider === "zenmux" ||
+      isDirectMiniMaxModel(model) ||
       lower.startsWith("moonshotai/") ||
       lower.includes("kimi");
     if (needZeroOne) {
@@ -435,8 +442,13 @@ async function runBatchItem(
     if (hasAnyCustomKeyHeader && !headerTokendanceKey) {
       return { ok: false, status: 401, error: "已启用自定义 Key，但未提供 TokenDance Key（已拒绝回退到系统 Key）" };
     }
-    const tokendanceApiKey = headerTokendanceKey || process.env.TOKENDANCE_API_KEY;
-    const tokendanceBaseUrl = headerTokendanceBaseUrl || process.env.TOKENDANCE_BASE_URL || TOKENDANCE_BASE_URL;
+    const directMiniMax = isDirectMiniMaxModel(model);
+    const tokendanceApiKey =
+      headerTokendanceKey ||
+      (directMiniMax ? process.env.MINIMAX_API_KEY : process.env.TOKENDANCE_API_KEY);
+    const tokendanceBaseUrl =
+      headerTokendanceBaseUrl ||
+      (directMiniMax ? MINIMAX_OPENAI_BASE_URL : process.env.TOKENDANCE_BASE_URL || TOKENDANCE_BASE_URL);
     if (!tokendanceApiKey || !tokendanceBaseUrl) {
       return { ok: false, status: 500, error: "TOKENDANCE_API_KEY or TOKENDANCE_BASE_URL not configured on server" };
     }
@@ -453,7 +465,7 @@ async function runBatchItem(
     };
 
     if (typeof max_tokens === "number" && Number.isFinite(max_tokens)) {
-      requestBody.max_tokens = Math.max(16, Math.floor(max_tokens));
+      requestBody[directMiniMax ? "max_completion_tokens" : "max_tokens"] = Math.max(16, Math.floor(max_tokens));
     }
 
     // GLM-4.7 / Kimi K2.5 默认开启思考，API 参数可关闭（已实测有效）
@@ -479,8 +491,7 @@ async function runBatchItem(
         headers: {
           Authorization: `Bearer ${tokendanceApiKey}`,
           "Content-Type": "application/json",
-          "X-App-Name": "Wolfcha",
-          "X-Site-URL": "https://wolf-cha.com",
+          ...(directMiniMax ? {} : { "X-App-Name": "AI Companion Board Game", "X-Site-URL": "https://github.com/jim6642/ai-companion-board-game" }),
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
@@ -574,13 +585,16 @@ async function runBatchItem(
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await authenticateRequest(request as unknown as Request);
+  const localMiniMaxPrototype = PERSONAL_PROTOTYPE_MODE && Boolean(process.env.MINIMAX_API_KEY);
+  const auth = localMiniMaxPrototype
+    ? { user: { id: "local-prototype" } }
+    : await authenticateRequest(request as unknown as Request);
   if ("error" in auth) return auth.error;
 
   const earlyZenmuxKey = request.headers.get("x-zenmux-api-key")?.trim();
   const earlyDashscopeKey = request.headers.get("x-dashscope-api-key")?.trim();
   const earlyTokendanceKey = request.headers.get("x-tokendance-api-key")?.trim();
-  const hasCustomKeys = Boolean(
+  const hasCustomKeys = localMiniMaxPrototype || Boolean(
     (earlyZenmuxKey ?? "") ||
     (earlyDashscopeKey ?? "") ||
     (earlyTokendanceKey ?? "")
@@ -650,6 +664,7 @@ export async function POST(request: NextRequest) {
       const lower = typeof model === "string" ? model.toLowerCase() : "";
       const needZeroOne =
         modelProvider === "zenmux" ||
+        isDirectMiniMaxModel(model) ||
         lower.startsWith("moonshotai/") ||
         lower.includes("kimi");
       if (needZeroOne) {
@@ -795,8 +810,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const tokendanceApiKey = headerTokendanceKey || process.env.TOKENDANCE_API_KEY;
-      const tokendanceBaseUrl = headerTokendanceBaseUrl || process.env.TOKENDANCE_BASE_URL || TOKENDANCE_BASE_URL;
+      const directMiniMax = isDirectMiniMaxModel(model);
+      const tokendanceApiKey =
+        headerTokendanceKey ||
+        (directMiniMax ? process.env.MINIMAX_API_KEY : process.env.TOKENDANCE_API_KEY);
+      const tokendanceBaseUrl =
+        headerTokendanceBaseUrl ||
+        (directMiniMax ? MINIMAX_OPENAI_BASE_URL : process.env.TOKENDANCE_BASE_URL || TOKENDANCE_BASE_URL);
       if (!tokendanceApiKey || !tokendanceBaseUrl) {
         return NextResponse.json(
           { error: "TOKENDANCE_API_KEY or TOKENDANCE_BASE_URL not configured on server" },
@@ -819,7 +839,7 @@ export async function POST(request: NextRequest) {
       };
 
       if (typeof max_tokens === "number" && Number.isFinite(max_tokens)) {
-        requestBody.max_tokens = Math.max(16, Math.floor(max_tokens));
+        requestBody[directMiniMax ? "max_completion_tokens" : "max_tokens"] = Math.max(16, Math.floor(max_tokens));
       }
 
       if (stream) {
@@ -849,8 +869,7 @@ export async function POST(request: NextRequest) {
           headers: {
             Authorization: `Bearer ${tokendanceApiKey}`,
             "Content-Type": "application/json",
-            "X-App-Name": "Wolfcha",
-            "X-Site-URL": "https://wolf-cha.com",
+            ...(directMiniMax ? {} : { "X-App-Name": "AI Companion Board Game", "X-Site-URL": "https://github.com/jim6642/ai-companion-board-game" }),
           },
           body: JSON.stringify(requestBody),
           signal: controller.signal,

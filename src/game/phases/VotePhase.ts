@@ -32,6 +32,7 @@ type VotePhaseRuntime = {
   setIsWaitingForAI: (waiting: boolean) => void;
   waitForUnpause: () => Promise<void>;
   isTokenValid: (token: FlowToken) => boolean;
+  onVotesReady: (state: GameState) => Promise<void>;
   onVoteComplete: (state: GameState, result: { seat: number; count: number } | null) => Promise<void>;
   onGameEnd: (state: GameState, winner: "village" | "wolf") => Promise<void>;
   runAISpeech: (state: GameState, player: Player) => Promise<void>;
@@ -48,7 +49,7 @@ export class VotePhase extends GamePhase {
     const speakerHost = t("speakers.host");
     const speakerHint = t("speakers.hint");
 
-    const { humanPlayer, setDialogue, setGameState, setIsWaitingForAI, waitForUnpause, isTokenValid, token } = runtime;
+    const { humanPlayer, setDialogue, setGameState, waitForUnpause } = runtime;
     const isRevote = runtime.isRevote === true;
 
     let currentState = transitionPhase(context.state, "DAY_VOTE");
@@ -74,45 +75,8 @@ export class VotePhase extends GamePhase {
     }
 
     // PK投票时，参与PK的人不能投票
-    const pkTargets = currentState.pkSource === "vote" && Array.isArray(currentState.pkTargets) ? currentState.pkTargets : [];
     // 已翻牌白痴不参与投票（节省 AI 调用）
-    const revealedIdiotId = currentState.roleAbilities.idiotRevealed
-      ? currentState.players.find((p) => p.role === "Idiot" && p.alive)?.playerId
-      : undefined;
-    const aiPlayers = currentState.players.filter((p) => p.alive && !p.isHuman && !pkTargets.includes(p.seat) && p.playerId !== revealedIdiotId);
-    let tokenInvalidated = false;
-    setIsWaitingForAI(true);
-    try {
-      for (const aiPlayer of aiPlayers) {
-        if (!isTokenValid(token)) {
-          tokenInvalidated = true;
-          break;
-        }
-        const vote = await generateAIVote(currentState, aiPlayer);
-        if (!isTokenValid(token)) {
-          tokenInvalidated = true;
-          break;
-        }
-
-        setGameState((prevState) => ({
-          ...prevState,
-          votes: { ...prevState.votes, [aiPlayer.playerId]: vote.seat },
-          voteReasons: { ...(prevState.voteReasons || {}), [aiPlayer.playerId]: vote.reason },
-        }));
-        currentState = {
-          ...currentState,
-          votes: { ...currentState.votes, [aiPlayer.playerId]: vote.seat },
-          voteReasons: { ...(currentState.voteReasons || {}), [aiPlayer.playerId]: vote.reason },
-        };
-      }
-    } finally {
-      setIsWaitingForAI(false);
-    }
-    if (tokenInvalidated) return;
-
-    if (!humanPlayer?.alive || isRevealedIdiot) {
-      await this.resolveVotes(currentState, runtime);
-    }
+    await this.collectMissingAIVotes(currentState, runtime);
   }
 
   getPrompt(context: GameContext, player: Player): PromptResult {
@@ -159,10 +123,15 @@ export class VotePhase extends GamePhase {
   }
 
   async handleAction(_context: GameContext, _action: GameAction): Promise<void> {
-    if (_action.type !== "RESOLVE_VOTES") return;
     const runtime = this.getRuntime(_context);
     if (!runtime) return;
-    await this.resolveVotes(_context.state, runtime);
+    if (_action.type === "RESUME_VOTES") {
+      await this.collectMissingAIVotes(_context.state, runtime);
+      return;
+    }
+    if (_action.type === "RESOLVE_VOTES") {
+      await this.resolveVotes(_context.state, runtime);
+    }
   }
 
   async onExit(): Promise<void> {
@@ -172,8 +141,86 @@ export class VotePhase extends GamePhase {
   private getRuntime(context: GameContext): VotePhaseRuntime | null {
     const raw = context.extras as VotePhaseRuntime | undefined;
     if (!raw) return null;
-    if (!raw.setGameState || !raw.setDialogue || !raw.waitForUnpause || !raw.isTokenValid) return null;
+    if (!raw.setGameState || !raw.setDialogue || !raw.waitForUnpause || !raw.isTokenValid || !raw.onVotesReady) return null;
     return raw;
+  }
+
+  /**
+   * Fill only votes that are still missing. This makes DAY_VOTE resumable after
+   * refresh and prevents completed AI votes from being generated a second time.
+   */
+  private async collectMissingAIVotes(state: GameState, runtime: VotePhaseRuntime): Promise<void> {
+    const { t } = getI18n();
+    const uiText = getUiText();
+    const speakerHint = t("speakers.hint");
+    const { humanPlayer, setDialogue, setGameState, setIsWaitingForAI, isTokenValid, token } = runtime;
+
+    let currentState = state;
+    const pkTargets = currentState.pkSource === "vote" && Array.isArray(currentState.pkTargets)
+      ? currentState.pkTargets
+      : [];
+    const revealedIdiotId = currentState.roleAbilities.idiotRevealed
+      ? currentState.players.find((p) => p.role === "Idiot" && p.alive)?.playerId
+      : undefined;
+    const aiPlayers = currentState.players.filter(
+      (p) =>
+        p.alive &&
+        !p.isHuman &&
+        !pkTargets.includes(p.seat) &&
+        p.playerId !== revealedIdiotId &&
+        typeof currentState.votes[p.playerId] !== "number"
+    );
+
+    if (humanPlayer?.alive && humanPlayer.playerId !== revealedIdiotId) {
+      setDialogue(speakerHint, uiText.clickToVote, false);
+    }
+
+    let tokenInvalidated = false;
+    if (aiPlayers.length > 0) setIsWaitingForAI(true);
+    try {
+      for (const aiPlayer of aiPlayers) {
+        if (!isTokenValid(token)) {
+          tokenInvalidated = true;
+          break;
+        }
+        const vote = await generateAIVote(currentState, aiPlayer);
+        if (!isTokenValid(token)) {
+          tokenInvalidated = true;
+          break;
+        }
+
+        currentState = {
+          ...currentState,
+          votes: { ...currentState.votes, [aiPlayer.playerId]: vote.seat },
+          voteReasons: { ...(currentState.voteReasons || {}), [aiPlayer.playerId]: vote.reason },
+        };
+        setGameState((prevState) => {
+          if (
+            prevState.gameId !== currentState.gameId ||
+            prevState.day !== currentState.day ||
+            prevState.phase !== "DAY_VOTE"
+          ) {
+            return prevState;
+          }
+          return {
+            ...prevState,
+            votes: { ...prevState.votes, [aiPlayer.playerId]: vote.seat },
+            voteReasons: { ...(prevState.voteReasons || {}), [aiPlayer.playerId]: vote.reason },
+          };
+        });
+      }
+    } finally {
+      if (aiPlayers.length > 0) setIsWaitingForAI(false);
+    }
+    if (tokenInvalidated) return;
+
+    const voterIds = currentState.players
+      .filter((p) => p.alive && !pkTargets.includes(p.seat) && p.playerId !== revealedIdiotId)
+      .map((p) => p.playerId);
+    const allVoted = voterIds.length > 0 && voterIds.every((id) => typeof currentState.votes[id] === "number");
+    if (allVoted) {
+      await runtime.onVotesReady(currentState);
+    }
   }
 
   private getVoteCounts(state: GameState): Record<number, number> {

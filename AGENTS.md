@@ -26,7 +26,7 @@ Copy `.env.example` to `.env.local` and fill in:
 
 ## Architecture Overview
 
-Wolfcha is an AI-powered Werewolf (社交推理) game built with **Next.js 16 App Router**. Every non-human player is controlled by an LLM, with the player competing against AI characters.
+AI Companion Board Game is an AI-powered Werewolf (社交推理) game built with **Next.js 16 App Router**. Every non-human player is controlled by an LLM, with the player competing against AI characters.
 
 ### State Management
 

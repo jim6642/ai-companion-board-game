@@ -804,7 +804,7 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
                       <div className="flex gap-2">
                         <Input
                           id="tokendance-key"
-                          name="wolfcha-tokendance-api-key"
+                          name="aicb-tokendance-api-key"
                           type={showTokendanceKey ? "text" : "password"}
                           autoComplete="new-password"
                           placeholder={t("customKey.tokendance.placeholder")}
@@ -839,7 +839,7 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
                         </Button>
                       </div>
 
-                      <a href="https://tokendance.agent-universe.cn/?ref=wolfcha" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] px-2.5 py-2 transition-colors hover:bg-[var(--bg-hover)]">
+                      <a href="https://tokendance.agent-universe.cn/?ref=aicb" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] px-2.5 py-2 transition-colors hover:bg-[var(--bg-hover)]">
                         <img src="/sponsor/tokendance-icon.svg" alt="" className="h-6 w-6 shrink-0 rounded object-contain" />
                         <div className="min-w-0 flex-1">
                           <span className="text-xs font-medium text-[var(--text-primary)]">{t("customKey.tokendance.get")}</span>
@@ -855,7 +855,7 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
                       <div className="flex gap-2">
                         <Input
                           id="zenmux-key"
-                          name="wolfcha-zenmux-api-key"
+                          name="aicb-zenmux-api-key"
                           type={showZenmuxKey ? "text" : "password"}
                           autoComplete="new-password"
                           placeholder={t("customKey.zenmux.placeholder")}
@@ -895,7 +895,7 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
                       <div className="flex gap-2">
                         <Input
                           id="dashscope-key"
-                          name="wolfcha-dashscope-api-key"
+                          name="aicb-dashscope-api-key"
                           type={showDashscopeKey ? "text" : "password"}
                           autoComplete="new-password"
                           placeholder={t("customKey.dashscope.placeholder")}
@@ -1033,7 +1033,7 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
                         <div className="flex gap-2">
                           <Input
                             id="minimax-key"
-                            name="wolfcha-minimax-api-key"
+                            name="aicb-minimax-api-key"
                             type={showMinimaxKey ? "text" : "password"}
                             autoComplete="new-password"
                             placeholder={t("customKey.optionalPlaceholder")}
@@ -1057,7 +1057,7 @@ import type { SpringCampaignSnapshot } from "@/lib/spring-campaign";
                         <div className="flex gap-2">
                           <Input
                             id="minimax-group"
-                            name="wolfcha-minimax-group-id"
+                            name="aicb-minimax-group-id"
                             type={showMinimaxGroupId ? "text" : "password"}
                             autoComplete="new-password"
                             placeholder={t("customKey.optionalPlaceholder")}

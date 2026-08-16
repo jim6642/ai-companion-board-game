@@ -111,6 +111,22 @@ export class NightPhase extends GamePhase {
     return rawTransitionPhase(state, newPhase);
   }
 
+  /**
+   * Entering a night role can be retried after a refresh or a queued human
+   * action. Keep the transition idempotent so the same wake-up announcement is
+   * not appended repeatedly for one day/phase.
+   */
+  private enterRolePhase(state: GameState, phase: Phase, message: string): GameState {
+    const phasedState = state.phase === phase ? state : this.transitionPhase(state, phase);
+    const alreadyAnnounced = phasedState.messages.some((item) =>
+      item.isSystem &&
+      item.day === phasedState.day &&
+      item.phase === phase &&
+      item.content === message
+    );
+    return alreadyAnnounced ? phasedState : addSystemMessage(phasedState, message);
+  }
+
   private async runGuardAction(state: GameState, runtime: NightPhaseRuntime): Promise<GameState> {
     const { t } = getI18n();
     const speakerSystem = t("speakers.system");
@@ -118,8 +134,7 @@ export class NightPhase extends GamePhase {
     const uiText = getUiText();
     const guard = state.players.find((p) => p.role === "Guard" && p.alive);
 
-    let currentState = this.transitionPhase(state, "NIGHT_GUARD_ACTION");
-    currentState = addSystemMessage(currentState, systemMessages.guardActionStart);
+    let currentState = this.enterRolePhase(state, "NIGHT_GUARD_ACTION", systemMessages.guardActionStart);
     runtime.setGameState(currentState);
 
     runtime.setIsWaitingForAI(true);
@@ -165,8 +180,7 @@ export class NightPhase extends GamePhase {
     const speakerSystem = t("speakers.system");
     const systemMessages = getSystemMessages();
     const uiText = getUiText();
-    let currentState = this.transitionPhase(state, "NIGHT_WOLF_ACTION");
-    currentState = addSystemMessage(currentState, systemMessages.wolfActionStart);
+    let currentState = this.enterRolePhase(state, "NIGHT_WOLF_ACTION", systemMessages.wolfActionStart);
     runtime.setGameState(currentState);
 
     const wolves = currentState.players.filter((p) => isWolfRole(p.role) && p.alive);
@@ -226,7 +240,7 @@ export class NightPhase extends GamePhase {
         };
         runtime.setGameState(currentState);
       } catch (error) {
-        console.error("[wolfcha] AI wolf vote failed:", error);
+        console.error("[aicb] AI wolf vote failed:", error);
         currentState = {
           ...currentState,
           nightActions: { ...currentState.nightActions, wolfVotes },
@@ -249,8 +263,7 @@ export class NightPhase extends GamePhase {
     const uiText = getUiText();
     const witch = state.players.find((p) => p.role === "Witch" && p.alive);
     const canWitchAct = witch && (!state.roleAbilities.witchHealUsed || !state.roleAbilities.witchPoisonUsed);
-    let currentState = this.transitionPhase(state, "NIGHT_WITCH_ACTION");
-    currentState = addSystemMessage(currentState, systemMessages.witchActionStart);
+    let currentState = this.enterRolePhase(state, "NIGHT_WITCH_ACTION", systemMessages.witchActionStart);
     runtime.setGameState(currentState);
 
     runtime.setIsWaitingForAI(true);
@@ -289,6 +302,12 @@ export class NightPhase extends GamePhase {
         nightActions: { ...currentState.nightActions, witchPoison: witchAction.target },
         roleAbilities: { ...currentState.roleAbilities, witchPoisonUsed: true },
       };
+    } else {
+      // false is an explicit pass; undefined means no decision has been made.
+      currentState = {
+        ...currentState,
+        nightActions: { ...currentState.nightActions, witchSave: false },
+      };
     }
     runtime.setGameState(currentState);
     runtime.setIsWaitingForAI(false);
@@ -304,8 +323,7 @@ export class NightPhase extends GamePhase {
     const systemMessages = getSystemMessages();
     const uiText = getUiText();
     const seer = state.players.find((p) => p.role === "Seer" && p.alive);
-    let currentState = this.transitionPhase(state, "NIGHT_SEER_ACTION");
-    currentState = addSystemMessage(currentState, systemMessages.seerActionStart);
+    let currentState = this.enterRolePhase(state, "NIGHT_SEER_ACTION", systemMessages.seerActionStart);
     runtime.setGameState(currentState);
 
     runtime.setIsWaitingForAI(true);

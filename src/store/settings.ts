@@ -40,7 +40,7 @@ const normalizeAudioSettings = (value: Partial<AudioSettings>): AudioSettings =>
     typeof value.isSpectatorMode === "boolean" ? value.isSpectatorMode : DEFAULT_AUDIO_SETTINGS.isSpectatorMode,
 });
 
-const rawAudioSettingsAtom = atomWithStorage<AudioSettings>("wolfcha.settings.audio", DEFAULT_AUDIO_SETTINGS);
+const rawAudioSettingsAtom = atomWithStorage<AudioSettings>("aicb.settings.audio", DEFAULT_AUDIO_SETTINGS);
 
 export const audioSettingsAtom = atom(
   (get) => normalizeAudioSettings(get(rawAudioSettingsAtom)),
@@ -51,7 +51,7 @@ export const audioSettingsAtom = atom(
   }
 );
 
-const DEFAULT_PLAYER_COUNT = 10;
+const DEFAULT_PLAYER_COUNT = 8;
 const MIN_PLAYER_COUNT = 8;
 const MAX_PLAYER_COUNT = 12;
 
@@ -60,7 +60,8 @@ const normalizePlayerCount = (value: number) => {
   return Math.min(MAX_PLAYER_COUNT, Math.max(MIN_PLAYER_COUNT, Math.round(value)));
 };
 
-const rawPlayerCountAtom = atomWithStorage<number>("wolfcha.settings.player_count", DEFAULT_PLAYER_COUNT);
+// v2 resets the prototype's former 10-player default to the intended 8-player cast.
+const rawPlayerCountAtom = atomWithStorage<number>("aicb.settings.player_count.v2", DEFAULT_PLAYER_COUNT);
 
 export const playerCountAtom = atom(
   (get) => normalizePlayerCount(get(rawPlayerCountAtom)),
@@ -77,7 +78,7 @@ const ALL_ROLES: Role[] = ["Villager", "Werewolf", "WhiteWolfKing", "Seer", "Wit
 const normalizePreferredRole = (value: string): Role | "" =>
   ALL_ROLES.includes(value as Role) ? (value as Role) : "";
 
-const rawPreferredRoleAtom = atomWithStorage<Role | "">("wolfcha.settings.preferred_role", "");
+const rawPreferredRoleAtom = atomWithStorage<Role | "">("aicb.settings.preferred_role", "");
 
 export const preferredRoleAtom = atom(
   (get) => normalizePreferredRole(get(rawPreferredRoleAtom)),
@@ -94,7 +95,7 @@ const DIFFICULTY_OPTIONS: DifficultyLevel[] = ["easy", "normal", "hard"];
 const normalizeDifficulty = (value: DifficultyLevel) =>
   DIFFICULTY_OPTIONS.includes(value) ? value : DEFAULT_DIFFICULTY;
 
-const rawDifficultyAtom = atomWithStorage<DifficultyLevel>("wolfcha.settings.difficulty", DEFAULT_DIFFICULTY);
+const rawDifficultyAtom = atomWithStorage<DifficultyLevel>("aicb.settings.difficulty", DEFAULT_DIFFICULTY);
 
 export const difficultyAtom = atom(
   (get) => normalizeDifficulty(get(rawDifficultyAtom)),

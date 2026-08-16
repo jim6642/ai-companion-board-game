@@ -43,7 +43,7 @@ export interface SoloLandingData {
   problemsSolved: string[];
   howItWorks: Array<{ step: string; description: string }>;
   uniqueFeatures: Array<{ title: string; description: string }>;
-  comparisonTable: Array<{ feature: string; traditional: string; wolfcha: string }>;
+  comparisonTable: Array<{ feature: string; traditional: string; aicb: string }>;
   seats: LandingAiSeat[];
   dialogues: LandingDialogueExample[];
   faqs: LandingFaqItem[];
@@ -69,7 +69,7 @@ export const baseSeats: LandingAiSeat[] = [
 ];
 
 export const hubLinks: LandingRelatedLink[] = [
-  { href: "/ai-werewolf", label: "AI Werewolf (Hub)", description: "What Wolfcha is and why solo vs AI works." },
+  { href: "/ai-werewolf", label: "AI Werewolf (Hub)", description: "What AI Companion Board Game is and why solo vs AI works." },
   { href: "/how-to-play", label: "How to Play", description: "A quick rules overview for solo play." },
   { href: "/werewolf-game-with-ai-opponents", label: "AI Opponents", description: "Why AI seats make solo Werewolf work." },
   { href: "/features", label: "Features", description: "Voice acting, classic roles, and more." },

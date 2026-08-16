@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Key, CreditCard, Play } from "@phosphor-icons/react";
 
-const ZENMUX_URL = "https://zenmux.ai/aboutus?ref=wolfcha";
+const ZENMUX_URL = "https://zenmux.ai/aboutus?ref=aicb";
 const LOW_CREDIT_THRESHOLD = 3;
 
 interface LowCreditModalProps {

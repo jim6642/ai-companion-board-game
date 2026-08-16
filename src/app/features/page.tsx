@@ -12,24 +12,24 @@ import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLink
 import { LandingCta } from "@/components/seo/landing/LandingCta";
 
 export const metadata: Metadata = {
-  title: "Features — AI Werewolf Game with Voice Acting | Wolfcha",
+  title: "Features — AI Werewolf Game with Voice Acting | AI Companion Board Game",
   description:
-    "Explore Wolfcha features: solo Werewolf gameplay, AI opponents that reason and bluff, immersive voice acting, classic roles, and instant browser-based play. No download required.",
+    "Explore AI Companion Board Game features: solo Werewolf gameplay, AI opponents that reason and bluff, immersive voice acting, classic roles, and instant browser-based play. No download required.",
   alternates: {
-    canonical: "https://wolf-cha.com/features",
+    canonical: "https://github.com/jim6642/ai-companion-board-game/features",
   },
   openGraph: {
-    title: "Wolfcha Features — AI Werewolf Game",
+    title: "AI Companion Board Game Features — AI Werewolf Game",
     description:
       "Solo play, AI opponents, voice acting, classic roles, and instant browser play — built for modern social deduction.",
-    url: "https://wolf-cha.com/features",
+    url: "https://github.com/jim6642/ai-companion-board-game/features",
     type: "website",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Wolfcha - AI Werewolf Game",
+        alt: "AI Companion Board Game - AI Werewolf Game",
       },
     ],
   },
@@ -162,12 +162,12 @@ const dialogueExamples = [
 
 const faqs = [
   {
-    question: "Is Wolfcha free to play?",
+    question: "Is AI Companion Board Game free to play?",
     answer: "Yes! You can start playing immediately for free in your browser. No registration required for basic play. Premium features are available for enhanced experience.",
   },
   {
     question: "Do I need to download anything?",
-    answer: "No. Wolfcha runs entirely in your browser. Works on desktop, tablet, and mobile. Just visit the site and start playing.",
+    answer: "No. AI Companion Board Game runs entirely in your browser. Works on desktop, tablet, and mobile. Just visit the site and start playing.",
   },
   {
     question: "How does voice acting work?",
@@ -183,7 +183,7 @@ const faqs = [
   },
   {
     question: "What roles are included?",
-    answer: "Wolfcha includes classic Werewolf roles: Werewolf, Seer, Witch, Hunter, Guard, and Villager. Each role has authentic abilities balanced for solo vs AI play.",
+    answer: "AI Companion Board Game includes classic Werewolf roles: Werewolf, Seer, Witch, Hunter, Guard, and Villager. Each role has authentic abilities balanced for solo vs AI play.",
   },
   {
     question: "How long does a game take?",
@@ -196,7 +196,7 @@ const faqs = [
 ];
 
 const hubLinks = [
-  { href: "/ai-werewolf", label: "AI Werewolf (Hub)", description: "What Wolfcha is and why solo vs AI works." },
+  { href: "/ai-werewolf", label: "AI Werewolf (Hub)", description: "What AI Companion Board Game is and why solo vs AI works." },
   { href: "/how-to-play", label: "How to Play", description: "Learn the rules and get started." },
   { href: "/guides/how-to-play-werewolf-with-ai", label: "Play with AI", description: "How AI opponents make solo Werewolf work." },
 ];
@@ -214,9 +214,9 @@ function buildSoftwareJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Wolfcha - AI Werewolf Game",
+    name: "AI Companion Board Game - AI Werewolf Game",
     description: "A solo Werewolf (Mafia) social deduction game with AI opponents, voice acting, and classic roles.",
-    url: "https://wolf-cha.com/features",
+    url: "https://github.com/jim6642/ai-companion-board-game/features",
     applicationCategory: "GameApplication",
     operatingSystem: "Any",
     offers: {
@@ -257,9 +257,9 @@ export default function FeaturesPage() {
       <JsonLd id="faq-jsonld" data={buildFaqJsonLd()} />
 
       <LandingHero
-        title="Wolfcha Features"
+        title="AI Companion Board Game Features"
         subtitle="Everything you need for solo Werewolf"
-        description="Wolfcha is built for players who love deduction and dialogue, but don't always have a group available. It's the Werewolf (Mafia) party game reimagined as a solo experience with AI opponents, voice acting, and instant browser play."
+        description="AI Companion Board Game is built for players who love deduction and dialogue, but don't always have a group available. It's the Werewolf (Mafia) party game reimagined as a solo experience with AI opponents, voice acting, and instant browser play."
         primaryCta={{ href: "/", label: "Play now — free" }}
         secondaryCta={{ href: "/how-to-play", label: "Learn the rules" }}
         aside={<LandingAiSeats seats={aiSeats} compact />}
@@ -269,7 +269,7 @@ export default function FeaturesPage() {
       <LandingSection
         id="core-features"
         title="Core features"
-        subtitle="What makes Wolfcha the best way to play Werewolf solo."
+        subtitle="What makes AI Companion Board Game the best way to play Werewolf solo."
       >
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coreFeatures.map((feature) => (
@@ -410,7 +410,7 @@ export default function FeaturesPage() {
       <LandingSection
         id="faq"
         title="Frequently asked questions"
-        subtitle="Common questions about Wolfcha features."
+        subtitle="Common questions about AI Companion Board Game features."
       >
         <LandingFaq items={faqs} />
       </LandingSection>
@@ -419,7 +419,7 @@ export default function FeaturesPage() {
       <LandingSection
         id="related"
         title="Explore more"
-        subtitle="Dive deeper into Wolfcha's game and AI arena."
+        subtitle="Dive deeper into AI Companion Board Game's game and AI arena."
       >
         <div className="grid gap-10 lg:grid-cols-2">
           <LandingRelatedLinks title="Hub pages" links={hubLinks} />

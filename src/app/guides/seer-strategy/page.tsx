@@ -10,7 +10,7 @@ import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLink
 import { LandingDialogueExamples, type LandingDialogueExample } from "@/components/seo/landing/LandingDialogueExamples";
 
 export const metadata: Metadata = {
-  title: "Seer Strategy Guide: How to Play Seer in Werewolf | Wolfcha",
+  title: "Seer Strategy Guide: How to Play Seer in Werewolf | AI Companion Board Game",
   description:
     "Master the Seer role in Werewolf with our comprehensive strategy guide. Learn who to check, when to reveal, how to share information, and avoid common mistakes that get Seers killed.",
   keywords: [
@@ -24,15 +24,15 @@ export const metadata: Metadata = {
     "mafia cop strategy",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/guides/seer-strategy",
+    canonical: "https://github.com/jim6642/ai-companion-board-game/guides/seer-strategy",
   },
   openGraph: {
-    title: "Seer Strategy Guide: Master the Most Powerful Village Role | Wolfcha",
+    title: "Seer Strategy Guide: Master the Most Powerful Village Role | AI Companion Board Game",
     description:
       "Complete Seer strategy guide for Werewolf - who to check, when to reveal, and how to lead the village to victory.",
-    url: "https://wolf-cha.com/guides/seer-strategy",
+    url: "https://github.com/jim6642/ai-companion-board-game/guides/seer-strategy",
     type: "article",
-    images: [{ url: "https://wolf-cha.com/og-image.png", width: 1200, height: 630, alt: "Werewolf Seer Strategy Guide" }],
+    images: [{ url: "https://github.com/jim6642/ai-companion-board-game/og-image.png", width: 1200, height: 630, alt: "Werewolf Seer Strategy Guide" }],
   },
 };
 
@@ -41,12 +41,12 @@ const articleJsonLd = {
   "@type": "Article",
   headline: "Seer Strategy Guide: How to Play Seer in Werewolf",
   description: "Complete strategy guide for playing the Seer role in Werewolf, including check priorities, reveal timing, and information management.",
-  image: "https://wolf-cha.com/og-image.png",
-  author: { "@type": "Organization", name: "Wolfcha", url: "https://wolf-cha.com" },
-  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: "https://wolf-cha.com/logo.png" } },
+  image: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
+  author: { "@type": "Organization", name: "AI Companion Board Game", url: "https://github.com/jim6642/ai-companion-board-game" },
+  publisher: { "@type": "Organization", name: "AI Companion Board Game", logo: { "@type": "ImageObject", url: "https://github.com/jim6642/ai-companion-board-game/logo.png" } },
   datePublished: "2024-01-15",
   dateModified: new Date().toISOString().split("T")[0],
-  mainEntityOfPage: { "@type": "WebPage", "@id": "https://wolf-cha.com/guides/seer-strategy" },
+  mainEntityOfPage: { "@type": "WebPage", "@id": "https://github.com/jim6642/ai-companion-board-game/guides/seer-strategy" },
 };
 
 const dialogueExamples: LandingDialogueExample[] = [
@@ -398,7 +398,7 @@ export default function SeerStrategyPage() {
               </div>
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-3">
-              Tip: In Wolfcha, your check history is tracked automatically in the UI!
+              Tip: In AI Companion Board Game, your check history is tracked automatically in the UI!
             </p>
           </div>
         </div>
@@ -482,7 +482,7 @@ export default function SeerStrategyPage() {
             Practice Your Seer Skills
           </h2>
           <p className="text-[var(--text-secondary)] max-w-2xl mx-auto mb-8">
-            The best Seers develop through experience. Play unlimited games as Seer against AI opponents in Wolfcha 
+            The best Seers develop through experience. Play unlimited games as Seer against AI opponents in AI Companion Board Game 
             and perfect your check strategy, reveal timing, and information management.
           </p>
           <Link href="/" className="inline-block rounded-full bg-[var(--color-gold)] px-8 py-4 font-bold text-black hover:bg-[var(--color-gold-dark)]">

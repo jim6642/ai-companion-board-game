@@ -28,7 +28,7 @@ const guidePages = [
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://wolf-cha.com";
+  const baseUrl = "https://github.com/jim6642/ai-companion-board-game";
   const lastModified = new Date();
 
   return [

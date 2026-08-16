@@ -53,13 +53,13 @@ export const metadata: Metadata = {
     type: "website",
     siteName: defaultMessages.app.title,
     locale: localeToHtmlLang[defaultLocale],
-    url: "https://wolf-cha.com",
+    url: "https://github.com/jim6642/ai-companion-board-game",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Wolfcha - AI Werewolf Game",
+        alt: "AI Companion Board Game - AI Werewolf Game",
       },
     ],
   },
@@ -70,9 +70,9 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
   },
   icons: {
-    icon: "/brand/wolfcha-favicon.svg",
+    icon: "/brand/aicb-favicon.svg",
   },
-  metadataBase: new URL("https://wolf-cha.com"),
+  metadataBase: new URL("https://github.com/jim6642/ai-companion-board-game"),
   alternates: {
     canonical: "/",
     languages: {
@@ -107,7 +107,7 @@ export default async function RootLayout({
   const requestHeaders = await headers();
   const cookieStore = await cookies();
   const initialLocale = resolveInitialLocale(
-    requestHeaders.get("x-wolfcha-pathname"),
+    requestHeaders.get("x-aicb-pathname"),
     cookieStore.get(STORAGE_KEY)?.value
   );
 

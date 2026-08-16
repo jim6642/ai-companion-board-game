@@ -59,9 +59,9 @@ const baseSeats: LandingAiSeat[] = [
 ];
 
 const hubLinks: LandingRelatedLink[] = [
-  { href: "/ai-werewolf", label: "AI Werewolf (Hub)", description: "What Wolfcha is and why solo vs AI works." },
+  { href: "/ai-werewolf", label: "AI Werewolf (Hub)", description: "What AI Companion Board Game is and why solo vs AI works." },
   { href: "/how-to-play", label: "How to Play", description: "A quick rules overview for solo play." },
-  { href: "/features", label: "Features", description: "All Wolfcha features explained." },
+  { href: "/features", label: "Features", description: "All AI Companion Board Game features explained." },
   { href: "/werewolf-game-with-ai-opponents", label: "AI Opponents", description: "How AI players fill the table." },
 ];
 
@@ -81,7 +81,7 @@ export const experienceLandingDataByKey: Record<ExperienceLandingKey, Experience
     title: "Werewolf Game with Voice Acting",
     tagline: "Hear your AI opponents argue, accuse, and defend",
     heroDescription:
-      "Wolfcha brings Werewolf to life with professional voice acting. Every AI opponent speaks their dialogue aloud, creating an immersive experience where you hear the tension in accusations and the desperation in last words.",
+      "AI Companion Board Game brings Werewolf to life with professional voice acting. Every AI opponent speaks their dialogue aloud, creating an immersive experience where you hear the tension in accusations and the desperation in last words.",
     featureHighlight: {
       title: "Full voice acting for AI characters",
       description:
@@ -152,7 +152,7 @@ export const experienceLandingDataByKey: Record<ExperienceLandingKey, Experience
     title: "Werewolf Game with Narrator",
     tagline: "A narrator guides every phase of the game",
     heroDescription:
-      "Experience Werewolf the classic way — with a narrator who announces phases, reveals deaths, and builds tension. Wolfcha's narrator creates atmosphere while keeping the game flowing smoothly.",
+      "Experience Werewolf the classic way — with a narrator who announces phases, reveals deaths, and builds tension. AI Companion Board Game's narrator creates atmosphere while keeping the game flowing smoothly.",
     featureHighlight: {
       title: "Professional narrator guidance",
       description:
@@ -219,7 +219,7 @@ export const experienceLandingDataByKey: Record<ExperienceLandingKey, Experience
     title: "Text-Based Werewolf Game",
     tagline: "Pure reading, no audio — play at your own pace",
     heroDescription:
-      "Prefer reading over listening? Wolfcha's text mode delivers the full Werewolf experience without audio. Read AI dialogue at your own pace, in any environment, with no headphones required.",
+      "Prefer reading over listening? AI Companion Board Game's text mode delivers the full Werewolf experience without audio. Read AI dialogue at your own pace, in any environment, with no headphones required.",
     featureHighlight: {
       title: "Silent, reading-focused gameplay",
       description:
@@ -290,7 +290,7 @@ export const experienceLandingDataByKey: Record<ExperienceLandingKey, Experience
     title: "Quick Werewolf Game",
     tagline: "10-minute games for busy schedules",
     heroDescription:
-      "Short on time? Wolfcha's quick mode delivers complete Werewolf games in 10-15 minutes. Smaller player counts, faster pacing, and optional auto-advance let you enjoy social deduction during a coffee break.",
+      "Short on time? AI Companion Board Game's quick mode delivers complete Werewolf games in 10-15 minutes. Smaller player counts, faster pacing, and optional auto-advance let you enjoy social deduction during a coffee break.",
     featureHighlight: {
       title: "Optimized for short sessions",
       description:
@@ -357,7 +357,7 @@ export const experienceLandingDataByKey: Record<ExperienceLandingKey, Experience
     title: "Immersive Werewolf Experience",
     tagline: "Full cinematic atmosphere with voice and narration",
     heroDescription:
-      "For the ultimate Werewolf experience, enable everything: voice acting, narrator, and atmospheric pacing. Wolfcha becomes a cinematic social deduction thriller where every accusation feels real.",
+      "For the ultimate Werewolf experience, enable everything: voice acting, narrator, and atmospheric pacing. AI Companion Board Game becomes a cinematic social deduction thriller where every accusation feels real.",
     featureHighlight: {
       title: "Maximum atmosphere mode",
       description:
@@ -370,7 +370,7 @@ export const experienceLandingDataByKey: Record<ExperienceLandingKey, Experience
       ],
     },
     whenToUse: [
-      { scenario: "You want the best experience", recommendation: "Immersive mode is Wolfcha at its finest." },
+      { scenario: "You want the best experience", recommendation: "Immersive mode is AI Companion Board Game at its finest." },
       { scenario: "You have time to spare", recommendation: "Immersive games take longer but feel more complete." },
       { scenario: "You're short on time", recommendation: "Quick mode is better for busy schedules." },
       { scenario: "You're in a quiet space with headphones", recommendation: "Perfect conditions for immersive play." },
@@ -428,7 +428,7 @@ export const experienceLandingDataByKey: Record<ExperienceLandingKey, Experience
     title: "Casual Werewolf Game",
     tagline: "Relaxed play with no pressure",
     heroDescription:
-      "Not every game needs to be competitive. Wolfcha's casual mode is about enjoying the social deduction experience without stress. Take your time, experiment with strategies, and have fun.",
+      "Not every game needs to be competitive. AI Companion Board Game's casual mode is about enjoying the social deduction experience without stress. Take your time, experiment with strategies, and have fun.",
     featureHighlight: {
       title: "Low-pressure social deduction",
       description:
@@ -562,7 +562,7 @@ export const experienceLandingDataByKey: Record<ExperienceLandingKey, Experience
     title: "Beginner-Friendly Werewolf",
     tagline: "Learn the game with helpful AI",
     heroDescription:
-      "New to Werewolf? Wolfcha's beginner mode teaches you as you play. Helpful hints, patient AI opponents, and guided gameplay let you learn the rules naturally without pressure.",
+      "New to Werewolf? AI Companion Board Game's beginner mode teaches you as you play. Helpful hints, patient AI opponents, and guided gameplay let you learn the rules naturally without pressure.",
     featureHighlight: {
       title: "Learn while playing",
       description:

@@ -7,24 +7,24 @@ import { LandingCta } from "@/components/seo/landing/LandingCta";
 import { roleLandingDataByKey, roleLandingKeys } from "@/components/seo/landing/roleLandingData";
 
 export const metadata: Metadata = {
-  title: "Werewolf Roles — Seer, Witch, Hunter, Guard | Wolfcha",
+  title: "Werewolf Roles — Seer, Witch, Hunter, Guard | AI Companion Board Game",
   description:
-    "Explore classic Werewolf (Mafia) roles in Wolfcha: Seer, Witch, Hunter, Guard, and Werewolf. Each role page includes strategy tips, AI dialogue examples, and an instant Play CTA.",
+    "Explore classic Werewolf (Mafia) roles in AI Companion Board Game: Seer, Witch, Hunter, Guard, and Werewolf. Each role page includes strategy tips, AI dialogue examples, and an instant Play CTA.",
   alternates: {
-    canonical: "https://wolf-cha.com/roles",
+    canonical: "https://github.com/jim6642/ai-companion-board-game/roles",
   },
   openGraph: {
-    title: "Werewolf Roles — Wolfcha",
+    title: "Werewolf Roles — AI Companion Board Game",
     description:
       "Role guides for Seer, Witch, Hunter, Guard, and Werewolf — with solo vs AI strategy and dialogue examples.",
-    url: "https://wolf-cha.com/roles",
+    url: "https://github.com/jim6642/ai-companion-board-game/roles",
     type: "website",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Wolfcha - AI Werewolf Game",
+        alt: "AI Companion Board Game - AI Werewolf Game",
       },
     ],
   },

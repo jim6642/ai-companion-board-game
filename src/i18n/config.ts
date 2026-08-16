@@ -1,4 +1,4 @@
-export const STORAGE_KEY = "wolfcha.locale";
+export const STORAGE_KEY = "aicb.locale";
 
 export const supportedLocales = ["zh", "en"] as const;
 export type AppLocale = (typeof supportedLocales)[number];

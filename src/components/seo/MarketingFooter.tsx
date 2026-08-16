@@ -14,15 +14,15 @@ export function MarketingFooter() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <img src="/brand/wolfcha-favicon.svg" alt="Wolfcha" className="h-8 w-8 grayscale opacity-80" />
-              <span className="font-serif text-xl font-bold text-[var(--text-primary)] tracking-tight">Wolfcha</span>
+              <img src="/brand/aicb-favicon.svg" alt="AI Companion Board Game" className="h-8 w-8 grayscale opacity-80" />
+              <span className="font-serif text-xl font-bold text-[var(--text-primary)] tracking-tight">AI Companion Board Game</span>
             </div>
             <p className="max-w-xs text-sm text-[var(--text-secondary)] mb-6">
               {t("slogan")}
             </p>
             <div className="flex gap-4">
               <a
-                href="https://github.com/oil-oil/wolfcha"
+                href="https://github.com/oil-oil/aicb"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
@@ -68,7 +68,7 @@ export function MarketingFooter() {
               </li>
               <li>
                 <a 
-                  href="https://github.com/oil-oil/wolfcha/issues" 
+                  href="https://github.com/oil-oil/aicb/issues" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-[var(--color-gold-dark)] transition-colors"
@@ -81,7 +81,7 @@ export function MarketingFooter() {
         </div>
         
         <div className="mt-12 border-t border-[var(--border-color)] pt-8 text-center text-sm text-[var(--text-muted)]">
-          <p>© {new Date().getFullYear()} Wolfcha. Open Source under MIT License.</p>
+          <p>© {new Date().getFullYear()} AI Companion Board Game. Open Source under MIT License.</p>
         </div>
       </div>
     </footer>

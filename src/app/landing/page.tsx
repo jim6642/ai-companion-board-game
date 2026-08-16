@@ -9,7 +9,7 @@ import {
 } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
-  title: "Wolfcha - AI Werewolf Game | AI狼人杀 | Play Werewolf with AI Online",
+  title: "AI Companion Board Game - AI Werewolf Game | AI狼人杀 | Play Werewolf with AI Online",
   description:
     "Play Werewolf with AI opponents online for free. A single-player social deduction game where AI players speak, bluff, suspect, vote, and react like a real table. 免费在线AI狼人杀游戏，一个人也能玩！",
   keywords: [
@@ -38,35 +38,35 @@ export const metadata: Metadata = {
     "社交推理游戏",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/landing",
+    canonical: "https://github.com/jim6642/ai-companion-board-game/landing",
     languages: {
-      "en": "https://wolf-cha.com/landing",
-      "zh-CN": "https://wolf-cha.com/landing",
+      "en": "https://github.com/jim6642/ai-companion-board-game/landing",
+      "zh-CN": "https://github.com/jim6642/ai-companion-board-game/landing",
     },
   },
   openGraph: {
-    title: "Wolfcha - AI Werewolf Game | AI狼人杀",
+    title: "AI Companion Board Game - AI Werewolf Game | AI狼人杀",
     description:
       "Play Werewolf with AI opponents. Single-player social deduction with AI players that speak, bluff, suspect, and vote. 免费AI狼人杀，一个人也能玩！",
-    url: "https://wolf-cha.com/landing",
-    siteName: "Wolfcha",
+    url: "https://github.com/jim6642/ai-companion-board-game/landing",
+    siteName: "AI Companion Board Game",
     locale: "en_US",
     type: "website",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Wolfcha - AI Werewolf Game",
+        alt: "AI Companion Board Game - AI Werewolf Game",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Wolfcha - AI Werewolf Game | AI狼人杀",
+    title: "AI Companion Board Game - AI Werewolf Game | AI狼人杀",
     description:
       "Play Werewolf with AI opponents. Single-player social deduction game with AI dialogue, bluffing, and voting. 免费AI狼人杀！",
-    images: ["https://wolf-cha.com/og-image.png"],
+    images: ["https://github.com/jim6642/ai-companion-board-game/og-image.png"],
   },
   robots: {
     index: true,

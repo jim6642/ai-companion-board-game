@@ -20,6 +20,7 @@ export interface CustomCharacterData {
   basic_info?: string;
   style_label?: string;
   avatar_seed?: string;
+  voice_id?: string;
 }
 
 export interface StartGameOptions {
@@ -278,6 +279,7 @@ export const MODEL_IDS = {
     deepseek: "deepseek-v3.2",
   },
   tokendance: {
+    minimaxHer: "M2-her",
     minimaxM27: "minimax-m2.7",
     deepseekV4Pro: "deepseek-v4-pro",
     deepseekV4Flash0731: "deepseek-v4-flash-0731",
@@ -288,16 +290,17 @@ export const MODEL_IDS = {
   },
 } as const;
 
-const BUILTIN_DEEPSEEK_V4_FLASH_0731_MODEL: ModelRef = {
+const BUILTIN_MINIMAX_HER_MODEL: ModelRef = {
   provider: "tokendance",
-  model: MODEL_IDS.tokendance.deepseekV4Flash0731,
+  model: MODEL_IDS.tokendance.minimaxHer,
+  temperature: 1,
   reasoning: { enabled: false },
 };
 
 export const DEFAULT_MODEL_CONFIG = {
-  generator: MODEL_IDS.zenmux.geminiFlashLite,
-  summary: MODEL_IDS.tokendance.deepseekV4Flash0731,
-  review: MODEL_IDS.tokendance.deepseekV4Flash0731,
+  generator: MODEL_IDS.tokendance.minimaxHer,
+  summary: MODEL_IDS.tokendance.minimaxHer,
+  review: MODEL_IDS.tokendance.minimaxHer,
   validation: {
     zenmux: MODEL_IDS.zenmux.geminiFlashLite,
     dashscope: MODEL_IDS.dashscope.deepseek,
@@ -314,13 +317,13 @@ export const DASHSCOPE_VALIDATION_MODEL = DEFAULT_MODEL_CONFIG.validation.dashsc
 export const TOKENDANCE_VALIDATION_MODEL = DEFAULT_MODEL_CONFIG.validation.tokendance;
 
 export const BUILTIN_PLAYER_MODELS: ModelRef[] = [
-  BUILTIN_DEEPSEEK_V4_FLASH_0731_MODEL,
+  BUILTIN_MINIMAX_HER_MODEL,
 ];
 
 // Default built-in models exposed to the app when custom key is not enabled.
 // This list includes system defaults plus the small built-in player pool.
 export const AVAILABLE_MODELS: ModelRef[] = [
-  BUILTIN_DEEPSEEK_V4_FLASH_0731_MODEL,
+  BUILTIN_MINIMAX_HER_MODEL,
 ];
 
 // Built-in project-key models that the server may call internally.

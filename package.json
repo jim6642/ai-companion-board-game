@@ -1,5 +1,5 @@
 {
-  "name": "wolfcha",
+  "name": "ai-companion-board-game",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,6 +7,18 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --experimental-strip-types --test scripts/test-middleware-proxy.mts",
+    "qa:aeroplane-capture": "node --experimental-strip-types scripts/qa-aeroplane-capture.mjs",
+    "qa:aeroplane-dialogue": "node --experimental-strip-types scripts/qa-aeroplane-dialogue.mjs",
+    "qa:aeroplane-context": "node --experimental-strip-types scripts/qa-aeroplane-context.mjs",
+    "qa:love-letter-engine": "node --experimental-strip-types scripts/qa-love-letter-engine.mjs",
+    "qa:love-letter-dialogue": "node --experimental-strip-types scripts/qa-love-letter-dialogue.mjs",
+    "qa:love-letter-rules": "node --experimental-strip-types scripts/qa-love-letter-rules.mjs",
+    "qa:love-letter-ui": "node scripts/qa-love-letter-ui.mjs",
+    "qa:liars-dice-engine": "node --experimental-strip-types scripts/qa-liars-dice-engine.mjs",
+    "qa:liars-dice-rules": "node --experimental-strip-types scripts/qa-liars-dice-rules.mjs",
+    "qa:liars-dice-ui": "node scripts/qa-liars-dice-ui.mjs",
+    "qa:prompt-isolation": "node --experimental-strip-types scripts/qa-companion-prompt-isolation.mjs",
     "migrate:game-sessions-user-id": "node scripts/migrate-game-sessions-user-id.mjs"
   },
   "dependencies": {
@@ -47,6 +59,7 @@
     "stripe": "^20.2.0",
     "tailwind-merge": "^3.4.0",
     "undici": "^7.19.1",
+    "uno-engine": "2.0.3",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

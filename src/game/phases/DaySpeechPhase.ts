@@ -207,10 +207,14 @@ export class DaySpeechPhase extends GamePhase {
     const guidelinesSection = isGenshinMode
       ? t("prompts.daySpeech.guidelines.genshin")
       : t("prompts.daySpeech.guidelines.default");
+    const spokenOnlyRule = player.displayName === "陈航"
+      ? "【输出硬规则】只输出陈航真正说出口的话，不写姓名或座位前缀，不写任何括号动作、神态、语气或舞台提示。最多两句，总长度不超过80个中文字符；只讲本轮最关键的一至两个判断，禁止逐个复盘全桌。"
+      : "【输出硬规则】只输出角色真正说出口的话，不写姓名或座位前缀，不写任何括号动作、神态、语气或舞台提示。发言简洁自然，总长度不超过160个中文字符。";
     const systemParts: SystemPromptPart[] = [
       { text: baseCacheable, cacheable: true, ttl: "1h" },
       { text: taskSection },
       ...(focusAngle ? [{ text: focusAngle }] : []),
+      { text: spokenOnlyRule, cacheable: true, ttl: "1h" },
       { text: guidelinesSection, cacheable: true, ttl: "1h" },
     ];
     const system = buildSystemTextFromParts(systemParts);
@@ -538,7 +542,14 @@ export class DaySpeechPhase extends GamePhase {
         const cursor = (state.currentSpeakerSeat ?? -1) + 1;
         for (let step = 0; step < total; step++) {
           const seat = ((cursor + step) % total + total) % total;
-          if (aliveCandidateSeats.includes(seat)) return seat;
+          if (!aliveCandidateSeats.includes(seat)) continue;
+          // Badge speeches start from a random candidate and proceed around the
+          // table once. Reaching the start seat again means every candidate has
+          // already spoken; do not wrap into a second, endless round.
+          if (state.daySpeechStartSeat !== null && seat === state.daySpeechStartSeat) {
+            return null;
+          }
+          return seat;
         }
         return null;
       };

@@ -8,7 +8,7 @@ export function Notebook() {
 
   // Load from local storage on mount
   useEffect(() => {
-    const saved = localStorage.getItem("wolfcha-notebook");
+    const saved = localStorage.getItem("aicb-notebook");
     if (saved) {
       queueMicrotask(() => setContent(saved));
     }
@@ -18,13 +18,13 @@ export function Notebook() {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     setContent(newValue);
-    localStorage.setItem("wolfcha-notebook", newValue);
+    localStorage.setItem("aicb-notebook", newValue);
   };
 
   const clearNotes = () => {
     if (confirm(t("notebook.clearConfirm"))) {
       setContent("");
-      localStorage.removeItem("wolfcha-notebook");
+      localStorage.removeItem("aicb-notebook");
     }
   };
 

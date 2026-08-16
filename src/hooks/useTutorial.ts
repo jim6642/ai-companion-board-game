@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Role } from "@/types/game";
 
-const STORAGE_KEY = "wolfcha.tutorial.state";
+const STORAGE_KEY = "aicb.tutorial.state";
 
 type TutorialState = {
   enabled: boolean;

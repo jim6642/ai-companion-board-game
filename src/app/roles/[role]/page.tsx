@@ -54,8 +54,8 @@ export async function generateMetadata({
     return {};
   }
 
-  const canonical = `https://wolf-cha.com/roles/${data.key}`;
-  const title = `${data.roleName} Role Guide — AI Werewolf (Mafia) | Wolfcha`;
+  const canonical = `https://github.com/jim6642/ai-companion-board-game/roles/${data.key}`;
+  const title = `${data.roleName} Role Guide — AI Werewolf (Mafia) | AI Companion Board Game`;
 
   return {
     title,
@@ -70,10 +70,10 @@ export async function generateMetadata({
       type: "article",
       images: [
         {
-          url: "https://wolf-cha.com/og-image.png",
+          url: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
           width: 1200,
           height: 630,
-          alt: "Wolfcha - AI Werewolf Game",
+          alt: "AI Companion Board Game - AI Werewolf Game",
         },
       ],
     },
@@ -92,7 +92,7 @@ export default async function RoleLandingPage({
     notFound();
   }
 
-  const canonical = `https://wolf-cha.com/roles/${data.key}`;
+  const canonical = `https://github.com/jim6642/ai-companion-board-game/roles/${data.key}`;
 
   const relatedHub = data.related.hub;
   const relatedCluster = data.related.cluster.filter((l) => l.href !== `/roles/${data.key}`);
@@ -141,7 +141,7 @@ export default async function RoleLandingPage({
       <LandingSection
         id="ai-seats"
         title="Example AI seats (what a table can feel like)"
-        subtitle="Wolfcha is designed for solo play: each other seat is an AI opponent with a different style."
+        subtitle="AI Companion Board Game is designed for solo play: each other seat is an AI opponent with a different style."
       >
         <LandingAiSeats seats={data.seats} />
       </LandingSection>

@@ -1,12 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveLocalApiProxyOrigin } from "@/lib/middleware-proxy";
 
-const LOCALE_COOKIE = "wolfcha.locale";
+const LOCALE_COOKIE = "aicb.locale";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-wolfcha-pathname", pathname);
+  requestHeaders.set("x-aicb-pathname", pathname);
   const continueWithPathname = () => NextResponse.next({ request: { headers: requestHeaders } });
+
+  // Opt-in bridge used when a fresh frontend build runs beside an older
+  // API process that already owns the user's in-memory prototype credentials.
+  // Must be explicitly enabled via LOCAL_API_PROXY_BASE_URL; never implied
+  // by hostname/port, otherwise a single Next.js process serving on :3001
+  // would silently rewrite /api/* to :3000 and ECONNREFUSED.
+  const proxy = resolveLocalApiProxyOrigin(process.env.LOCAL_API_PROXY_BASE_URL);
+  if (proxy.kind === "rewrite" && pathname.startsWith("/api/")) {
+    const upstream = new URL(`${pathname}${request.nextUrl.search}`, proxy.origin);
+    return NextResponse.rewrite(upstream);
+  }
 
   // Skip static files, API routes, and paths that already have locale
   if (
@@ -46,5 +58,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|api|.*\\..*).*)"],
+  matcher: ["/((?!_next|.*\\..*).*)"],
 };

@@ -43,6 +43,11 @@ next-env.d.ts
 ai-logs.json
 ai-logs.jsonl
 /dry-runs/
+/work/
+/.site-server-*.pid
+/.site-server-*.log
+/.codex-server-*.log
+/.codex-server-*.err.log
 
 # windsurf rules (local only)
 .windsurf/rules/renewlog.md

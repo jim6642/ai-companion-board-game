@@ -59,7 +59,7 @@ import { getLocale } from "@/i18n/locale-store";
 import { useSettings } from "@/hooks/useSettings";
 import { useTutorial } from "@/hooks/useTutorial";
 import { persistReferralFromCurrentUrl, removeReferralFromCurrentUrl } from "@/lib/referral";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import { useGameAnalysis } from "@/hooks/useGameAnalysis";
 
 const RITUAL_CUE_DURATION_SECONDS = 2.2;
@@ -140,6 +140,8 @@ function getRitualCueFromSystemMessage(content: string): { title: string; subtit
 export default function Home() {
   const t = useTranslations();
   const router = useRouter();
+  const pathname = usePathname();
+  const companionMode = /(^|\/)companion\/werewolf(?:\/|$)/.test(pathname);
   const params = useParams();
   const slug = params?.slug as string | undefined;
   const {
@@ -174,6 +176,30 @@ export default function Home() {
   const { settings, setBgmVolume, setSoundEnabled, setAiVoiceEnabled, setGenshinMode, setSpectatorMode, setAutoAdvanceDialogueEnabled } = useSettings();
   const { bgmVolume, isSoundEnabled, isAiVoiceEnabled, isGenshinMode, isSpectatorMode, isAutoAdvanceDialogueEnabled } = settings;
   const shouldUseAiVoice = isSoundEnabled && isAiVoiceEnabled && bgmVolume > 0;
+  const companionAutoStartRef = useRef(false);
+
+  useEffect(() => {
+    if (!companionMode || gameStarted || isLoading || companionAutoStartRef.current) return;
+    companionAutoStartRef.current = true;
+    void startGame({
+      playerCount: 8,
+      difficulty: "normal",
+      isGenshinMode: false,
+      isSpectatorMode: false,
+    }).catch(() => {
+      companionAutoStartRef.current = false;
+    });
+  }, [companionMode, gameStarted, isLoading, startGame]);
+
+  const handleReturnToCompanion = useCallback(() => {
+    restartGame();
+    router.push("/companion");
+  }, [restartGame, router]);
+
+  const handleGameRestart = useCallback(() => {
+    if (companionMode) companionAutoStartRef.current = false;
+    restartGame();
+  }, [companionMode, restartGame]);
   
   // Exit game functionality - use restartGame which properly handles all state resets
   const gameInProgress = useMemo(() => isGameInProgress(gameState), [gameState]);
@@ -1036,7 +1062,7 @@ export default function Home() {
     nightActionOverlayTimerRef.current = window.setTimeout(() => {
       setNightActionOverlay(null);
     }, 1500);
-  }, [gameState.players, isRoleRevealOpen, showTable]);
+  }, [gameState.players, gameState.isGenshinMode, isRoleRevealOpen, showTable]);
 
   useEffect(() => {
     if (!showTable) {
@@ -1141,7 +1167,7 @@ export default function Home() {
     }
     if (!canClickSeat(player)) return;
     setSelectedSeat(prev => prev === player.seat ? null : player.seat);
-  }, [canClickSeat, isRoleRevealOpen, humanPlayer, gameState.phase, gameState.roleAbilities.witchPoisonUsed]);
+  }, [canClickSeat, isRoleRevealOpen, humanPlayer, gameState.phase, gameState.roleAbilities.witchPoisonUsed, t]);
 
   const confirmSelectedSeat = useCallback(async () => {
     if (isRoleRevealOpen) return;
@@ -1251,9 +1277,10 @@ export default function Home() {
 
   // 欢迎阶段：未开始游戏时显示欢迎屏
   const isWelcomeStage = !gameStarted;
+  const isCompanionStarting = companionMode && isWelcomeStage;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-transparent">
+    <div className={`h-screen flex flex-col overflow-hidden bg-transparent ${companionMode ? "companion-game-shell" : ""}`}>
       <GameBackground isNight={visualIsNight} isBlinking={!!dayNightBlinkPhase} />
 
       <motion.div
@@ -1291,7 +1318,30 @@ export default function Home() {
       />
 
       <AnimatePresence mode="wait" initial={false}>
-        {isWelcomeStage ? (
+        {isCompanionStarting ? (
+          <motion.div
+            key="companion-starting"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="companion-game-starting"
+          >
+            <button type="button" className="companion-back-button companion-back-button--floating" onClick={handleReturnToCompanion}>
+              ← 返回桌游大厅
+            </button>
+            <div className="companion-game-starting__mark">
+              <WerewolfIcon size={46} />
+            </div>
+            <p>今夜有局 · 狼人杀</p>
+            <h1>{isLoading ? "正在为八位玩家发牌" : "正在布置陪玩牌桌"}</h1>
+            <span>林夏、苏遥、顾清岚、唐果、陈航、小满和沈宁正在入座</span>
+            <div className="companion-game-starting__dots" aria-label="正在开始游戏">
+              <i />
+              <i />
+              <i />
+            </div>
+          </motion.div>
+        ) : isWelcomeStage ? (
           <motion.div
             key="welcome-stage"
             initial={{ opacity: 0, y: 10, filter: "blur(10px)" }}
@@ -1442,19 +1492,26 @@ export default function Home() {
                 <div className="wc-topbar__row-1 flex items-center justify-between w-full md:w-auto md:contents">
                   <div className="wc-topbar__title">
                     <WerewolfIcon size={22} className="text-[var(--color-blood)]" />
-                    <span>WOLFCHA</span>
+                    <span>{companionMode ? "今夜有局 · 狼人杀" : "AI COMPANION BOARD GAME"}</span>
                   </div>
 
                   {/* 移动端设置按钮 - 只显示图标 */}
-                  <button
-                    type="button"
-                    onClick={() => setIsSettingsOpen(true)}
-                    title={t("page.audioSettings")}
-                    aria-label={t("page.audioSettings")}
-                    className="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-md border border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-primary)] transition-colors hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-bg)]"
-                  >
-                    <GearSix size={16} />
-                  </button>
+                  <div className="md:hidden flex items-center gap-2">
+                    {companionMode && (
+                      <button type="button" className="companion-back-button" onClick={handleReturnToCompanion}>
+                        ← 大厅
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsSettingsOpen(true)}
+                      title={t("page.audioSettings")}
+                      aria-label={t("page.audioSettings")}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-primary)] transition-colors hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-bg)]"
+                    >
+                      <GearSix size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="wc-topbar__info">
@@ -1495,6 +1552,11 @@ export default function Home() {
 
                 {/* 桌面端右侧区域 */}
                 <div className="hidden md:flex items-center gap-3">
+                  {companionMode && (
+                    <button type="button" className="companion-back-button" onClick={handleReturnToCompanion}>
+                      ← 返回桌游大厅
+                    </button>
+                  )}
                   <div className="wc-topbar__item wc-topbar__item--role">
                     <span className="text-xs uppercase tracking-wider opacity-60">{t("page.roleLabel")}</span>
                     <span className="font-bold text-[var(--color-gold)]">
@@ -1594,7 +1656,7 @@ export default function Home() {
                       onCancelSelection={() => setSelectedSeat(null)}
                       onNightAction={handleNightActionConfirm}
                       onBadgeSignup={handleBadgeSignup}
-                      onRestart={restartGame}
+                      onRestart={handleGameRestart}
                       onWhiteWolfKingBoom={handleWhiteWolfKingBoom}
                       onViewAnalysis={handleViewAnalysis}
                       isAnalysisLoading={isAnalysisLoading}
@@ -1689,17 +1751,19 @@ export default function Home() {
 </AnimatePresence>
 
       {/* 笔记本悬浮按钮 - 参考 style-unification-preview.html */}
-      <button
-        onClick={() => {
-          setIsNotebookOpen((v) => !v);
-          setIsEventLogOpen(false);
-        }}
-        className="wc-notebook-fab"
-        title={isNotebookOpen ? t("page.closeNotebook") : t("page.openNotebook")}
-        type="button"
-      >
-        {isNotebookOpen ? <X size={24} /> : <NotePencil size={24} />}
-      </button>
+      {gameStarted && (
+        <button
+          onClick={() => {
+            setIsNotebookOpen((v) => !v);
+            setIsEventLogOpen(false);
+          }}
+          className="wc-notebook-fab"
+          title={isNotebookOpen ? t("page.closeNotebook") : t("page.openNotebook")}
+          type="button"
+        >
+          {isNotebookOpen ? <X size={24} /> : <NotePencil size={24} />}
+        </button>
+      )}
 
       <AnimatePresence>
         {isNotebookOpen && (
@@ -1741,7 +1805,7 @@ export default function Home() {
         onAiVoiceEnabledChange={setAiVoiceEnabled}
         onAutoAdvanceDialogueEnabledChange={setAutoAdvanceDialogueEnabled}
         isGameInProgress={gameInProgress}
-        onExitGame={restartGame}
+        onExitGame={companionMode ? handleReturnToCompanion : restartGame}
       />
 
       {/* 开发者模式 - 只在游戏开始后显示 */}

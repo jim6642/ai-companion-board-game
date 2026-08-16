@@ -25,6 +25,7 @@ import type { PromptResult } from "@/game/core/types";
 import { buildCachedSystemMessageFromParts } from "./prompt-utils";
 import { parseLLMJson } from "./llm-json";
 import { getI18n } from "@/i18n/translator";
+import { sanitizeModelControlArtifacts } from "./model-output-sanitizer";
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -60,7 +61,7 @@ function sanitizeModelArtifacts(text: string): string {
   const raw = String(text ?? "");
   if (!raw) return raw;
 
-  return stripReasoningArtifacts(raw)
+  return sanitizeModelControlArtifacts(stripReasoningArtifacts(raw))
     .replace(/<\|begin▁of▁sentence\|>/g, "")
     .replace(/<\|end▁of▁sentence\|>/g, "")
     .replace(/<｜begin▁of▁sentence｜>/g, "")
@@ -116,7 +117,7 @@ function resolvePhasePrompt(
   const overriddenState = state.phase === phase ? state : { ...state, phase };
   const prompt = phaseManager.getPrompt(phase, { state: overriddenState, extras }, player);
   if (!prompt) {
-    throw new Error(`[wolfcha] Missing phase prompt for ${phase}`);
+    throw new Error(`[aicb] Missing phase prompt for ${phase}`);
   }
   return prompt;
 }
@@ -186,7 +187,7 @@ export function createInitialGameState(): GameState {
 
 export function getRoleConfiguration(playerCount: number): Role[] {
   const configs: Record<number, Role[]> = {
-    8: ["Werewolf", "Werewolf", "Werewolf", "Seer", "Witch", "Hunter", "Villager", "Villager"],
+    8: ["Villager", "Villager", "Seer", "Witch", "Hunter", "Werewolf", "Werewolf", "WhiteWolfKing"],
     9: ["Werewolf", "Werewolf", "Werewolf", "Seer", "Witch", "Hunter", "Villager", "Villager", "Villager"],
     10: [
       "Werewolf",
@@ -390,7 +391,7 @@ export function addPlayerMessage(
       (isLastWords ? m.isLastWords === true : !m.isLastWords)
   );
   if (isDuplicate) {
-    console.warn("[wolfcha] addPlayerMessage: duplicate message blocked", {
+    console.warn("[aicb] addPlayerMessage: duplicate message blocked", {
       playerId,
       day: state.day,
       phase: state.phase,
@@ -1133,9 +1134,9 @@ export async function generateAISpeechSegmentsStream(
     }
 
     // Sanitize all segments
-    const sanitizedSegments = segments.map((s) =>
-      sanitizeSeatMentions(sanitizeModelArtifacts(s), state.players)
-    );
+    const sanitizedSegments = segments
+      .map((s) => sanitizeSeatMentions(sanitizeModelArtifacts(s), state.players))
+      .filter((segment) => segment.length > 0);
 
     await aiLogger.log({
       type: "speech",
@@ -1648,7 +1649,7 @@ export async function generateAIBadgeVote(
     return parsedSeat;
   } catch (error) {
     // Network/API error: treat as abstain so the phase does not get stuck
-    console.warn("[wolfcha] generateAIBadgeVote failed, treating as abstain:", error);
+    console.warn("[aicb] generateAIBadgeVote failed, treating as abstain:", error);
     await aiLogger.log({
       type: "badge_vote",
       request: {
@@ -1742,7 +1743,7 @@ export async function generateBadgeTransfer(
 
     return parsedSeat;
   } catch (error) {
-    console.warn("[wolfcha] generateBadgeTransfer failed, tearing badge:", error);
+    console.warn("[aicb] generateBadgeTransfer failed, tearing badge:", error);
     await aiLogger.log({
       type: "badge_transfer",
       request: {
@@ -1808,7 +1809,7 @@ export async function generateSeerAction(
 
     return parsedSeat;
   } catch (error) {
-    console.warn("[wolfcha] generateSeerAction failed, skipping seer check:", error);
+    console.warn("[aicb] generateSeerAction failed, skipping seer check:", error);
     await aiLogger.log({
       type: "seer_action",
       request: {
@@ -1873,7 +1874,7 @@ export async function generateWolfAction(
 
     return parsedSeat;
   } catch (error) {
-    console.warn("[wolfcha] generateWolfAction failed, skipping wolf kill:", error);
+    console.warn("[aicb] generateWolfAction failed, skipping wolf kill:", error);
     await aiLogger.log({
       type: "wolf_action",
       request: {
@@ -1976,7 +1977,7 @@ export async function generateWitchAction(
 
     return parsedAction;
   } catch (error) {
-    console.warn("[wolfcha] generateWitchAction failed, passing witch action:", error);
+    console.warn("[aicb] generateWitchAction failed, passing witch action:", error);
     await aiLogger.log({
       type: "witch_action",
       request: {
@@ -2045,7 +2046,7 @@ export async function generateGuardAction(
 
     return parsedSeat;
   } catch (error) {
-    console.warn("[wolfcha] generateGuardAction failed, skipping guard protection:", error);
+    console.warn("[aicb] generateGuardAction failed, skipping guard protection:", error);
     await aiLogger.log({
       type: "guard_action",
       request: {
@@ -2128,7 +2129,7 @@ export async function generateHunterShoot(
 
     return parsedTarget;
   } catch (error) {
-    console.warn("[wolfcha] generateHunterShoot failed, passing hunter shot:", error);
+    console.warn("[aicb] generateHunterShoot failed, passing hunter shot:", error);
     await aiLogger.log({
       type: "hunter_shoot",
       request: {
@@ -2221,7 +2222,7 @@ export async function generateWhiteWolfKingBoomDecision(
 
     return parsedTarget;
   } catch (error) {
-    console.warn("[wolfcha] generateWhiteWolfKingBoomDecision failed, passing self-destruct:", error);
+    console.warn("[aicb] generateWhiteWolfKingBoomDecision failed, passing self-destruct:", error);
     await aiLogger.log({
       type: "wwk_boom_decision",
       request: {

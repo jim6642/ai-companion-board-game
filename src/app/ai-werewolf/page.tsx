@@ -12,24 +12,24 @@ import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLink
 import { LandingCta } from "@/components/seo/landing/LandingCta";
 
 export const metadata: Metadata = {
-  title: "AI Werewolf (Mafia) Game — Play Solo with AI Opponents | Wolfcha",
+  title: "AI Werewolf (Mafia) Game — Play Solo with AI Opponents | AI Companion Board Game",
   description:
-    "Play Werewolf (Mafia) online with AI opponents. Wolfcha is a solo social deduction game where AI players talk, bluff, accuse, defend, vote, and react like a real table. No friends or download needed.",
+    "Play Werewolf (Mafia) online with AI opponents. AI Companion Board Game is a solo social deduction game where AI players talk, bluff, accuse, defend, vote, and react like a real table. No friends or download needed.",
   alternates: {
-    canonical: "https://wolf-cha.com/ai-werewolf",
+    canonical: "https://github.com/jim6642/ai-companion-board-game/ai-werewolf",
   },
   openGraph: {
-    title: "AI Werewolf (Mafia) Game — Play Solo | Wolfcha",
+    title: "AI Werewolf (Mafia) Game — Play Solo | AI Companion Board Game",
     description:
       "Play Werewolf (Mafia) solo against AI opponents. A browser-based social deduction game with classic roles, AI dialogue, voting, bluffing, and optional voice acting.",
-    url: "https://wolf-cha.com/ai-werewolf",
+    url: "https://github.com/jim6642/ai-companion-board-game/ai-werewolf",
     type: "website",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Wolfcha - AI Werewolf Game",
+        alt: "AI Companion Board Game - AI Werewolf Game",
       },
     ],
   },
@@ -104,11 +104,11 @@ const dialogueExamples = [
 const faqs = [
   {
     question: "What is AI Werewolf?",
-    answer: "AI Werewolf (also known as Mafia) is a social deduction game where you try to identify hidden werewolves through discussion and voting. In Wolfcha, every other seat is an AI opponent with its own personality, memory, pressure level, and faction goal.",
+    answer: "AI Werewolf (also known as Mafia) is a social deduction game where you try to identify hidden werewolves through discussion and voting. In AI Companion Board Game, every other seat is an AI opponent with its own personality, memory, pressure level, and faction goal.",
   },
   {
     question: "Can I play alone without friends?",
-    answer: "Yes! That's exactly what Wolfcha is designed for. Every other seat at the table is an AI opponent. You can start a game anytime, no group required.",
+    answer: "Yes! That's exactly what AI Companion Board Game is designed for. Every other seat at the table is an AI opponent. You can start a game anytime, no group required.",
   },
   {
     question: "Do AI players actually reason and bluff?",
@@ -116,14 +116,14 @@ const faqs = [
   },
   {
     question: "What roles are available?",
-    answer: "Wolfcha includes classic Werewolf roles: Werewolf (the hunters), Seer (checks alignments), Witch (one save, one kill), Hunter (shoots when dying), Guard (protects players), and Villager (the majority trying to find wolves).",
+    answer: "AI Companion Board Game includes classic Werewolf roles: Werewolf (the hunters), Seer (checks alignments), Witch (one save, one kill), Hunter (shoots when dying), Guard (protects players), and Villager (the majority trying to find wolves).",
   },
   {
     question: "Is there voice acting?",
-    answer: "Yes! Wolfcha features optional voice acting for narration and character dialogue, making the experience more immersive. You can enable or disable it in settings.",
+    answer: "Yes! AI Companion Board Game features optional voice acting for narration and character dialogue, making the experience more immersive. You can enable or disable it in settings.",
   },
   {
-    question: "Is Wolfcha free to play?",
+    question: "Is AI Companion Board Game free to play?",
     answer: "Yes, you can start playing immediately for free in your browser. No download or registration required.",
   },
   {
@@ -131,8 +131,8 @@ const faqs = [
     answer: "A typical game takes 10-20 minutes depending on the number of players and your reading speed. Voice acting adds some time but enhances immersion.",
   },
   {
-    question: "What makes Wolfcha different from other Werewolf games?",
-    answer: "Wolfcha is designed for solo play with AI opponents that actually reason, argue, remember, and form suspicions. It's built around dialogue and imperfect information, so it feels closer to a real social deduction table than a scripted bot match.",
+    question: "What makes AI Companion Board Game different from other Werewolf games?",
+    answer: "AI Companion Board Game is designed for solo play with AI opponents that actually reason, argue, remember, and form suspicions. It's built around dialogue and imperfect information, so it feels closer to a real social deduction table than a scripted bot match.",
   },
 ];
 
@@ -155,9 +155,9 @@ function buildGameJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "VideoGame",
-    name: "Wolfcha - AI Werewolf Game",
+    name: "AI Companion Board Game - AI Werewolf Game",
     description: "A solo Werewolf (Mafia) social deduction game where you play against AI opponents that reason, bluff, accuse, defend, and vote.",
-    url: "https://wolf-cha.com/ai-werewolf",
+    url: "https://github.com/jim6642/ai-companion-board-game/ai-werewolf",
     genre: ["Social Deduction", "Party Game", "Strategy"],
     gamePlatform: "Web Browser",
     applicationCategory: "Game",
@@ -194,7 +194,7 @@ export default function AiWerewolfPage() {
       <LandingHero
         title="AI Werewolf (Mafia), playable solo"
         subtitle="Social deduction meets AI"
-        description="Werewolf (also known as Mafia) is a social deduction game about hidden roles, persuasion, and imperfect information. Wolfcha turns it into a single-player experience: every other seat is controlled by an AI player that talks, lies, doubts, votes, and remembers."
+        description="Werewolf (also known as Mafia) is a social deduction game about hidden roles, persuasion, and imperfect information. AI Companion Board Game turns it into a single-player experience: every other seat is controlled by an AI player that talks, lies, doubts, votes, and remembers."
         primaryCta={{ href: "/", label: "Play now — free" }}
         secondaryCta={{ href: "/how-to-play", label: "Learn the rules" }}
         aside={<LandingAiSeats seats={aiSeats.slice(0, 6)} compact />}
@@ -249,8 +249,8 @@ export default function AiWerewolfPage() {
 
       {/* What makes it different */}
       <LandingSection
-        id="why-wolfcha"
-        title="What makes Wolfcha different"
+        id="why-aicb"
+        title="What makes AI Companion Board Game different"
         subtitle="Not just another Werewolf app — a genuine social deduction experience against reasoning AI."
       >
         <div className="grid gap-6 md:grid-cols-2">
@@ -316,7 +316,7 @@ export default function AiWerewolfPage() {
       <LandingSection
         id="related"
         title="Explore more"
-        subtitle="Dive deeper into Wolfcha's features, roles, and AI opponents."
+        subtitle="Dive deeper into AI Companion Board Game's features, roles, and AI opponents."
       >
         <div className="grid gap-10 lg:grid-cols-2">
           <LandingRelatedLinks title="Hub pages" links={hubLinks} />

@@ -54,8 +54,8 @@ export interface ModelLandingData {
 }
 
 const hubLinks: LandingRelatedLink[] = [
-  { href: "/ai-models", label: "AI Models (Hub)", description: "Overview of all AI models in Wolfcha." },
-  { href: "/ai-werewolf", label: "AI Werewolf", description: "What Wolfcha is and how it works." },
+  { href: "/ai-models", label: "AI Models (Hub)", description: "Overview of all AI models in AI Companion Board Game." },
+  { href: "/ai-werewolf", label: "AI Werewolf", description: "What AI Companion Board Game is and how it works." },
   { href: "/how-to-play", label: "How to Play", description: "Rules and mechanics overview." },
   { href: "/features", label: "Features", description: "Voice acting, roles, and more." },
 ];
@@ -79,7 +79,7 @@ export const modelLandingDataByKey: Record<ModelLandingKey, ModelLandingData> = 
     displayName: "DeepSeek",
     tagline: "The logical analyst who finds contradictions.",
     heroDescription:
-      "DeepSeek approaches Werewolf like a puzzle. It tracks statements, identifies inconsistencies, and builds arguments from evidence. In Wolfcha, DeepSeek-powered opponents are known for catching contradictions and demanding logical explanations. If you slip, DeepSeek will notice.",
+      "DeepSeek approaches Werewolf like a puzzle. It tracks statements, identifies inconsistencies, and builds arguments from evidence. In AI Companion Board Game, DeepSeek-powered opponents are known for catching contradictions and demanding logical explanations. If you slip, DeepSeek will notice.",
     logo: "/models/deepseek.svg",
     company: "DeepSeek AI",
     strengths: [
@@ -144,7 +144,7 @@ export const modelLandingDataByKey: Record<ModelLandingKey, ModelLandingData> = 
     displayName: "Qwen",
     tagline: "The methodical strategist who plans ahead.",
     heroDescription:
-      "Qwen is patient and deliberate. It doesn't rush to conclusions but builds cases over time. In Wolfcha, Qwen-powered opponents are known for long-term thinking, vote coordination, and steady pressure that increases as the game progresses.",
+      "Qwen is patient and deliberate. It doesn't rush to conclusions but builds cases over time. In AI Companion Board Game, Qwen-powered opponents are known for long-term thinking, vote coordination, and steady pressure that increases as the game progresses.",
     logo: "/models/qwen.svg",
     company: "Alibaba Cloud",
     strengths: [
@@ -209,7 +209,7 @@ export const modelLandingDataByKey: Record<ModelLandingKey, ModelLandingData> = 
     displayName: "Kimi",
     tagline: "The empathetic connector who builds trust.",
     heroDescription:
-      "Kimi focuses on relationships. It builds trust, reads emotions, and creates alliances. In Wolfcha, Kimi-powered opponents are known for their supportive communication style and ability to get others to open up—which can be used for good or manipulation.",
+      "Kimi focuses on relationships. It builds trust, reads emotions, and creates alliances. In AI Companion Board Game, Kimi-powered opponents are known for their supportive communication style and ability to get others to open up—which can be used for good or manipulation.",
     logo: "/models/kimi.svg",
     company: "Moonshot AI",
     strengths: [
@@ -274,7 +274,7 @@ export const modelLandingDataByKey: Record<ModelLandingKey, ModelLandingData> = 
     displayName: "Gemini",
     tagline: "The creative adapter who thinks outside the box.",
     heroDescription:
-      "Gemini is flexible and innovative. It doesn't follow scripts—it creates new approaches based on the situation. In Wolfcha, Gemini-powered opponents are known for unexpected plays, creative arguments, and the ability to pivot strategies mid-game.",
+      "Gemini is flexible and innovative. It doesn't follow scripts—it creates new approaches based on the situation. In AI Companion Board Game, Gemini-powered opponents are known for unexpected plays, creative arguments, and the ability to pivot strategies mid-game.",
     logo: "/models/gemini.svg",
     company: "Google",
     strengths: [
@@ -339,7 +339,7 @@ export const modelLandingDataByKey: Record<ModelLandingKey, ModelLandingData> = 
     displayName: "Seed",
     tagline: "The bold risk-taker who swings for the fences.",
     heroDescription:
-      "Seed plays to win big. It takes risks, makes bold claims, and isn't afraid to gamble on uncertain information. In Wolfcha, Seed-powered opponents are known for aggressive plays, early claims, and high-stakes decisions that can turn the game.",
+      "Seed plays to win big. It takes risks, makes bold claims, and isn't afraid to gamble on uncertain information. In AI Companion Board Game, Seed-powered opponents are known for aggressive plays, early claims, and high-stakes decisions that can turn the game.",
     logo: "/models/bytedance.svg",
     company: "ByteDance",
     strengths: [
@@ -404,7 +404,7 @@ export const modelLandingDataByKey: Record<ModelLandingKey, ModelLandingData> = 
     displayName: "Claude",
     tagline: "The nuanced persuader who sees all angles.",
     heroDescription:
-      "Claude is thoughtful and nuanced. It considers multiple perspectives, acknowledges uncertainty, and builds persuasive arguments. In Wolfcha, Claude-powered opponents are known for balanced analysis, fair-minded reasoning, and the ability to see both sides of any argument.",
+      "Claude is thoughtful and nuanced. It considers multiple perspectives, acknowledges uncertainty, and builds persuasive arguments. In AI Companion Board Game, Claude-powered opponents are known for balanced analysis, fair-minded reasoning, and the ability to see both sides of any argument.",
     logo: "/models/claude.svg",
     company: "Anthropic",
     strengths: [
@@ -469,7 +469,7 @@ export const modelLandingDataByKey: Record<ModelLandingKey, ModelLandingData> = 
     displayName: "OpenAI GPT",
     tagline: "The narrative storyteller who shapes the game's story.",
     heroDescription:
-      "OpenAI GPT thinks in narratives. It understands games as stories with characters, arcs, and themes. In Wolfcha, GPT-powered opponents are known for compelling speeches, memorable moments, and the ability to frame events in ways that shift perception.",
+      "OpenAI GPT thinks in narratives. It understands games as stories with characters, arcs, and themes. In AI Companion Board Game, GPT-powered opponents are known for compelling speeches, memorable moments, and the ability to frame events in ways that shift perception.",
     logo: "/models/openai.svg",
     company: "OpenAI",
     strengths: [
@@ -534,7 +534,7 @@ export const modelLandingDataByKey: Record<ModelLandingKey, ModelLandingData> = 
     displayName: "GLM",
     tagline: "The observant watcher who speaks when it matters.",
     heroDescription:
-      "GLM is patient and observant. It watches, listens, and waits for the right moment to contribute. In Wolfcha, GLM-powered opponents are known for well-timed interventions, careful observation, and insights that cut through noise.",
+      "GLM is patient and observant. It watches, listens, and waits for the right moment to contribute. In AI Companion Board Game, GLM-powered opponents are known for well-timed interventions, careful observation, and insights that cut through noise.",
     logo: "/models/glm.svg",
     company: "Zhipu AI",
     strengths: [
@@ -600,7 +600,7 @@ export const modelLandingDataByKey: Record<ModelLandingKey, ModelLandingData> = 
     displayName: "Doubao",
     tagline: "The aggressive challenger who confronts directly.",
     heroDescription:
-      "Doubao is direct and confrontational. It doesn't mince words or avoid conflict. In Wolfcha, Doubao-powered opponents are known for aggressive questioning, direct accusations, and a high-pressure style that forces reactions.",
+      "Doubao is direct and confrontational. It doesn't mince words or avoid conflict. In AI Companion Board Game, Doubao-powered opponents are known for aggressive questioning, direct accusations, and a high-pressure style that forces reactions.",
     logo: "/models/doubao.svg",
     company: "ByteDance",
     strengths: [
@@ -665,7 +665,7 @@ export const modelLandingDataByKey: Record<ModelLandingKey, ModelLandingData> = 
     displayName: "MiniMax",
     tagline: "The steady anchor who holds the line.",
     heroDescription:
-      "MiniMax is consistent and reliable. It doesn't swing between extremes—it maintains steady positions and follows through on commitments. In Wolfcha, MiniMax-powered opponents are known for predictable behavior, reliable alliances, and a stabilizing presence in chaotic games.",
+      "MiniMax is consistent and reliable. It doesn't swing between extremes—it maintains steady positions and follows through on commitments. In AI Companion Board Game, MiniMax-powered opponents are known for predictable behavior, reliable alliances, and a stabilizing presence in chaotic games.",
     logo: "/models/minimax.svg",
     company: "MiniMax",
     strengths: [

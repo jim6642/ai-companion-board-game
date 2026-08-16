@@ -13,7 +13,7 @@ import { getI18n } from "@/i18n/translator";
 
 // ============ 游戏状态持久化配置 ============
 
-const GAME_STATE_STORAGE_KEY = "wolfcha.game_state";
+const GAME_STATE_STORAGE_KEY = "aicb.game_state";
 const GAME_STATE_VERSION = 1;
 // 24 hours in milliseconds - states older than this won't be restored
 const GAME_STATE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -55,6 +55,28 @@ export function isGameInProgress(state: GameState | null | undefined): boolean {
 }
 
 /**
+ * Synchronous mount guard for auto-starting pages. The game hook restores its
+ * atom in an effect, so a sibling auto-start effect must not create a new game
+ * during the same first render and overwrite this checkpoint.
+ */
+export function hasPersistedGameInProgress(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = localStorage.getItem(GAME_STATE_STORAGE_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as Partial<PersistedGameState>;
+    return (
+      parsed.version === GAME_STATE_VERSION &&
+      Array.isArray(parsed.state?.players) &&
+      parsed.state.players.length > 0 &&
+      isGameInProgress(parsed.state)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Check if the current phase's required action has been completed.
  * We only save state when the phase action is complete to avoid
  * restoring into the middle of an action.
@@ -80,6 +102,9 @@ function isPhaseActionCompleted(state: GameState): boolean {
 
     case "NIGHT_GUARD_ACTION": {
       const guard = state.players.find((p) => p.role === "Guard" && p.alive);
+      // Waiting for a human choice is a stable checkpoint. Persist it so a
+      // refresh does not replay earlier role announcements.
+      if (guard?.isHuman) return true;
       // 没有守卫，或守卫已选择目标
       return !guard || state.nightActions.guardTarget !== undefined;
     }
@@ -87,6 +112,7 @@ function isPhaseActionCompleted(state: GameState): boolean {
     case "NIGHT_WOLF_ACTION": {
       const aliveWolves = state.players.filter((p) => isWolfRole(p.role) && p.alive);
       if (aliveWolves.length === 0) return true;
+      if (aliveWolves.some((wolf) => wolf.isHuman)) return true;
       // 狼人已选择目标
       return state.nightActions.wolfTarget !== undefined;
     }
@@ -94,6 +120,7 @@ function isPhaseActionCompleted(state: GameState): boolean {
     case "NIGHT_WITCH_ACTION": {
       const witch = state.players.find((p) => p.role === "Witch" && p.alive);
       if (!witch) return true;
+      if (witch.isHuman) return true;
       // 药都用完了
       if (state.roleAbilities.witchHealUsed && state.roleAbilities.witchPoisonUsed) return true;
       // 女巫已做出决定（救人、毒人、或明确不救）
@@ -106,6 +133,7 @@ function isPhaseActionCompleted(state: GameState): boolean {
 
     case "NIGHT_SEER_ACTION": {
       const seer = state.players.find((p) => p.role === "Seer" && p.alive);
+      if (seer?.isHuman) return true;
       // 没有预言家，或预言家已查验
       return !seer || state.nightActions.seerTarget !== undefined;
     }
@@ -116,28 +144,15 @@ function isPhaseActionCompleted(state: GameState): boolean {
       return false;
 
     case "DAY_BADGE_ELECTION": {
-      const candidates = Array.isArray(state.badge?.candidates) ? state.badge.candidates : [];
-      // 候选人不投票
-      const voterIds = state.players
-        .filter((p) => p.alive && !candidates.includes(p.seat))
-        .map((p) => p.playerId);
-      if (voterIds.length === 0) return true;
-      return voterIds.every((id) => typeof state.badge?.votes?.[id] === "number");
+      // A partially collected election is a stable checkpoint. On restore the
+      // badge phase fills only the missing AI ballots and keeps the human vote.
+      return true;
     }
 
     case "DAY_VOTE": {
-      // PK投票时，参与PK的人不投票
-      const pkTargets =
-        state.pkSource === "vote" && Array.isArray(state.pkTargets) ? state.pkTargets : [];
-      // 已翻牌白痴不参与投票
-      const revealedIdiotId = state.roleAbilities.idiotRevealed
-        ? state.players.find((p) => p.role === "Idiot" && p.alive)?.playerId
-        : undefined;
-      const voterIds = state.players
-        .filter((p) => p.alive && !pkTargets.includes(p.seat) && p.playerId !== revealedIdiotId)
-        .map((p) => p.playerId);
-      if (voterIds.length === 0) return true;
-      return voterIds.every((id) => typeof state.votes[id] === "number");
+      // Persist while waiting for either AI or human ballots. The vote phase is
+      // idempotently resumed instead of rolling back and replaying speeches.
+      return true;
     }
 
     // 发言阶段：允许保存（会牺牲“刷新后能继续同一段流式发言”的能力）
@@ -322,7 +337,7 @@ function loadPersistedGameState(): GameState {
     
     // Version check for future migrations
     if (parsed.version !== GAME_STATE_VERSION) {
-      console.warn(`[wolfcha] Game state version mismatch: ${parsed.version} !== ${GAME_STATE_VERSION}`);
+      console.warn(`[aicb] Game state version mismatch: ${parsed.version} !== ${GAME_STATE_VERSION}`);
       localStorage.removeItem(GAME_STATE_STORAGE_KEY);
       return initial;
     }
@@ -330,28 +345,28 @@ function loadPersistedGameState(): GameState {
     // Check if the saved state is too old
     const age = Date.now() - parsed.savedAt;
     if (age > GAME_STATE_MAX_AGE_MS) {
-      console.info("[wolfcha] Saved game state expired, starting fresh");
+      console.info("[aicb] Saved game state expired, starting fresh");
       localStorage.removeItem(GAME_STATE_STORAGE_KEY);
       return initial;
     }
     
     // Validate the state structure
     if (!isValidGameState(parsed.state)) {
-      console.warn("[wolfcha] Invalid saved game state structure");
+      console.warn("[aicb] Invalid saved game state structure");
       localStorage.removeItem(GAME_STATE_STORAGE_KEY);
       return initial;
     }
     
     // Only restore if game is in progress
     if (!isGameInProgress(parsed.state)) {
-      console.info("[wolfcha] Saved game not in progress, starting fresh");
+      console.info("[aicb] Saved game not in progress, starting fresh");
       localStorage.removeItem(GAME_STATE_STORAGE_KEY);
       return initial;
     }
     
     // Players must exist for a valid in-progress game
     if (parsed.state.players.length === 0) {
-      console.warn("[wolfcha] Saved game has no players");
+      console.warn("[aicb] Saved game has no players");
       localStorage.removeItem(GAME_STATE_STORAGE_KEY);
       return initial;
     }
@@ -361,21 +376,21 @@ function loadPersistedGameState(): GameState {
     const restorePhase = getRestorePhase(savedState);
     
     if (restorePhase !== savedState.phase) {
-      console.info(`[wolfcha] Phase ${savedState.phase} action incomplete, restoring to ${restorePhase}`);
+      console.info(`[aicb] Phase ${savedState.phase} action incomplete, restoring to ${restorePhase}`);
       // 回退 phase，但保留已完成的 nightActions
       const restoredState = {
         ...savedState,
         phase: restorePhase,
       };
-      console.info(`[wolfcha] Restoring game from ${new Date(parsed.savedAt).toLocaleString()} at phase ${restorePhase} (rolled back from ${savedState.phase})`);
+      console.info(`[aicb] Restoring game from ${new Date(parsed.savedAt).toLocaleString()} at phase ${restorePhase} (rolled back from ${savedState.phase})`);
       return restoredState;
     }
     
-    console.info(`[wolfcha] Restoring game from ${new Date(parsed.savedAt).toLocaleString()} at phase ${parsed.state.phase}`);
+    console.info(`[aicb] Restoring game from ${new Date(parsed.savedAt).toLocaleString()} at phase ${parsed.state.phase}`);
     return savedState;
     
   } catch (error) {
-    console.error("[wolfcha] Failed to load saved game state:", error);
+    console.error("[aicb] Failed to load saved game state:", error);
     // Clear potentially corrupted data
     try {
       localStorage.removeItem(GAME_STATE_STORAGE_KEY);
@@ -478,9 +493,9 @@ function doSaveGameState(state: GameState): void {
       savedAt: Date.now(),
     };
     localStorage.setItem(GAME_STATE_STORAGE_KEY, JSON.stringify(persisted));
-    console.debug(`[wolfcha] Saved checkpoint at ${state.phase}, day ${state.day}`);
+    console.debug(`[aicb] Saved checkpoint at ${state.phase}, day ${state.day}`);
   } catch (error) {
-    console.error("[wolfcha] Failed to save game state:", error);
+    console.error("[aicb] Failed to save game state:", error);
   }
 }
 
@@ -504,7 +519,7 @@ export function clearPersistedGameState(): void {
 // ============ 基础状态 Atoms ============
 
 // 持久化存储
-export const humanNameAtom = atomWithStorage("wolfcha_human_name", "");
+export const humanNameAtom = atomWithStorage("aicb_human_name", "");
 export const apiKeyConfirmedAtom = atom(false);
 
 // Raw game state atom with localStorage persistence
@@ -544,7 +559,7 @@ export const dialogueAtom = atom<DialogueState | null>(null);
 export const inputTextAtom = atom("");
 
 // 游戏分析数据 - 使用 localStorage 持久化存储
-export const gameAnalysisAtom = atomWithStorage<GameAnalysisData | null>("wolfcha_analysis_data", null);
+export const gameAnalysisAtom = atomWithStorage<GameAnalysisData | null>("aicb_analysis_data", null);
 export const analysisLoadingAtom = atom(false);
 export const analysisErrorAtom = atom<string | null>(null);
 
@@ -615,7 +630,9 @@ export const PHASE_CONFIGS: Record<Phase, PhaseConfig> = {
       const { t } = getI18n();
       return hp?.role === "Guard" ? t("phase.nightGuard.human") : t("phase.nightGuard.description");
     },
-    requiresHumanInput: (hp) => hp?.alive && hp?.role === "Guard" || false,
+      requiresHumanInput: (hp, gs) => Boolean(
+        hp?.alive && hp?.role === "Guard" && gs.nightActions.guardTarget === undefined
+      ),
     canSelectPlayer: (hp, target, gs) => {
       if (!hp || hp.role !== "Guard" || !target.alive) return false;
       // 不能连续保护同一人
@@ -631,7 +648,9 @@ export const PHASE_CONFIGS: Record<Phase, PhaseConfig> = {
       const { t } = getI18n();
       return hp ? isWolfRole(hp.role) ? t("phase.nightWolf.human") : t("phase.nightWolf.description") : t("phase.nightWolf.description");
     },
-    requiresHumanInput: (hp) => hp?.alive && isWolfRole(hp?.role ?? "Villager") || false,
+      requiresHumanInput: (hp, gs) => Boolean(
+        hp?.alive && isWolfRole(hp?.role ?? "Villager") && gs.nightActions.wolfTarget === undefined
+      ),
     canSelectPlayer: (hp, target) => {
       if (!hp || !isWolfRole(hp.role) || !target.alive) return false;
       // 狼人可以刀任何存活玩家（包括队友和自己）
@@ -648,7 +667,10 @@ export const PHASE_CONFIGS: Record<Phase, PhaseConfig> = {
     },
     requiresHumanInput: (hp, gs) => {
       if (!hp?.alive || hp?.role !== "Witch") return false;
-      return !gs.roleAbilities.witchHealUsed || !gs.roleAbilities.witchPoisonUsed;
+      const hasDecision =
+        gs.nightActions.witchSave !== undefined ||
+        gs.nightActions.witchPoison !== undefined;
+      return (!gs.roleAbilities.witchHealUsed || !gs.roleAbilities.witchPoisonUsed) && !hasDecision;
     },
     canSelectPlayer: (hp, target, gs) => {
       if (!hp || hp.role !== "Witch" || !target.alive) return false;
@@ -665,7 +687,9 @@ export const PHASE_CONFIGS: Record<Phase, PhaseConfig> = {
       const { t } = getI18n();
       return hp?.role === "Seer" ? t("phase.nightSeer.human") : t("phase.nightSeer.description");
     },
-    requiresHumanInput: (hp) => hp?.alive && hp?.role === "Seer" || false,
+      requiresHumanInput: (hp, gs) => Boolean(
+        hp?.alive && hp?.role === "Seer" && gs.nightActions.seerTarget === undefined
+      ),
     canSelectPlayer: (hp, target, gs) => {
       if (!hp || hp.role !== "Seer" || !target.alive || target.isHuman) return false;
       // Seer can only check once per night

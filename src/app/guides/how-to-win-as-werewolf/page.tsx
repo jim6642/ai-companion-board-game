@@ -10,7 +10,7 @@ import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLink
 import { LandingDialogueExamples, type LandingDialogueExample } from "@/components/seo/landing/LandingDialogueExamples";
 
 export const metadata: Metadata = {
-  title: "How to Win as Werewolf: Complete Strategy Guide | Wolfcha",
+  title: "How to Win as Werewolf: Complete Strategy Guide | AI Companion Board Game",
   description:
     "Master werewolf strategy with our comprehensive guide. Learn deception tactics, kill target selection, fake claiming, vote manipulation, and team coordination to dominate as the wolf team.",
   keywords: [
@@ -24,15 +24,15 @@ export const metadata: Metadata = {
     "werewolf fake claim",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/guides/how-to-win-as-werewolf",
+    canonical: "https://github.com/jim6642/ai-companion-board-game/guides/how-to-win-as-werewolf",
   },
   openGraph: {
-    title: "How to Win as Werewolf: Master the Art of Deception | Wolfcha",
+    title: "How to Win as Werewolf: Master the Art of Deception | AI Companion Board Game",
     description:
       "Complete werewolf strategy guide - deception tactics, kill selection, fake claiming, and coordination to ensure wolf victory.",
-    url: "https://wolf-cha.com/guides/how-to-win-as-werewolf",
+    url: "https://github.com/jim6642/ai-companion-board-game/guides/how-to-win-as-werewolf",
     type: "article",
-    images: [{ url: "https://wolf-cha.com/og-image.png", width: 1200, height: 630, alt: "Werewolf Strategy Guide" }],
+    images: [{ url: "https://github.com/jim6642/ai-companion-board-game/og-image.png", width: 1200, height: 630, alt: "Werewolf Strategy Guide" }],
   },
 };
 
@@ -41,12 +41,12 @@ const articleJsonLd = {
   "@type": "Article",
   headline: "How to Win as Werewolf: Complete Strategy Guide",
   description: "Master the art of deception and dominate as the werewolf team with comprehensive strategies for kill selection, fake claiming, and team coordination.",
-  image: "https://wolf-cha.com/og-image.png",
-  author: { "@type": "Organization", name: "Wolfcha", url: "https://wolf-cha.com" },
-  publisher: { "@type": "Organization", name: "Wolfcha", logo: { "@type": "ImageObject", url: "https://wolf-cha.com/logo.png" } },
+  image: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
+  author: { "@type": "Organization", name: "AI Companion Board Game", url: "https://github.com/jim6642/ai-companion-board-game" },
+  publisher: { "@type": "Organization", name: "AI Companion Board Game", logo: { "@type": "ImageObject", url: "https://github.com/jim6642/ai-companion-board-game/logo.png" } },
   datePublished: "2024-01-15",
   dateModified: new Date().toISOString().split("T")[0],
-  mainEntityOfPage: { "@type": "WebPage", "@id": "https://wolf-cha.com/guides/how-to-win-as-werewolf" },
+  mainEntityOfPage: { "@type": "WebPage", "@id": "https://github.com/jim6642/ai-companion-board-game/guides/how-to-win-as-werewolf" },
 };
 
 const dialogueExamples: LandingDialogueExample[] = [
@@ -457,7 +457,7 @@ export default function HowToWinAsWerewolfPage() {
                 <span className="text-green-400">✓</span>
                 <div>
                   <div className="font-semibold text-[var(--text-primary)]">Agree on Kill Quickly</div>
-                  <p className="text-sm text-[var(--text-secondary)]">In physical games, use pre-agreed signals. In online games like Wolfcha, discuss and reach consensus efficiently.</p>
+                  <p className="text-sm text-[var(--text-secondary)]">In physical games, use pre-agreed signals. In online games like AI Companion Board Game, discuss and reach consensus efficiently.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -548,7 +548,7 @@ export default function HowToWinAsWerewolfPage() {
             Embrace Your Inner Wolf 🐺
           </h2>
           <p className="text-[var(--text-secondary)] max-w-2xl mx-auto mb-8">
-            The best way to master wolf strategy is through practice. Play unlimited games in Wolfcha and 
+            The best way to master wolf strategy is through practice. Play unlimited games in AI Companion Board Game and 
             experience being a werewolf against AI opponents who will challenge your deception skills.
           </p>
           <Link href="/" className="inline-block rounded-full bg-[var(--color-gold)] px-8 py-4 font-bold text-black hover:bg-[var(--color-gold-dark)]">

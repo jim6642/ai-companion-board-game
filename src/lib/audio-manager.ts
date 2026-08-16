@@ -1,6 +1,7 @@
 import { getMinimaxApiKey, getMinimaxGroupId, isCustomKeyEnabled } from "@/lib/api-keys";
 import { getAuthHeaders } from "@/lib/auth-headers";
 import { gameSessionTracker } from "@/lib/game-session-tracker";
+import { prepareTextForTts } from "@/lib/companion/speech-text";
 
 export interface AudioTask {
   id: string; // unique message id
@@ -10,7 +11,7 @@ export interface AudioTask {
 }
 
 export function makeAudioTaskId(voiceId: string, text: string) {
-  return `${voiceId}::${text}`;
+  return `${voiceId}::${prepareTextForTts(text)}`;
 }
 
 type PlayState = "idle" | "playing" | "loading";
@@ -114,11 +115,13 @@ class AudioManager {
 
   private async fetchAndCache(task: AudioTask) {
     const headers = await this.buildTtsHeaders();
+    const spokenText = prepareTextForTts(task.text);
+    if (!spokenText) return;
 
     const response = await fetch("/api/tts", {
       method: "POST",
       headers,
-      body: JSON.stringify({ text: task.text, voiceId: task.voiceId }),
+      body: JSON.stringify({ text: spokenText, voiceId: task.voiceId }),
     });
 
     if (!response.ok) {

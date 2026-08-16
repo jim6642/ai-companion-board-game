@@ -8,10 +8,10 @@ import { LandingFaq } from "@/components/seo/landing/LandingFaq";
 import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLinks";
 
 export const metadata: Metadata = {
-  title: "How to Bluff in Werewolf: Master the Art of Deception | Wolfcha",
+  title: "How to Bluff in Werewolf: Master the Art of Deception | AI Companion Board Game",
   description: "Learn bluffing techniques in Werewolf. Master fake claims, misdirection, and psychological manipulation to survive as a wolf or deceive as a villager.",
   keywords: ["werewolf bluffing", "how to lie in mafia", "werewolf deception", "fake claim werewolf"],
-  alternates: { canonical: "https://wolf-cha.com/guides/how-to-bluff" },
+  alternates: { canonical: "https://github.com/jim6642/ai-companion-board-game/guides/how-to-bluff" },
 };
 
 const faqItems = [

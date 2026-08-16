@@ -19,6 +19,26 @@ import { type FlowToken } from "@/lib/game-flow-controller";
 import { audioManager, makeAudioTaskId } from "@/lib/audio-manager";
 import { resolveVoiceId, type AppLocale } from "@/lib/voice-constants";
 import { getLocale } from "@/i18n/locale-store";
+import { cleanGeneratedSpeech } from "@/lib/companion/speech-text";
+
+function speechCharacterLimit(player: Player) {
+  return player.displayName === "陈航" ? 80 : 160;
+}
+
+function cleanSpeechSegments(segments: string[], player: Player) {
+  const output: string[] = [];
+  const limit = speechCharacterLimit(player);
+  let used = 0;
+  for (const segment of segments) {
+    const remaining = limit - used;
+    if (remaining <= 0) break;
+    const cleaned = cleanGeneratedSpeech(segment, player.displayName, player.seat, remaining);
+    if (!cleaned) continue;
+    output.push(cleaned);
+    used += Array.from(cleaned).length;
+  }
+  return output;
+}
 
 export interface DayPhaseCallbacks {
   setDialogue: (speaker: string, text: string, isStreaming?: boolean) => void;
@@ -114,7 +134,7 @@ export function useDayPhase(
         state.players.some((p) => p.seat === seat && p.alive)
       );
       const total = state.players.length;
-      let cursor = (state.currentSpeakerSeat ?? -1) + 1;
+      const cursor = (state.currentSpeakerSeat ?? -1) + 1;
       for (let step = 0; step < total; step++) {
         const seat = ((cursor + step) % total + total) % total;
         if (aliveCandidateSeats.includes(seat)) {
@@ -210,12 +230,12 @@ export function useDayPhase(
     options?: { afterSpeech?: (s: GameState) => Promise<void> }
   ) => {
     if (state.phase.includes("NIGHT")) {
-      console.warn("[wolfcha] runAISpeech called during NIGHT phase:", state.phase);
+      console.warn("[aicb] runAISpeech called during NIGHT phase:", state.phase);
       return;
     }
 
     if (currentSpeakingPlayerRef.current === player.playerId) {
-      console.warn("[wolfcha] runAISpeech: already speaking for", player.displayName);
+      console.warn("[aicb] runAISpeech: already speaking for", player.displayName);
       return;
     }
 
@@ -240,7 +260,8 @@ export function useDayPhase(
       messageCount: state.messages.length,
     };
 
-    const prefetchedSegments = consumePrefetchedSpeech(prefetchCriteria);
+    const consumedPrefetch = consumePrefetchedSpeech(prefetchCriteria);
+    const prefetchedSegments = consumedPrefetch ? cleanSpeechSegments(consumedPrefetch, player) : null;
     if (prefetchedSegments && prefetchedSegments.length > 0) {
       currentSpeakingPlayerRef.current = player.playerId;
 
@@ -314,7 +335,12 @@ export function useDayPhase(
 
       // 使用流式生成，带超时保护
       const streamPromise = generateAISpeechSegmentsStream(state, player, {
-        onSegmentReceived: (segment, index) => {
+        onSegmentReceived: (rawSegment) => {
+          const remainingCharacters = speechCharacterLimit(player)
+            - streamingSegmentsRef.current.reduce((total, item) => total + Array.from(item).length, 0);
+          if (remainingCharacters <= 0) return;
+          const segment = cleanGeneratedSpeech(rawSegment, player.displayName, player.seat, remainingCharacters);
+          if (!segment) return;
           // 如果已超时，忽略后续段落
           if (isTimedOut) return;
 
@@ -382,7 +408,7 @@ export function useDayPhase(
           const currentState = gameStateRef.current;
           const currentPhase = currentState.phase;
           if (!isSpeechLikePhase(currentPhase)) {
-            console.warn("[wolfcha] runAISpeech: phase changed during AI speech generation, skipping display. Expected speech phase, got:", currentPhase);
+            console.warn("[aicb] runAISpeech: phase changed during AI speech generation, skipping display. Expected speech phase, got:", currentPhase);
             return;
           }
 
@@ -416,7 +442,7 @@ export function useDayPhase(
 
       // 处理超时情况
       if (result === "timeout") {
-        console.warn(`[wolfcha] runAISpeech: timeout after ${ORGANIZING_TIMEOUT_MS}ms for ${player.displayName}, skipping to next speaker`);
+        console.warn(`[aicb] runAISpeech: timeout after ${ORGANIZING_TIMEOUT_MS}ms for ${player.displayName}, skipping to next speaker`);
         // 显示超时消息并标记完成
         appendToSpeechQueue(t("dayPhase.timeout"));
         finalizeSpeechQueue();

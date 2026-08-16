@@ -20,12 +20,12 @@ export function getGameJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "VideoGame",
-    name: "Wolfcha - AI Werewolf Game",
+    name: "AI Companion Board Game - AI Werewolf Game",
     alternateName: ["AI Werewolf", "猹杀", "AI狼人杀"],
     description:
       "Play Werewolf with AI opponents. A single-player social deduction game where AI players reason, bluff, accuse, defend, and vote through the full Werewolf flow.",
-    url: "https://wolf-cha.com",
-    image: "https://wolf-cha.com/og-image.png",
+    url: "https://github.com/jim6642/ai-companion-board-game",
+    image: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
     genre: ["Social Deduction", "Strategy", "Party Game", "AI Game"],
     gamePlatform: ["Web Browser", "Mobile Browser"],
     applicationCategory: "Game",
@@ -38,8 +38,8 @@ export function getGameJsonLd() {
     },
     author: {
       "@type": "Organization",
-      name: "Wolfcha Team",
-      url: "https://wolf-cha.com",
+      name: "AI Companion Board Game Team",
+      url: "https://github.com/jim6642/ai-companion-board-game",
     },
     keywords:
       "AI werewolf, play werewolf online, werewolf game online, play werewolf alone, single player werewolf, AI mafia game, werewolf with AI opponents, social deduction game",
@@ -57,14 +57,14 @@ export function getWebsiteJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Wolfcha",
+    name: "AI Companion Board Game",
     alternateName: "AI Werewolf Game",
-    url: "https://wolf-cha.com",
+    url: "https://github.com/jim6642/ai-companion-board-game",
     description:
       "Play Werewolf with AI opponents online. A single-player social deduction game with classic roles, AI dialogue, voting, bluffing, and optional voice acting.",
     potentialAction: {
       "@type": "PlayAction",
-      target: "https://wolf-cha.com",
+      target: "https://github.com/jim6642/ai-companion-board-game",
       name: "Play AI Werewolf",
     },
   };
@@ -74,13 +74,13 @@ export function getOrganizationJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Wolfcha",
-    url: "https://wolf-cha.com",
-    logo: "https://wolf-cha.com/logo.png",
-    sameAs: ["https://github.com/oil-oil/wolfcha"],
+    name: "AI Companion Board Game",
+    url: "https://github.com/jim6642/ai-companion-board-game",
+    logo: "https://github.com/jim6642/ai-companion-board-game/logo.png",
+    sameAs: ["https://github.com/oil-oil/aicb"],
     contactPoint: {
       "@type": "ContactPoint",
-      email: "contact@wolf-cha.com",
+      email: "noreply@github.com",
       contactType: "customer support",
     },
   };
@@ -104,7 +104,7 @@ export function getFAQJsonLd() {
         name: "Can I play Werewolf alone?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes! Wolfcha allows you to play Werewolf completely solo. All other players are AI opponents with distinct personalities, memory, and strategies.",
+          text: "Yes! AI Companion Board Game allows you to play Werewolf completely solo. All other players are AI opponents with distinct personalities, memory, and strategies.",
         },
       },
       {
@@ -117,10 +117,10 @@ export function getFAQJsonLd() {
       },
       {
         "@type": "Question",
-        name: "Is Wolfcha free to play?",
+        name: "Is AI Companion Board Game free to play?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes, Wolfcha is free to play. You can start playing immediately by visiting wolf-cha.com.",
+          text: "Yes, AI Companion Board Game is free to play. You can start playing immediately by visiting https://github.com/jim6642/ai-companion-board-game.",
         },
       },
       {
@@ -142,13 +142,13 @@ export function getHowToJsonLd() {
     name: "How to Play AI Werewolf",
     description:
       "Learn how to play Werewolf with AI opponents in this single-player social deduction game.",
-    image: "https://wolf-cha.com/og-image.png",
+    image: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
     totalTime: "PT15M",
     step: [
       {
         "@type": "HowToStep",
         name: "Enter Your Name",
-        text: "Visit wolf-cha.com and enter your player name to begin.",
+        text: "Visit https://github.com/jim6642/ai-companion-board-game and enter your player name to begin.",
         position: 1,
       },
       {

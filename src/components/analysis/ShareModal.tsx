@@ -74,7 +74,7 @@ export function ShareModal({ isOpen, onClose, data, overrideTag }: ShareModalPro
       });
 
       const link = document.createElement("a");
-      link.download = `wolfcha-report-${data.gameId.slice(0, 8)}.png`;
+      link.download = `aicb-report-${data.gameId.slice(0, 8)}.png`;
       link.href = dataUrl;
       link.click();
     } catch (error) {

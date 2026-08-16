@@ -551,13 +551,13 @@ export function LandingContent() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src="/brand/wolfcha-favicon.svg"
-              alt="Wolfcha"
+              src="/brand/aicb-favicon.svg"
+              alt="AI Companion Board Game"
               width={32}
               height={32}
             />
             <span className="font-serif text-xl font-bold tracking-[0.2em] text-[var(--text-primary)]">
-              WOLFCHA
+              AI COMPANION BOARD GAME
             </span>
           </Link>
           <div className="hidden items-center gap-8 text-sm font-medium text-[var(--text-secondary)] md:flex">
@@ -657,12 +657,12 @@ export function LandingContent() {
 
           <div className="mt-4 flex justify-center">
             <a
-              href="https://www.producthunt.com/products/wolfcha?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-wolfcha"
+              href="https://www.producthunt.com/products/aicb?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-aicb"
               target="_blank"
               rel="noopener noreferrer"
             >
               <img
-                alt="Wolfcha - Single-player Werewolf where AI models battle it out | Product Hunt"
+                alt="AI Companion Board Game - Single-player Werewolf where AI models battle it out | Product Hunt"
                 width="250"
                 height="54"
                 src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1069557&theme=light&t=1769674895697"
@@ -952,23 +952,23 @@ export function LandingContent() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 md:flex-row">
           <div className="flex items-center gap-3 opacity-80">
             <Image
-              src="/brand/wolfcha-favicon.svg"
-              alt="Wolfcha"
+              src="/brand/aicb-favicon.svg"
+              alt="AI Companion Board Game"
               width={32}
               height={32}
               className="brightness-200 grayscale"
             />
             <span className="font-serif font-bold tracking-[0.3em]">
-              WOLFCHA
+              AI COMPANION BOARD GAME
             </span>
           </div>
           <div className="text-center text-sm opacity-50">
             <p>{t("seo.footer.slogan")}</p>
-            <p className="mt-1 font-mono">© 2024 Wolfcha Project. Open Source.</p>
+            <p className="mt-1 font-mono">© 2024 AI Companion Board Game Project. Open Source.</p>
           </div>
           <div className="flex gap-6 opacity-60">
             <a
-              href="https://github.com/oil-oil/wolfcha"
+              href="https://github.com/oil-oil/aicb"
               target="_blank"
               rel="noopener noreferrer"
               className="transition-colors hover:text-[var(--color-gold)]"

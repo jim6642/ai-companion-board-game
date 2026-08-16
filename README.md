@@ -1,82 +1,140 @@
+# AI Companion Board Game — AI Board Game Companion
+
 <p align="right"><a href="./README.zh.md">简体中文</a></p>
 
-![Wolfcha — Play Werewolf solo](assets/readme/hero-en.png)
+![AI Companion Board Game — Play Werewolf solo](assets/readme/hero-en.png)
 
 <p align="center">
   <strong>You take one seat. AI players fill the rest.</strong><br />
-  An AI-native Werewolf game for deduction, bluffing, and chaos on demand.
+  An AI-native companion that plays a full table of social-deduction and
+  bluffing board games with you — Werewolf, Liars Dice, Love Letter, and Aeroplane Chess.
 </p>
 
 <p align="center">
-  <a href="https://wolf-cha.com"><strong>Play online</strong></a>
+  <a href="https://github.com/jim6642/ai-companion-board-game"><strong>Play online</strong></a>
   ·
   <a href="#local-development">Run locally</a>
   ·
   <a href="./README.zh.md">中文说明</a>
 </p>
 
-## One human. A table that talks back.
+## What is this?
 
-Wolfcha recreates the part of Werewolf that is hardest to schedule: a complete table of distinct players. Choose your role, enter an 8–12 seat game, and let the AI handle every other personality, secret, accusation, and vote.
+AI Companion Board Game is a browser-native collection of classic social and bluffing
+board games where every non-human seat is controlled by an LLM. You pick
+the game, pick the AI companions, and the rest of the table plays,
+bluffs, and reacts around a fully local rule engine. The model is
+never a referee — it only chats about the publicly visible state.
 
-| Characters first | Table-aware memory | Decisions with intent |
-| --- | --- | --- |
-| Each AI has a stable personality layered over a hidden game role. | Players follow speeches, votes, deaths, and changing suspicions. | They accuse, defend, bluff, follow, or hold back according to their faction goal. |
+| Game | Players | What you do | How AI fits in |
+| --- | --- | --- | --- |
+| **Werewolf** (`/zh/companion/werewolf`) | 8 | Night actions → speeches → vote → repeat | Each AI holds a hidden role + a stable personality; accuses, defends, bluffs, follows. |
+| **Liars Dice** (`/zh/companion/liars-dice`) | 5 (you + 4 AI) | Bid the next quantity of a face, or call the previous bidder | AI bots estimate probability from the public bid history and their own hidden dice; you can challenge or outbid. |
+| **Love Letter** (`/zh/companion/love-letter`) | 4 (you + 3 AI) | Draw → play a card → resolve its effect (guard, priest, baron, handmaid, prince, king, countess, princess) | AI plays the game locally; reacts to revealed events in chat. |
+| **Aeroplane Chess** (`/zh/companion/aeroplane`) | 4 (you + 3 AI) | Roll dice, fly tokens home, take shortcuts | AI rolls and moves locally; the model only reacts to public events. |
 
-## What happens at the table
+All four games share the same 7-character cast (`林夏` / `苏遥` / `顾清岚` / `唐果` / `陈航` / `小满` / `沈宁`) and the same companion chat / TTS / STT pipeline; each game has its own rule engine, prompt set, and round cadence.
 
-1. **Night falls** — Werewolves choose a target while special roles act on private information.
-2. **The table speaks** — Every surviving player explains, suspects, misdirects, or pushes a read.
-3. **Everyone votes** — The group turns conversation into a decision.
-4. **The story changes** — New deaths and revealed information reshape the next round.
+## How the AI is wired
 
-You can play as **Villager, Werewolf, White Wolf King, Seer, Witch, Hunter, Guard, or Idiot**. Conversations are generated in real time, so the same setup can produce a very different table.
+- **Local rules, public state only.** Every move, draw, dice roll, and
+  win check is computed in the browser by a pure TypeScript engine. The
+  model never sees hidden cards or dice; the prompt explicitly forbids it
+  from claiming otherwise.
+- **Per-character memory.** Each AI carries a small `warmth / rivalry /
+  callback` memory across rounds in the same match (you can read the
+  full design in [`COMPANION.md`](./COMPANION.md)).
+- **One chat pipeline, four games.** `/api/companion/respond` dispatches
+  by `mode` (`werewolf` / `liars-dice` / `love-letter` / `aeroplane`),
+  so a single LLM call serves all four games with a mode-specific system
+  prompt and a per-character cue.
+- **TTS + STT.** MiniMax TTS plays each line sequentially (queue-based,
+  no overlap); SiliconFlow STT fills the chat input on mobile.
+- **Streaming UI.** All four game UIs are fixed-height, side-by-side
+  board + chat, so the page does not grow with chat history.
 
-## Built for atmosphere
+## Latest engineering work
 
-- Retro visual direction with day/night eye-blink transitions.
-- Lip-sync animation while characters speak.
-- Dedicated role artwork for night actions.
-- Optional AI voice playback and spectator mode.
-
-## Project origin
-
-Wolfcha was created at the **Watcha × ModelScope Global Hackathon**. The name combines **Wolf** with **Cha (猹)** — part Werewolf, part spectator watching a table of AI personalities collide.
-
-## Local development
-
-Requirements: Node.js and [pnpm](https://pnpm.io/).
-
-```bash
-git clone https://github.com/oil-oil/wolfcha.git
-cd wolfcha
-pnpm install
-cp .env.example .env.local
-pnpm dev
-```
-
-Open [http://localhost:3000](http://localhost:3000). Configure the providers you need in `.env.local`; the available variables are documented in [`.env.example`](./.env.example).
+- **Chat / voice queue draining fix** — across all four companion games,
+  the `reactionQueueRef` / `voiceQueueRef` / `pendingVoiceCountRef` now
+  get a `matchId` bump and explicit reset on every `startGame` /
+  `restart` / companion switch. Long games no longer leak an
+  in-flight `/api/companion/respond` reply from the previous match
+  into the new one. Regression tests under `scripts/qa-*-queue-drain.mjs`
+  (with `qa-queue-drain-helper.mjs` as the shared CDP harness) verify
+  this with a parked-fetch stub and a negative-control revert.
+- **Middleware proxy opt-in** — `src/middleware.ts` no longer silently
+  rewrites `/api/*` to `http://localhost:3000` when the dev server is
+  on `:3001`. The proxy is now strictly opt-in via
+  `LOCAL_API_PROXY_BASE_URL`; a `resolveLocalApiProxyOrigin` helper
+  guards against non-`http(s)` values. Covered by
+  `scripts/test-middleware-proxy.mts`.
 
 ## Tech stack
 
-[Next.js 16](https://nextjs.org/) · [TypeScript](https://www.typescriptlang.org/) · [Tailwind CSS 4](https://tailwindcss.com/) · [Jotai](https://jotai.org/) · [Radix UI](https://www.radix-ui.com/) · [Framer Motion](https://www.framer.com/motion/) · [Tiptap](https://tiptap.dev/)
+- [Next.js 16](https://nextjs.org/) (App Router) · [React 19](https://react.dev/)
+- [TypeScript 5](https://www.typescriptlang.org/) (strict) · Node ≥ 22
+- [Tailwind CSS 4](https://tailwindcss.com/) · CSS Modules per game
+- [Jotai](https://jotai.org/) for shared state, `useState` + refs for game state
+- [Radix UI](https://www.radix-ui.com/) primitives, [Phosphor Icons](https://phosphoricons.com/)
+- [Framer Motion](https://www.framer.com/) for transitions
+- MiniMax for chat + TTS, SiliconFlow for STT, ZenMux / DashScope / NewAPI as routing options
+- `node --test` + CDP-driven Edge harness for regression tests, no extra test framework
+
+## Local development
+
+Requirements: Node ≥ 22 and [pnpm](https://pnpm.io/).
+
+```bash
+git clone https://github.com/oil-oil/aicb.git
+cd aicb
+pnpm install
+cp .env.example .env.local
+# Fill in ZENMUX_API_KEY / MINIMAX_API_KEY / MINIMAX_GROUP_ID at minimum
+pnpm dev          # http://localhost:3000
+# Or
+pnpm start        # production build (needs `pnpm build` first)
+```
+
+Game URLs (dev port defaults to 3000; the project also runs on 3001
+via `scripts/site-service.ps1`):
+- `/zh/companion/werewolf` — 8-seat Werewolf
+- `/zh/companion/liars-dice` — 5-seat Liars Dice
+- `/zh/companion/love-letter` — 4-seat Love Letter
+- `/zh/companion/aeroplane` — 4-seat Aeroplane Chess
+
+## Tests
+
+```bash
+pnpm test                                   # middleware proxy helper
+node --experimental-strip-types \
+  scripts/qa-liars-dice-engine.mjs          # 5000-game engine sim
+node --experimental-strip-types \
+  scripts/qa-liars-dice-rules.mjs          # edge cases (1s halve, 1s double+1)
+node --experimental-strip-types \
+  scripts/qa-liars-dice-queue-drain.mjs     # regression: stale reply leak
+node --experimental-strip-types \
+  scripts/qa-love-letter-queue-drain.mjs    # same regression
+node --experimental-strip-types \
+  scripts/qa-aeroplane-queue-drain.mjs      # same regression
+```
+
+## Project origin
+
+AI Companion Board Game was created at the **Watcha × ModelScope Global Hackathon**. The
+name combines **Wolf** with **Cha (猹)** — part Werewolf, part spectator
+watching a table of AI personalities collide. The companion games
+(Liars Dice, Love Letter, Aeroplane Chess) extend the same "one human +
+a table of personalities" premise to faster, more casual bluffing
+formats.
 
 ## Sponsors
-
-![TokenDance](public/sponsor/tokendance.svg)
 
 - [TokenDance](https://tokendance.agent-universe.cn/) — core game flow, roleplay, and summaries
 - [DashScope](https://bailian.console.aliyun.com/) — AI capability support
 - [Watcha](https://watcha.cn/) — AI capability and showcase platform support
-
-## Roadmap
-
-- Better mobile play
-- Post-game review and free chat
-- Richer memory, bluffing, and table behavior
-- Special mechanics such as time rewind and AI insight
-- Multiplayer with friends and AI players
-- Community ratings for standout AI personalities
+- [MiniMax](https://api.minimaxi.com/) — chat + TTS for the companion characters
+- [SiliconFlow](https://siliconflow.cn/) — STT
 
 ## License
 

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Wolfcha | AI Werewolf Game - Play Werewolf Online",
+    "title": "AI Companion Board Game | AI Werewolf Game - Play Werewolf Online",
     "description": "Play Werewolf with AI opponents online. A single-player social deduction game with classic roles, AI players that bluff and reason, optional voice acting, and no download."
   },
   "locale": {
@@ -58,8 +58,8 @@
         "title": "Happy Lunar New Year",
         "subtitle": "Wishing you luck and great reads in every match.",
         "line1": "During the event, sign in daily to receive 10 Spring quota. They are consumed first when a match starts.",
-        "line2": "We also want to be honest: after the Lunar New Year maintenance window, we may have to pause Wolfcha due to operational pressure.",
-        "line3": "Thank you for being with us all this way. We hope Wolfcha has kept you company through some joyful and relaxing moments.",
+        "line2": "We also want to be honest: after the Lunar New Year maintenance window, we may have to pause AI Companion Board Game due to operational pressure.",
+        "line3": "Thank you for being with us all this way. We hope AI Companion Board Game has kept you company through some joyful and relaxing moments.",
         "note": "Event window: Feb 12 - Feb 17 (Asia/Shanghai, ends at 00:00 on Feb 18)",
         "action": "Continue to Match"
       },
@@ -77,16 +77,16 @@
       "title": "GitHub Project"
     },
     "productHunt": {
-      "title": "Vote for Wolfcha on Product Hunt",
+      "title": "Vote for AI Companion Board Game on Product Hunt",
       "description": "If you enjoyed this game, an upvote helps a lot and takes only a moment.",
       "hint": "~10s",
       "cta": "UPVOTE",
-      "ariaLabel": "Open Wolfcha on Product Hunt (vote)"
+      "ariaLabel": "Open AI Companion Board Game on Product Hunt (vote)"
     },
     "sponsor": {
       "title": "Become a sponsor",
-      "subtitle": "Your support keeps Wolfcha running smoothly and free for everyone.",
-      "description": "Wolfcha is a community-driven AI Werewolf project. Our costs go toward AI gameplay, voice synthesis, servers, and content creation. Any support—big or small—means the world to us.",
+      "subtitle": "Your support keeps AI Companion Board Game running smoothly and free for everyone.",
+      "description": "AI Companion Board Game is a community-driven AI Werewolf project. Our costs go toward AI gameplay, voice synthesis, servers, and content creation. Any support—big or small—means the world to us.",
       "items": {
         "credits": "Model credits / compute / server resources",
         "media": "Voice, sound effects, character art assets",
@@ -107,12 +107,12 @@
       },
       "copySuccess": "Email copied",
       "copyFallback": "Email address",
-      "mailSubject": "Wolfcha sponsorship inquiry",
-      "mailBody": "Hi, I'm interested in supporting Wolfcha and would like to offer help in the following ways:\n\n- (Model credits / compute)\n- (Voice / SFX assets)\n- (Design / product collaboration)\n- (Other)\n\nMy contact info:\n\n"
+      "mailSubject": "AI Companion Board Game sponsorship inquiry",
+      "mailBody": "Hi, I'm interested in supporting AI Companion Board Game and would like to offer help in the following ways:\n\n- (Model credits / compute)\n- (Voice / SFX assets)\n- (Design / product collaboration)\n- (Other)\n\nMy contact info:\n\n"
     },
     "watchaRating": {
       "title": "Watcha Rating",
-      "ariaLabel": "View Wolfcha's rating on Watcha"
+      "ariaLabel": "View AI Companion Board Game's rating on Watcha"
     },
     "settings": "Settings",
     "tutorial": "How to play",
@@ -205,13 +205,13 @@
     "description": "Adjust preferences and export logs",
     "about": {
       "title": "About",
-      "description": "Learn about Wolfcha",
-      "appName": "Wolfcha",
+      "description": "Learn about AI Companion Board Game",
+      "appName": "AI Companion Board Game",
       "version": "Version: v{version}",
       "group": {
         "title": "Join the community",
         "description": "Scan to join and share feedback",
-        "alt": "Wolfcha community group",
+        "alt": "AI Companion Board Game community group",
         "missing": "Group image not found (public/group.png)"
       },
       "back": "Back to settings",
@@ -357,7 +357,7 @@
       "q3": "How do AI players work?",
       "a3": "Every AI player only sees information their role should know. They track speeches, react to votes, protect themselves, bluff when needed, and try to win with their faction.",
       "q4": "Is it free to play?",
-      "a4": "Yes, Wolfcha is free to play. Start immediately at wolf-cha.com.",
+      "a4": "Yes, AI Companion Board Game is free to play. Start immediately at https://github.com/jim6642/ai-companion-board-game.",
       "q5": "What roles are available?",
       "a5": "Classic roles include Werewolf, Seer, Witch, Hunter, Guard, and Villager. Role composition varies by player count (8-12)."
     },
@@ -367,7 +367,7 @@
       "button": "Play Now"
     },
     "footer": {
-      "slogan": "Wolfcha — The best way to play Werewolf with AI"
+      "slogan": "AI Companion Board Game — The best way to play Werewolf with AI"
     }
   },
   "difficultySelector": {
@@ -2054,7 +2054,7 @@
       "wechatPayHint": "WeChat/Alipay (¥2/game) - contact developer",
       "contactDeveloper": "Contact",
       "wechatQrTitle": "Developer WeChat",
-      "wechatQrDescription": "Scan to add developer on WeChat, note 'Wolfcha credits'",
+      "wechatQrDescription": "Scan to add developer on WeChat, note 'AI Companion Board Game credits'",
       "longPressToSave": "Long press to save image",
       "pricePerGame": "${price} per game",
       "quantity": "Quantity",

@@ -9,10 +9,10 @@ import { LandingFaq } from "@/components/seo/landing/LandingFaq";
 import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLinks";
 
 export const metadata: Metadata = {
-  title: "Guard Strategy Guide: Protect the Village in Werewolf | Wolfcha",
+  title: "Guard Strategy Guide: Protect the Village in Werewolf | AI Companion Board Game",
   description: "Master the Guard role in Werewolf. Learn who to protect, prediction strategies, and avoid common mistakes.",
   keywords: ["werewolf guard strategy", "guard role werewolf", "who to protect werewolf"],
-  alternates: { canonical: "https://wolf-cha.com/guides/guard-strategy" },
+  alternates: { canonical: "https://github.com/jim6642/ai-companion-board-game/guides/guard-strategy" },
 };
 
 const faqItems = [

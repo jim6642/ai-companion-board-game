@@ -16,7 +16,7 @@ export function AnalysisHeader({ gameId }: AnalysisHeaderProps) {
           <Scroll className="w-5 h-5 text-[var(--color-gold)]" />
         </div>
         <h1 className="font-bold text-xl text-[var(--color-gold)] tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-          Wolfcha
+          AI Companion Board Game
         </h1>
       </div>
       <div className="text-xs text-[var(--color-gold)]/60 tracking-widest border border-[var(--color-gold)]/20 px-2 py-1 rounded">

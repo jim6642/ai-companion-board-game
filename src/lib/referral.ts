@@ -1,5 +1,5 @@
 export const REFERRAL_QUERY_PARAM = "ref" as const;
-export const REFERRAL_STORAGE_KEY = "wolfcha_referral" as const;
+export const REFERRAL_STORAGE_KEY = "aicb_referral" as const;
 
 export const readReferralFromSearchParams = (searchParams: URLSearchParams): string | null => {
   const raw = searchParams.get(REFERRAL_QUERY_PARAM);

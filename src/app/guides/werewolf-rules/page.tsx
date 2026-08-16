@@ -10,7 +10,7 @@ import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLink
 import { LandingAiSeats } from "@/components/seo/landing/LandingAiSeats";
 
 export const metadata: Metadata = {
-  title: "Werewolf Game Rules: Complete Official Guide for Beginners | Wolfcha",
+  title: "Werewolf Game Rules: Complete Official Guide for Beginners | AI Companion Board Game",
   description:
     "Master Werewolf (Mafia) game rules with our comprehensive guide. Learn night phases, day voting, role abilities, win conditions, and advanced strategies. Play solo against AI or with friends.",
   keywords: [
@@ -24,17 +24,17 @@ export const metadata: Metadata = {
     "social deduction game rules",
   ],
   alternates: {
-    canonical: "https://wolf-cha.com/guides/werewolf-rules",
+    canonical: "https://github.com/jim6642/ai-companion-board-game/guides/werewolf-rules",
   },
   openGraph: {
-    title: "Werewolf Game Rules: Complete Official Guide | Wolfcha",
+    title: "Werewolf Game Rules: Complete Official Guide | AI Companion Board Game",
     description:
       "Learn the complete rules of Werewolf (Mafia) - night phases, day voting, role abilities, and winning strategies. Perfect for beginners and experienced players.",
-    url: "https://wolf-cha.com/guides/werewolf-rules",
+    url: "https://github.com/jim6642/ai-companion-board-game/guides/werewolf-rules",
     type: "article",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
         width: 1200,
         height: 630,
         alt: "Werewolf Game Rules Guide",
@@ -49,25 +49,25 @@ const articleJsonLd = {
   headline: "Werewolf Game Rules: Complete Official Guide for Beginners",
   description:
     "Master Werewolf (Mafia) game rules with our comprehensive guide covering night phases, day voting, role abilities, and winning strategies.",
-  image: "https://wolf-cha.com/og-image.png",
+  image: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
   author: {
     "@type": "Organization",
-    name: "Wolfcha",
-    url: "https://wolf-cha.com",
+    name: "AI Companion Board Game",
+    url: "https://github.com/jim6642/ai-companion-board-game",
   },
   publisher: {
     "@type": "Organization",
-    name: "Wolfcha",
+    name: "AI Companion Board Game",
     logo: {
       "@type": "ImageObject",
-      url: "https://wolf-cha.com/logo.png",
+      url: "https://github.com/jim6642/ai-companion-board-game/logo.png",
     },
   },
   datePublished: "2024-01-15",
   dateModified: new Date().toISOString().split("T")[0],
   mainEntityOfPage: {
     "@type": "WebPage",
-    "@id": "https://wolf-cha.com/guides/werewolf-rules",
+    "@id": "https://github.com/jim6642/ai-companion-board-game/guides/werewolf-rules",
   },
 };
 
@@ -80,7 +80,7 @@ const faqJsonLd = {
       name: "How many players do you need to play Werewolf?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Traditional Werewolf requires 7-15 players plus a moderator. However, with Wolfcha, you can play solo against AI opponents with 8-12 total players in a game.",
+        text: "Traditional Werewolf requires 7-15 players plus a moderator. However, with AI Companion Board Game, you can play solo against AI opponents with 8-12 total players in a game.",
       },
     },
     {
@@ -131,7 +131,7 @@ const faqItems = [
   {
     question: "How many players do you need to play Werewolf?",
     answer:
-      "Traditional Werewolf requires 7-15 players plus a moderator. However, with Wolfcha, you can play solo against AI opponents with 8-12 total players in a game. This makes it perfect for practicing strategies or enjoying the game when you can't gather a group.",
+      "Traditional Werewolf requires 7-15 players plus a moderator. However, with AI Companion Board Game, you can play solo against AI opponents with 8-12 total players in a game. This makes it perfect for practicing strategies or enjoying the game when you can't gather a group.",
   },
   {
     question: "What is the difference between Werewolf and Mafia?",
@@ -156,7 +156,7 @@ const faqItems = [
   {
     question: "What if there's a tie during voting?",
     answer:
-      "Tie-handling varies by ruleset. Common approaches include: no elimination (the tied players survive), a runoff vote between tied players, or the Sheriff/Mayor breaks the tie. In Wolfcha, tied players enter a PK (player kill) speech round before a revote.",
+      "Tie-handling varies by ruleset. Common approaches include: no elimination (the tied players survive), a runoff vote between tied players, or the Sheriff/Mayor breaks the tie. In AI Companion Board Game, tied players enter a PK (player kill) speech round before a revote.",
   },
   {
     question: "Can Werewolves kill each other?",
@@ -788,7 +788,7 @@ export default function WerewolfRulesPage() {
                 Ready to Practice These Rules?
               </h2>
               <p className="mt-3 text-[var(--text-secondary)] max-w-xl">
-                Play Werewolf solo against AI opponents in Wolfcha. No friends needed, no waiting for a group. 
+                Play Werewolf solo against AI opponents in AI Companion Board Game. No friends needed, no waiting for a group. 
                 Start a game in seconds and master the rules with unlimited practice.
               </p>
             </div>

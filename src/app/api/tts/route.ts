@@ -5,6 +5,8 @@ import * as https from "node:https";
 import { URL } from "node:url";
 import * as zlib from "node:zlib";
 import { DEFAULT_VOICE_ID } from "@/lib/voice-constants";
+import { PERSONAL_PROTOTYPE_MODE } from "@/lib/prototype-mode";
+import { prepareTextForTts } from "@/lib/companion/speech-text";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +16,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req as unknown as Request);
+  const localMiniMaxPrototype = PERSONAL_PROTOTYPE_MODE && Boolean(process.env.MINIMAX_API_KEY && process.env.MINIMAX_GROUP_ID);
+  const auth = localMiniMaxPrototype
+    ? { user: { id: "local-prototype" } }
+    : await authenticateRequest(req as unknown as Request);
   if ("error" in auth) return auth.error;
 
   const headerApiKey = req.headers.get("x-minimax-api-key")?.trim();
@@ -25,7 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "MiniMax API key and group ID are both required" }, { status: 400 });
   }
 
-  if (!hasCustomTtsKey) {
+  if (!hasCustomTtsKey && !localMiniMaxPrototype) {
     const sessionId = req.headers.get("x-game-session-id")?.trim() || null;
     const hasAuthorizedSession = await hasAuthorizedActiveGameSession(auth.user.id, sessionId);
     if (!hasAuthorizedSession) {
@@ -39,7 +44,7 @@ export async function POST(req: NextRequest) {
     const text = typeof parsedRecord.text === "string" ? parsedRecord.text : String(parsedRecord.text ?? "");
     const voiceId = typeof parsedRecord.voiceId === "string" ? parsedRecord.voiceId : String(parsedRecord.voiceId ?? "");
 
-    const normText = text.trim();
+    const normText = prepareTextForTts(text);
     const normVoiceId = voiceId.trim();
 
     if (!normText || !normVoiceId) {
@@ -70,7 +75,7 @@ export async function POST(req: NextRequest) {
     }
 
     const payload = {
-      model: process.env.MINIMAX_TTS_MODEL || "speech-01-turbo",
+      model: process.env.MINIMAX_TTS_MODEL || "speech-2.8-turbo",
       text: normText,
       stream: false, // 暂时不使用流式，简化前端处理
       voice_setting: {

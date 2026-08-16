@@ -12,24 +12,24 @@ import { LandingRelatedLinks } from "@/components/seo/landing/LandingRelatedLink
 import { LandingCta } from "@/components/seo/landing/LandingCta";
 
 export const metadata: Metadata = {
-  title: "How to Play Werewolf (Mafia) Solo with AI | Rules & Guide | Wolfcha",
+  title: "How to Play Werewolf (Mafia) Solo with AI | Rules & Guide | AI Companion Board Game",
   description:
-    "Learn how to play Werewolf (Mafia) solo in Wolfcha. Complete rules guide: get a role, act at night, discuss by day, and vote — all against AI opponents in your browser. Perfect for beginners.",
+    "Learn how to play Werewolf (Mafia) solo in AI Companion Board Game. Complete rules guide: get a role, act at night, discuss by day, and vote — all against AI opponents in your browser. Perfect for beginners.",
   alternates: {
-    canonical: "https://wolf-cha.com/how-to-play",
+    canonical: "https://github.com/jim6642/ai-companion-board-game/how-to-play",
   },
   openGraph: {
-    title: "How to Play Werewolf with AI — Complete Guide | Wolfcha",
+    title: "How to Play Werewolf with AI — Complete Guide | AI Companion Board Game",
     description:
       "Learn how to play Werewolf (Mafia) solo against AI in your browser. Night actions, day discussion, voting, and winning strategies — simplified.",
-    url: "https://wolf-cha.com/how-to-play",
+    url: "https://github.com/jim6642/ai-companion-board-game/how-to-play",
     type: "website",
     images: [
       {
-        url: "https://wolf-cha.com/og-image.png",
+        url: "https://github.com/jim6642/ai-companion-board-game/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Wolfcha - AI Werewolf Game",
+        alt: "AI Companion Board Game - AI Werewolf Game",
       },
     ],
   },
@@ -171,7 +171,7 @@ const dialogueExamples = [
 
 const faqs = [
   {
-    question: "How does solo Werewolf work in Wolfcha?",
+    question: "How does solo Werewolf work in AI Companion Board Game?",
     answer: "You play one seat at the table, and every other seat is controlled by AI. The AI opponents have unique personalities and reasoning styles — they discuss, form opinions, make accusations, and vote just like human players would.",
   },
   {
@@ -188,7 +188,7 @@ const faqs = [
   },
   {
     question: "What if I'm new to Werewolf?",
-    answer: "Wolfcha is perfect for learning! The AI opponents are forgiving, and you can practice different strategies without the pressure of a live group. Start with the beginner's guide for tips.",
+    answer: "AI Companion Board Game is perfect for learning! The AI opponents are forgiving, and you can practice different strategies without the pressure of a live group. Start with the beginner's guide for tips.",
   },
   {
     question: "How long does a game take?",
@@ -205,7 +205,7 @@ const faqs = [
 ];
 
 const hubLinks = [
-  { href: "/ai-werewolf", label: "AI Werewolf (Hub)", description: "What Wolfcha is and why solo vs AI works." },
+  { href: "/ai-werewolf", label: "AI Werewolf (Hub)", description: "What AI Companion Board Game is and why solo vs AI works." },
   { href: "/features", label: "Features", description: "Voice acting, AI arena, and more." },
   { href: "/werewolf-game-with-ai-opponents", label: "AI Opponents", description: "See how AI fills the table." },
 ];
@@ -224,8 +224,8 @@ function buildHowToJsonLd() {
     "@context": "https://schema.org",
     "@type": "HowTo",
     name: "How to Play Werewolf (Mafia) Solo with AI",
-    description: "Learn how to play Werewolf solo against AI opponents in Wolfcha.",
-    url: "https://wolf-cha.com/how-to-play",
+    description: "Learn how to play Werewolf solo against AI opponents in AI Companion Board Game.",
+    url: "https://github.com/jim6642/ai-companion-board-game/how-to-play",
     step: gameFlow.map((s, idx) => ({
       "@type": "HowToStep",
       position: idx + 1,
@@ -260,7 +260,7 @@ export default function HowToPlayPage() {
       <LandingHero
         title="How to play Werewolf (Mafia) solo"
         subtitle="Learn in 5 minutes"
-        description="Wolfcha turns the classic Werewolf (Mafia) party game into a single-player experience. You play one seat; every other seat is an AI opponent. Night actions, day discussion, voting — all the classic elements, no party required."
+        description="AI Companion Board Game turns the classic Werewolf (Mafia) party game into a single-player experience. You play one seat; every other seat is an AI opponent. Night actions, day discussion, voting — all the classic elements, no party required."
         primaryCta={{ href: "/", label: "Play now — free" }}
         secondaryCta={{ href: "/guides/werewolf-for-beginners", label: "Beginner's guide" }}
         aside={<LandingAiSeats seats={aiSeats} compact />}
