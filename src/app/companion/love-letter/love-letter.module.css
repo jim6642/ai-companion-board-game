@@ -279,6 +279,8 @@
 .actionPanel strong { display: block; margin-bottom: 6px; font-size: 12px; }
 .actionPanel p { margin: 0; color: #7f6874; font-size: 13px; }
 .choiceRow { display: flex; flex-wrap: wrap; gap: 6px; }
+.characterSelected { color: white; background: #b74e79; border-color: #b74e79; }
+.choiceSelected { color: white; background: #b74e79; }
 .choiceRow button,
 .confirmButton,
 .roundOverlay button,

@@ -367,7 +367,7 @@ export default function CompanionWerewolfPage() {
             : "确认目标";
 
   return (
-    <main className={`${styles.shell} ${isNight ? styles.night : styles.day}`}>
+    <main className={isNight ? `${styles.shell} ${styles.night}` : styles.shell}>
       <header className={styles.header}>
         <div className={styles.brandBlock}>
           <Link className={styles.backLink} href="/zh/companion" onClick={leaveGame}>← 游戏大厅</Link>
