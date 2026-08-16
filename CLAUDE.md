@@ -81,7 +81,6 @@ Defined in `src/types/game.ts`. Night: `NIGHT_START → NIGHT_GUARD_ACTION → N
 | `/api/credits/*` | Credit consumption, daily bonus, referral, redeem |
 | `/api/game-sessions` | Session tracking (Supabase) |
 | `/api/stripe/*` | Payment link & webhook |
-| `/api/auth/watcha/*` | (deprecated Watcha OAuth2 callback; route removed) |
 
 ### Key Conventions
 
