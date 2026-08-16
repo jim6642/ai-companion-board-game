@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { useRouter } from "next/navigation";
 import {
   Airplane,
+  Bomb,
   ChatsCircle,
   DiceFive,
   GameController,
@@ -526,6 +527,16 @@ export default function CompanionPrototypePage() {
                 }}>
                   <Play size={18} weight="fill" />
                   进入狼人杀
+                </button>
+              </article>
+              <article className={styles.gameCardFeatured}>
+                <span className={styles.availableBadge}>新游戏 · 2-5 人</span>
+                <div className={styles.gameIcon}><Bomb size={38} weight="duotone" /></div>
+                <h3>炸弹猫</h3>
+                <p>54 张经典牌：抽到爆炸猫又没拆弹就出局，攻击、预见、洗牌、否决、索要、5 种猫牌组合全部由本地引擎处理；模型只根据公开事件陪你聊天。</p>
+                <button type="button" className={styles.launchButton} onClick={() => router.push("/companion/exploding-kittens")}>
+                  <Play size={18} weight="fill" />
+                  进入炸弹猫
                 </button>
               </article>
             </div>

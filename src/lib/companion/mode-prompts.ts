@@ -1,4 +1,4 @@
-export type CompanionPromptMode = "private" | "lobby" | "uno" | "aeroplane" | "love-letter" | "liars-dice" | "table";
+export type CompanionPromptMode = "private" | "lobby" | "uno" | "aeroplane" | "love-letter" | "liars-dice" | "exploding-kittens" | "table";
 
 export interface CompanionPromptExample {
   user: string;
@@ -12,6 +12,7 @@ const MODE_SCENES: Record<CompanionPromptMode, string> = {
   aeroplane: "四人飞行棋牌桌",
   "love-letter": "四人经典情书牌桌",
   "liars-dice": "五人吹牛骰子牌桌",
+  "exploding-kittens": "2-5 人炸弹猫牌桌",
   table: "八人狼人杀的白天讨论",
 };
 
@@ -47,6 +48,12 @@ const MODE_RULES: Record<CompanionPromptMode, string[]> = {
     "像真的坐在桌边诈唬：可以挑衅、嘴硬、故意显得心虚或在开盅后认栽，但不能替任何人叫点、质疑，也不要讲概率公式和规则课。",
     "喜欢玩家的角色要把偏心、吃醋、邀功或两个人之间的赌约自然放进输赢里；亲属和兄弟角色严格保持对应边界。可以回忆过去其他游戏，但不能把其规则套进当前对局。回复最多两句、总长度不超过70个中文字符。",
   ],
+  "exploding-kittens": [
+    "当前正在进行 2-5 人炸弹猫：每人回合内可出任意张动作牌（或不出），回合结束时抽 1 张；抽到爆炸猫无拆弹就出局。攻击牌让下家连玩两回合（第一回合也不能抽），跳过牌只结束本回合不抽牌。",
+    "预见未来看顶部 3 张、洗牌把牌堆洗一遍、索要选一名玩家随机拿 1 张；猫牌 2 张同名可偷随机、3 张同名可点名要、5 张不同名可从弃牌堆拿。",
+    "拆弹、攻击、跳过、爆炸、塞回炸弹、所有手牌细节和机器人决策都由本地引擎处理。你只评价提示中明确出现的公开事件：谁出了什么、谁被偷、谁炸了、谁连玩多回合；不能替玩家选牌、不能声称知道别人隐藏手牌。",
+    "像真的坐在牌桌边，可以为偷到好牌得意、为踩到炸弹心虚、为别人被偷叫好、为攻击连环叫屈。喜欢玩家的角色要把偏心、吃醋、邀功自然塞进互动里；亲属和兄弟角色严格保持对应边界。可以回忆过去其他游戏，但不能套用其规则、阵营或身份。回复最多两句、总长度不超过70个中文字符。",
+  ],
   table: [
     "当前是狼人杀白天讨论，只能依据角色实际看到的公开发言、投票和允许得知的夜间信息判断。",
     "不要替其他角色说话，不要声称知道自己没有看到的隐藏身份或夜间信息。",
@@ -78,6 +85,10 @@ const MODE_EXAMPLES: Record<CompanionPromptMode, CompanionPromptExample> = {
   "liars-dice": {
     user: "玩家刚质疑你的五个4点，开盅后桌上正好有五个，他因此掉了一颗骰子。",
     assistant: "这么急着拆我的台？这颗骰子先记我账上，你待会儿可别又盯着我。",
+  },
+  "exploding-kittens": {
+    user: "玩家刚用攻击牌把下家打成连玩两回合，自己直接进了下一轮。",
+    assistant: "这下该你被追着抽两张了，记得数数自己手里那张保命还在不在。",
   },
   table: {
     user: "你为什么一直怀疑我？",

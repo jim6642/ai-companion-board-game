@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>你坐一席，剩下的人交给 AI。</strong><br />
-  狼人杀、吹牛骰子、心动密函、飞行棋 —— 浏览器本地规则引擎 + AI 陪玩。
+  狼人杀、吹牛骰子、心动密函、飞行棋、UNO、炸弹猫 —— 浏览器本地规则引擎 + AI 陪玩。
 </p>
 
 <p align="center">
@@ -27,8 +27,10 @@ AI Companion Board Game 是一组在浏览器里就能跑的经典社交 / 伪�
 | **吹牛骰子** `/zh/companion/liars-dice` | 5（你 + 4 AI）| 叫下一个"多少个几"，或质疑上家 | AI 用公开叫点轨迹 + 自己的隐藏骰子估算胜率，决定跟叫、翻倍还是开盅 |
 | **心动密函** `/zh/companion/love-letter` | 4（你 + 3 AI）| 摸一张 → 打出一张 → 触发效果 | 卫兵 / 祭司 / 男爵 / 侍女 / 王子 / 国王 / 伯爵夫人 / 公主，全在本地结算 |
 | **飞行棋** `/zh/companion/aeroplane` | 4（你 + 3 AI）| 掷骰子 → 飞飞机回家 → 抄近道 | AI 掷骰、决策、选近道全在本地；模型只对公开事件反应 |
+| **UNO** `/zh/companion/uno` | 8 | 出牌 / 抽牌 / 被 +2 / 抢 +4 | AI 持 8 名稳定性格；按需叫 UNO、抢 +4、控色 |
+| **炸弹猫** `/zh/companion/exploding-kittens` | 2-5（你 + 1-4 AI）| 出动作牌或抽 1 张 → 抽到爆炸猫又没拆弹就出局 | 54 张经典牌（拆弹 / 攻击 / 预见 / 洗牌 / 跳过 / 否决 / 索要 / 5 种猫牌）全部由本地引擎处理；模型只评价公开事件 |
 
-四款游戏共用同一套 7 名陪玩角色（`温婉` / `沈棠` / `凌雪` / `苏念` / `陆野` / `程悦` / `傅宁`）和同一套聊天 / TTS / STT 通道；每款有独立的规则引擎、提示词和回合节奏。
+六款游戏共用同一套 7 名陪玩角色（`温婉` / `沈棠` / `凌雪` / `苏念` / `陆野` / `程悦` / `傅宁`）和同一套聊天 / TTS / STT 通道；每款有独立的规则引擎、提示词和回合节奏。
 
 ## AI 是怎么接进来的
 
@@ -36,7 +38,13 @@ AI Companion Board Game 是一组在浏览器里就能跑的经典社交 / 伪�
 - **角色级记忆**。每个 AI 在同一局里跨回合带 `warmth / rivalry / callback` 三件小记忆（完整设计见 [`COMPANION.md`](./COMPANION.md)）。
 - **一套聊天管四款游戏**。`/api/companion/respond` 按 `mode`（`werewolf` / `liars-dice` / `love-letter` / `aeroplane`）分发，一个 LLM 调用服务四款游戏，配合 mode 专属 system prompt 和角色 cue。
 - **TTS + STT**。MiniMax TTS 用全局队列顺序播放，多人连续发言不互相覆盖；硅基流动 STT 给移动端提供按住说话。
-- **流式 UI**。四款游戏都是固定一屏的"牌桌 + 聊天"两栏布局，聊天记录不会把页面越拉越长。
+- **流式 UI**。六款游戏都是固定一屏的"牌桌 + 聊天"两栏布局，聊天记录不会把页面越拉越长。
+
+## 最近一轮的工程改动
+
+- **炸弹猫作为第 6 款陪伴桌游**。`src/lib/exploding-kittens/engine.ts` 实现经典 54 张牌（4 爆炸猫 / 6 拆弹 / 4 攻击 / 5 预见 / 4 洗牌 / 4 跳过 / 4 否决 / 4 索要 / 5×4 猫牌），含完整 2/3/5 猫牌组合、否決链（深度上限 4）、攻击连环、拆弹后秘密塞回炸弹。开局 4 人发 4 张牌 + 1 拆弹，牌堆插 3 爆炸猫；剩余拆弹和多余爆炸猫按官方规则移除。机器人走 `EKBotView` 启发式：默认 70% 抽牌，看过顶 3 张发现爆炸猫先洗牌 / 跳过，弱手对手时考虑攻击。本地引擎是真理来源，聊天和提示词只允许看到公开出牌 / 弃牌 / 事件。`/companion/exploding-kittens` 已上线，与另外 5 款游戏共用 `MODE_PROMPTS` / `characters` / 聊天 / TTS / STT 通道。
+- **聊天 / 语音队列排空**。陪伴游戏的 `reactionQueueRef` / `voiceQueueRef` / `pendingVoiceCountRef` 现在都在 `startGame` / `restart` / 换陪玩时拿到一个 `matchId` 自增并显式重置。长局里 bot 一回合的 `/api/companion/respond` 回复不再会漏进下一局。回归测试在 `scripts/qa-*-queue-drain.mjs`，共享 CDP 桩在 `scripts/qa-queue-drain-helper.mjs`，并各自跑过一次正反两路验证。
+- **中间件代理改为显式 opt-in**。`src/middleware.ts` 不再在 dev 服务器跑在 `:3001` 时偷偷把所有 `/api/*` 重写到 `http://localhost:3000`。代理现在严格通过环境变量 `LOCAL_API_PROXY_BASE_URL` 显式开启；`resolveLocalApiProxyOrigin` 帮手拒绝非 `http(s)` 值。`scripts/test-middleware-proxy.mts` 覆盖。
 
 ## 最近一轮的工程改动
 

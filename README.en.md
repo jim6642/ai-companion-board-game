@@ -57,6 +57,19 @@ We're continuing to improve:
 *   **Post-Game Review / Chat**: Reflect on strategies and memorable moments.
 *   **Special Abilities**: Unique mechanics like time rewind and AI insight.
 *   **Smarter AI Players**: Richer memory, stronger bluffing, and more varied table behavior.
+
+## 🎴 Companion-mode board games
+
+In addition to the full Werewolf flow above, `/companion` now hosts six smaller table games that share the same 7 AI characters and the same chat / TTS / STT pipeline:
+
+| Game | Players | You do | AI does |
+| --- | --- | --- | --- |
+| Werewolf | 8 | night actions → speech → vote → next round | hidden role + stable personality; accuse, rebut, follow votes, bluff |
+| Liars Dice | 5 (you + 4) | bid the next quantity/face, or call the previous bidder | local engine for hidden dice + legal bids + reveal |
+| Love Letter | 4 (you + 3) | draw 1 → play 1 → resolve effect | all 8 card kinds resolved locally |
+| Aeroplane (Aeroplane Chess) | 4 (you + 3) | roll dice → fly home → take shortcuts | dice + AI decisions fully local |
+| UNO | 8 | play / draw / take +2 / challenge +4 | 8 AI personalities, real-time call-UNO logic |
+| **Exploding Kittens** | 2-5 (you + 1-4) | play action cards or draw; draw the kitten without a defuse and you explode | classic 54-card deck (defuse / attack / see-future / shuffle / skip / nope / favor / 5 cat types) resolved by a local engine |
 *   **Multiplayer Mode**: Play with friends alongside AI characters.
 *   **Character Ratings**: Upvote standout AI personalities to find the most convincing Werewolf players.
 
