@@ -5,7 +5,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$Port = 3001
+$Port = 3000
 $SiteUrl = "http://localhost:$Port/zh/companion"
 $ProjectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 $PidPath = Join-Path $ProjectRoot ".site-server-$Port.pid"
@@ -43,7 +43,7 @@ try {
 
     $processInfo = Get-ListenerProcess $listener.OwningProcess
     if (-not (Test-IsProjectProcess $processInfo)) {
-      throw "Port 3001 belongs to another program. Nothing was stopped."
+      throw "Port $Port belongs to another program. Nothing was stopped."
     }
 
     Stop-Process -Id $listener.OwningProcess -Force
@@ -51,25 +51,18 @@ try {
       Start-Sleep -Milliseconds 150
     }
     Remove-Item -LiteralPath $PidPath -Force -ErrorAction SilentlyContinue
-    Write-Host "The site service has stopped and port 3001 is free." -ForegroundColor Green
+    Write-Host "The site service has stopped and port $Port is free." -ForegroundColor Green
     exit 0
   }
 
   if ($listener) {
     $processInfo = Get-ListenerProcess $listener.OwningProcess
     if (-not (Test-IsProjectProcess $processInfo)) {
-      throw "Port 3001 is already in use by another program."
+      throw "Port $Port is already in use by another program."
     }
     Write-Host "The site is already running. Opening the browser..." -ForegroundColor Green
     Open-Site
     exit 0
-  }
-
-  if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot ".next\BUILD_ID"))) {
-    $pnpm = Get-Command pnpm.cmd -ErrorAction Stop
-    Write-Host "The first launch needs a production build. Please wait..." -ForegroundColor Cyan
-    & $pnpm.Source build
-    if ($LASTEXITCODE -ne 0) { throw "The production build failed." }
   }
 
   $node = Get-Command node.exe -ErrorAction Stop
@@ -78,10 +71,10 @@ try {
     throw "Project dependencies are missing. Run pnpm install first."
   }
 
-  Write-Host "Starting the site service..." -ForegroundColor Cyan
+  Write-Host "Starting the site service (dev mode with hot reload)..." -ForegroundColor Cyan
   $server = Start-Process `
     -FilePath $node.Source `
-    -ArgumentList @("`"$nextScript`"", "start", "-p", "$Port") `
+    -ArgumentList @("`"$nextScript`"", "dev", "--webpack", "-p", "$Port") `
     -WorkingDirectory $ProjectRoot `
     -WindowStyle Hidden `
     -RedirectStandardOutput $OutLogPath `
@@ -95,7 +88,7 @@ try {
       $processInfo = Get-ListenerProcess $listener.OwningProcess
       if (-not (Test-IsProjectProcess $processInfo)) {
         Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
-        throw "Another program took port 3001 while the site was starting."
+        throw "Another program took port $Port while the site was starting."
       }
       Set-Content -LiteralPath $PidPath -Value $listener.OwningProcess -Encoding ascii
       Write-Host "The site is ready: $SiteUrl" -ForegroundColor Green
