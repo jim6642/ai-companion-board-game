@@ -644,8 +644,6 @@ input[type="submit"]:not(:disabled),
   font-family: var(--font-chinese), ui-serif, Georgia, serif;
 }
 
-}
-
 .wc-contract-oath {
   font-size: 14px;
   line-height: 1.9;
