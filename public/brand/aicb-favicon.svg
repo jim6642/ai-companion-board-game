@@ -1,7 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path d="M12 2L8 7L4 5V11L2 14L4 16L6 22H18L20 16L22 14L20 11V5L16 7L12 2Z" fill="#8b1d1d"/>
-  <path d="M8 11.5L12 11.5M16 11.5L12 11.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
-  <circle cx="8" cy="13" r="1.5" fill="#ffffff"/>
-  <circle cx="16" cy="13" r="1.5" fill="#ffffff"/>
-  <path d="M10 18L12 16L14 18" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AI Companion Board Game">
+  <defs>
+    <linearGradient id="card-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FBF6E4"/>
+      <stop offset="1" stop-color="#E8D49A"/>
+    </linearGradient>
+    <linearGradient id="card-sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Soft drop shadow under the card -->
+  <rect x="5" y="8" width="54" height="54" rx="5" ry="5" fill="#1A1A1A" opacity="0.18"/>
+
+  <!-- Card body -->
+  <rect x="3" y="3" width="58" height="58" rx="5" ry="5"
+        fill="url(#card-bg)" stroke="#A8821C" stroke-width="1.8"/>
+
+  <!-- Inner decorative border -->
+  <rect x="7" y="7" width="50" height="50" rx="3" ry="3"
+        fill="none" stroke="#A8821C" stroke-width="0.6"/>
+
+  <!-- Subtle diagonal sheen for a playing-card feel -->
+  <rect x="3" y="3" width="58" height="58" rx="5" ry="5" fill="url(#card-sheen)"/>
+
+  <!-- Top decorative pip line -->
+  <line x1="14" y1="11" x2="50" y2="11" stroke="#A8821C" stroke-width="0.5" stroke-linecap="round"/>
+  <circle cx="32" cy="11" r="1" fill="#A8821C"/>
+  <line x1="14" y1="53" x2="50" y2="53" stroke="#A8821C" stroke-width="0.5" stroke-linecap="round"/>
+  <circle cx="32" cy="53" r="1" fill="#A8821C"/>
+
+  <!-- Center "AI" monogram -->
+  <text x="32" y="42" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', 'Noto Serif', serif"
+        font-weight="700" font-size="26" letter-spacing="0.5"
+        fill="#1A2A4A">AI</text>
+
+  <!-- Top-left corner pip (A) -->
+  <text x="11" y="18" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-weight="700" font-size="7" fill="#1A2A4A">A</text>
+
+  <!-- Bottom-right corner pip (rotated 180°, classic playing-card style) -->
+  <g transform="rotate(180 53 46)">
+    <text x="53" y="53" text-anchor="middle"
+          font-family="Georgia, 'Times New Roman', serif"
+          font-weight="700" font-size="7" fill="#1A2A4A">A</text>
+  </g>
 </svg>
