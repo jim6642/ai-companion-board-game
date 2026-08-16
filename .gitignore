@@ -57,3 +57,6 @@ scripts/rename-wolfcha.mjs
 
 # local-only preview renders (e.g. AI-generated icon references) — not part of the shipped product
 /art/
+aicb.mailmap
+
+# One-off mailmap used by git-filter-repo to rewrite the upstream history
