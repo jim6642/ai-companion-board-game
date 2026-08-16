@@ -51,3 +51,9 @@ ai-logs.jsonl
 
 # windsurf rules (local only)
 .windsurf/rules/renewlog.md
+
+# one-off brand migration script (kept locally for re-runs, never shipped)
+scripts/rename-wolfcha.mjs
+
+# local-only preview renders (e.g. AI-generated icon references) — not part of the shipped product
+/art/
