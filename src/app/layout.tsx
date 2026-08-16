@@ -56,9 +56,9 @@ export const metadata: Metadata = {
     url: "https://github.com/jim6642/ai-companion-board-game",
     images: [
       {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
+        url: "/assets/readme/hero-en.png",
+        width: 1280,
+        height: 640,
         alt: "AI Companion Board Game - AI Werewolf Game",
       },
     ],
