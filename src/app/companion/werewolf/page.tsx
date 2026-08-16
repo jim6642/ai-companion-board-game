@@ -534,7 +534,7 @@ export default function CompanionWerewolfPage() {
               const roleReveal = parseRoleRevealMessage(message.content);
               const voteResult = parseVoteResultMessage(message.content);
               const displayContent = speaker
-                ? cleanGeneratedSpeech(message.content, speaker.displayName, speaker.seat, speaker.displayName === "陈航" ? 80 : 160)
+                ? cleanGeneratedSpeech(message.content, speaker.displayName, speaker.seat, speaker.displayName === "陆野" ? 80 : 160)
                 : message.content;
               return (
                 <div key={`${message.timestamp}-${index}`} className={`${styles.message} ${message.isSystem ? styles.systemMessage : ""} ${speaker?.isHuman ? styles.myMessage : ""}`}>

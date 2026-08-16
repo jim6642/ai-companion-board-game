@@ -33,7 +33,7 @@ never a referee — it only chats about the publicly visible state.
 | **Love Letter** (`/zh/companion/love-letter`) | 4 (you + 3 AI) | Draw → play a card → resolve its effect (guard, priest, baron, handmaid, prince, king, countess, princess) | AI plays the game locally; reacts to revealed events in chat. |
 | **Aeroplane Chess** (`/zh/companion/aeroplane`) | 4 (you + 3 AI) | Roll dice, fly tokens home, take shortcuts | AI rolls and moves locally; the model only reacts to public events. |
 
-All four games share the same 7-character cast (`林夏` / `苏遥` / `顾清岚` / `唐果` / `陈航` / `小满` / `沈宁`) and the same companion chat / TTS / STT pipeline; each game has its own rule engine, prompt set, and round cadence.
+All four games share the same 7-character cast (`温婉` / `沈棠` / `凌雪` / `苏念` / `陆野` / `程悦` / `傅宁`) and the same companion chat / TTS / STT pipeline; each game has its own rule engine, prompt set, and round cadence.
 
 ## How the AI is wired
 

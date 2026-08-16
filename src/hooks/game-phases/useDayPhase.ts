@@ -22,7 +22,7 @@ import { getLocale } from "@/i18n/locale-store";
 import { cleanGeneratedSpeech } from "@/lib/companion/speech-text";
 
 function speechCharacterLimit(player: Player) {
-  return player.displayName === "陈航" ? 80 : 160;
+  return player.displayName === "陆野" ? 80 : 160;
 }
 
 function cleanSpeechSegments(segments: string[], player: Player) {

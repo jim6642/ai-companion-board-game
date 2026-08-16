@@ -60,3 +60,6 @@ scripts/rename-wolfcha.mjs
 aicb.mailmap
 
 # One-off mailmap used by git-filter-repo to rewrite the upstream history
+rename-characters.mjs
+
+# One-off character-rename script

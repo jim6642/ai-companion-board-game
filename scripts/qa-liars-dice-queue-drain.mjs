@@ -10,7 +10,7 @@ const result = await runQueueDrainTest({
   url: "http://localhost:3001/zh/companion/liars-dice",
   debugPort: 9358,
   selectionMarker: "今晚想和谁互相诈唬",
-  characters: ["林夏", "苏遥", "顾清岚", "唐果"],
+  characters: ["温婉", "沈棠", "凌雪", "苏念"],
   startButtonText: "和这四人开局",
   humanTurnExpression: `(() => {
     const bid = [...document.querySelectorAll('button')].find((node) => node.textContent.includes('确认叫点') && !node.disabled);

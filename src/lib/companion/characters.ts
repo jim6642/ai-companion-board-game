@@ -46,7 +46,7 @@ export const COMPANION_CHARACTERS: CompanionCharacter[] = [
   {
     id: "lin-xia",
     seat: 2,
-    name: "林夏",
+    name: "温婉",
     age: 24,
     relation: "flirty",
     relationLabel: "暗恋你的朋友",
@@ -72,7 +72,7 @@ export const COMPANION_CHARACTERS: CompanionCharacter[] = [
   {
     id: "su-yao",
     seat: 3,
-    name: "苏遥",
+    name: "沈棠",
     age: 21,
     relation: "flirty",
     relationLabel: "嘴硬暗恋你的搭档",
@@ -98,7 +98,7 @@ export const COMPANION_CHARACTERS: CompanionCharacter[] = [
   {
     id: "gu-qinglan",
     seat: 4,
-    name: "顾清岚",
+    name: "凌雪",
     age: 23,
     relation: "flirty",
     relationLabel: "克制暗恋你的学姐",
@@ -124,7 +124,7 @@ export const COMPANION_CHARACTERS: CompanionCharacter[] = [
   {
     id: "tang-guo",
     seat: 5,
-    name: "唐果",
+    name: "苏念",
     age: 20,
     relation: "flirty",
     relationLabel: "明恋你的玩伴",
@@ -150,7 +150,7 @@ export const COMPANION_CHARACTERS: CompanionCharacter[] = [
   {
     id: "chen-hang",
     seat: 6,
-    name: "陈航",
+    name: "陆野",
     age: 24,
     relation: "brother",
     relationLabel: "你的好兄弟",
@@ -176,7 +176,7 @@ export const COMPANION_CHARACTERS: CompanionCharacter[] = [
   {
     id: "xiao-man",
     seat: 7,
-    name: "小满",
+    name: "程悦",
     age: 19,
     relation: "younger-sister",
     relationLabel: "你的亲妹妹",
@@ -202,7 +202,7 @@ export const COMPANION_CHARACTERS: CompanionCharacter[] = [
   {
     id: "shen-ning",
     seat: 8,
-    name: "沈宁",
+    name: "傅宁",
     age: 27,
     relation: "older-sister",
     relationLabel: "你的亲姐姐",

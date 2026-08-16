@@ -207,8 +207,8 @@ export class DaySpeechPhase extends GamePhase {
     const guidelinesSection = isGenshinMode
       ? t("prompts.daySpeech.guidelines.genshin")
       : t("prompts.daySpeech.guidelines.default");
-    const spokenOnlyRule = player.displayName === "陈航"
-      ? "【输出硬规则】只输出陈航真正说出口的话，不写姓名或座位前缀，不写任何括号动作、神态、语气或舞台提示。最多两句，总长度不超过80个中文字符；只讲本轮最关键的一至两个判断，禁止逐个复盘全桌。"
+    const spokenOnlyRule = player.displayName === "陆野"
+      ? "【输出硬规则】只输出陆野真正说出口的话，不写姓名或座位前缀，不写任何括号动作、神态、语气或舞台提示。最多两句，总长度不超过80个中文字符；只讲本轮最关键的一至两个判断，禁止逐个复盘全桌。"
       : "【输出硬规则】只输出角色真正说出口的话，不写姓名或座位前缀，不写任何括号动作、神态、语气或舞台提示。发言简洁自然，总长度不超过160个中文字符。";
     const systemParts: SystemPromptPart[] = [
       { text: baseCacheable, cacheable: true, ttl: "1h" },

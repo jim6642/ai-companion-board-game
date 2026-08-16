@@ -89,7 +89,7 @@ try {
   await waitFor("AI selection screen", () => evaluate("document.body?.innerText?.includes('今晚想和谁一起飞')"));
   await delay(1500);
   await evaluate("Math.random = () => 0");
-  for (const [index, name] of ["林夏", "唐果", "陈航"].entries()) {
+  for (const [index, name] of ["温婉", "苏念", "陆野"].entries()) {
     if (!await clickCharacter(name)) throw new Error(`Could not select ${name}`);
     await waitFor(`${index + 1} selected companions`, () => evaluate(`document.querySelectorAll('button[class*=characterSelected]').length === ${index + 1}`));
   }
@@ -123,8 +123,8 @@ try {
           return node.textContent.includes(labels[route]) && node.style.getPropertyValue('--cell-color');
         }),
       shortcutRuleVisible: text.includes('正好停在入口') && text.includes('自动 +12') && text.includes('沿同色箭头飞到'),
-      chosenPlayersVisible: ['林夏', '唐果', '陈航'].every((name) => text.includes(name)),
-      unchosenPlayerAbsent: !text.includes('苏遥'),
+      chosenPlayersVisible: ['温婉', '苏念', '陆野'].every((name) => text.includes(name)),
+      unchosenPlayerAbsent: !text.includes('沈棠'),
       publicEventVisible: text.includes('掷出了'),
       chatComposerVisible: Boolean(document.querySelector('textarea[placeholder^="和本局的三位陪玩聊两句"]')),
       noHangarTrackOverlap: !bases.some((base) => track.some((cell) => overlaps(base, cell))),
@@ -138,7 +138,7 @@ try {
   const ok = result.trackCells === 52 && result.shortcutPaths === 4 && result.shortcutEntries === 4 && result.shortcutExits === 4 && result.shortcutColoursMatch && result.shortcutRuleVisible && result.chosenPlayersVisible && result.unchosenPlayerAbsent && result.publicEventVisible && result.chatComposerVisible && result.noHangarTrackOverlap && result.hangarsPainted && result.skippedRollFeedbackVisible;
   const screenshot = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(new URL("../work/aeroplane-qa.png", import.meta.url), Buffer.from(screenshot.data, "base64"));
-  await waitFor("AI skipped turn", () => evaluate("document.body?.innerText?.includes('林夏掷出了1点')"));
+  await waitFor("AI skipped turn", () => evaluate("document.body?.innerText?.includes('温婉掷出了1点')"));
   result.aiPassDidNotPause = await evaluate("!document.querySelector('[data-feedback=\"true\"]')");
   const finalOk = ok && result.aiPassDidNotPause;
   console.log(JSON.stringify({ ok: finalOk, ...result }));

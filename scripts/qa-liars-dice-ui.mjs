@@ -86,9 +86,9 @@ try {
   })()`);
 
   const lineups = [
-    ["林夏", "苏遥", "顾清岚", "唐果"],
-    ["陈航", "小满", "沈宁", "林夏"],
-    ["苏遥", "唐果", "陈航", "沈宁"],
+    ["温婉", "沈棠", "凌雪", "苏念"],
+    ["陆野", "程悦", "傅宁", "温婉"],
+    ["沈棠", "苏念", "陆野", "傅宁"],
   ];
   const results = [];
   let midgameRestarted = false;
@@ -161,7 +161,7 @@ try {
     const result = await evaluate(`(() => {
       const text = document.body.innerText;
       const selected = ${JSON.stringify(lineup)};
-      const allNames = ['林夏','苏遥','顾清岚','唐果','陈航','小满','沈宁'];
+      const allNames = ['温婉','沈棠','凌雪','苏念','陆野','程悦','傅宁'];
       return {
         gameOver: text.includes('整场结束'),
         selectedVisible: selected.every((name) => text.includes(name)),

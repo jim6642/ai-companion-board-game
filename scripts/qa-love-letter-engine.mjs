@@ -36,7 +36,7 @@ function assertSnapshot(snapshot) {
 
 function runGame(seed, humanSeat) {
   const random = seededRandom(seed);
-  const names = ["林夏", "苏遥", "顾清岚", "唐果"];
+  const names = ["温婉", "沈棠", "凌雪", "苏念"];
   const specs = names.map((name, index) => ({
     id: index === humanSeat ? "human" : `ai-${index}`,
     name: index === humanSeat ? "玩家" : name,

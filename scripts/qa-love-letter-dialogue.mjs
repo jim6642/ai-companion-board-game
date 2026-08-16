@@ -19,7 +19,7 @@ const directEvent = {
   kind: "eliminate",
   actorId: "human",
   actorName: "玩家",
-  text: "玩家用卫兵猜中了唐果的手牌，唐果本轮出局。",
+  text: "玩家用卫兵猜中了苏念的手牌，苏念本轮出局。",
   targetIds: ["tang-guo"],
   significant: true,
 };
@@ -29,9 +29,9 @@ rememberLoveLetterPlayerLine(memories, ["lin-xia"], "刚才那张侍女是专门
 
 const engine = new CompanionLoveLetterEngine([
   { id: "human", name: "玩家", isHuman: true },
-  { id: "lin-xia", name: "林夏", isHuman: false },
-  { id: "su-yao", name: "苏遥", isHuman: false },
-  { id: "tang-guo", name: "唐果", isHuman: false },
+  { id: "lin-xia", name: "温婉", isHuman: false },
+  { id: "su-yao", name: "沈棠", isHuman: false },
+  { id: "tang-guo", name: "苏念", isHuman: false },
 ], () => 0.37);
 const publicContext = describeLoveLetterSnapshot(engine.snapshot());
 const loveLetterRules = getCompanionModeRules("love-letter").join("\n");

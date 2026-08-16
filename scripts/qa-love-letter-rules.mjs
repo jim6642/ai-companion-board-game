@@ -2,9 +2,9 @@ import { CompanionLoveLetterEngine } from "../src/lib/love-letter/engine.ts";
 
 const specs = [
   { id: "human", name: "玩家", isHuman: true },
-  { id: "ai-1", name: "林夏" },
-  { id: "ai-2", name: "苏遥" },
-  { id: "ai-3", name: "唐果" },
+  { id: "ai-1", name: "温婉" },
+  { id: "ai-2", name: "沈棠" },
+  { id: "ai-3", name: "苏念" },
 ];
 
 function assert(condition, message) {

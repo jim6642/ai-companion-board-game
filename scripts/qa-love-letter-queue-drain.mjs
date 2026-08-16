@@ -30,7 +30,7 @@ const result = await runQueueDrainTest({
   url: "http://localhost:3001/zh/companion/love-letter",
   debugPort: 9359,
   selectionMarker: "选择三位真正参与本局的 AI 陪玩",
-  characters: ["林夏", "苏遥", "陈航"],
+  characters: ["温婉", "沈棠", "陆野"],
   startButtonText: "四人到齐，拆开密函",
   humanTurnExpression: loveLetterHumanTurn,
   freshMatchExpression: "document.body.innerText.includes('新的一场已经洗好牌') || document.body.innerText.includes('新的一场开始')",

@@ -10,7 +10,7 @@ const result = await runQueueDrainTest({
   url: "http://localhost:3001/zh/companion/aeroplane",
   debugPort: 9360,
   selectionMarker: "今晚想和谁一起飞",
-  characters: ["林夏", "苏遥", "顾清岚"],
+  characters: ["温婉", "沈棠", "凌雪"],
   startButtonText: "四人到齐，开始游戏",
   // The aeroplane "roll dice" button is an icon (no text). It is the
   // only enabled button in the turn console whose className contains

@@ -84,7 +84,7 @@ const INITIAL_LOBBY_CHAT: ChatEntry[] = [
   {
     id: "lobby-chen-hang-welcome",
     speakerId: "chen-hang",
-    speakerName: "陈航",
+    speakerName: "陆野",
     text: "人齐了。想闲聊就在这儿，想开局就去点上面的开始游戏。",
     kind: "ai",
   },

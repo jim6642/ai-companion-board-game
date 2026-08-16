@@ -16,7 +16,7 @@ const captureEvent = {
   kind: "capture",
   actorId: "human",
   actorName: "玩家",
-  text: "玩家把唐果的1号飞机撞回了机库。",
+  text: "玩家把苏念的1号飞机撞回了机库。",
   targetIds: ["tang-guo"],
   significant: true,
 };
