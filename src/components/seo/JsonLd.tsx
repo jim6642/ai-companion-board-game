@@ -77,7 +77,7 @@ export function getOrganizationJsonLd() {
     name: "AI Companion Board Game",
     url: "https://github.com/jim6642/ai-companion-board-game",
     logo: "https://github.com/jim6642/ai-companion-board-game/logo.png",
-    sameAs: ["https://github.com/oil-oil/aicb"],
+    sameAs: ["https://github.com/jim6642/ai-companion-board-game"],
     contactPoint: {
       "@type": "ContactPoint",
       email: "noreply@github.com",

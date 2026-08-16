@@ -22,7 +22,7 @@ export function MarketingFooter() {
             </p>
             <div className="flex gap-4">
               <a
-                href="https://github.com/oil-oil/aicb"
+                href="https://github.com/jim6642/ai-companion-board-game"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
@@ -68,7 +68,7 @@ export function MarketingFooter() {
               </li>
               <li>
                 <a 
-                  href="https://github.com/oil-oil/aicb/issues" 
+                  href="https://github.com/jim6642/ai-companion-board-game/issues" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-[var(--color-gold-dark)] transition-colors"

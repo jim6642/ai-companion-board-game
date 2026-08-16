@@ -429,7 +429,7 @@ export function WelcomeScreen({
 
   // Fetch GitHub stars
   useEffect(() => {
-    fetch('https://api.github.com/repos/oil-oil/aicb')
+    fetch('https://api.github.com/repos/jim6642/ai-companion-board-game')
       .then(res => res.json())
       .then(data => {
         if (data.stargazers_count !== undefined) {
@@ -1019,7 +1019,7 @@ export function WelcomeScreen({
               )}
               <Button asChild variant="outline" className="justify-start">
                 <a
-                  href="https://github.com/oil-oil/aicb"
+                  href="https://github.com/jim6642/ai-companion-board-game"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -1059,27 +1059,13 @@ export function WelcomeScreen({
             name="TokenDance"
             note={t("welcome.sponsor.cards.tokendance")}
           />
-
-          {/* Temporarily hidden: Sponsor card - Watcha (right-center)
-          <SponsorCard
-            sponsorId="watcha"
-            href="https://watcha.cn/"
-            className="wc-sponsor-card wc-sponsor-card--with-logo wc-sponsor-card--watcha"
-            rotate="5deg"
-            delay={0.45}
-            logoSrc="/sponsor/watcha.svg"
-            logoAlt="观猹"
-            name="观猹"
-            note={t("welcome.sponsor.cards.watcha")}
-          />
-          */}
         </div>
 
         <div className="wc-welcome-actions absolute top-5 right-5 z-20 flex items-center gap-2">
           <div className="hidden sm:flex items-center gap-2">
             <LocaleSwitcher className="shrink-0" />
             <a
-              href="https://github.com/oil-oil/aicb"
+              href="https://github.com/jim6642/ai-companion-board-game"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-1.5 rounded-md border-2 border-[var(--border-color)] bg-[var(--bg-card)] px-2 py-1 text-[11px] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all group"
@@ -1249,19 +1235,6 @@ export function WelcomeScreen({
                 <img src="/sponsor/tokendance-icon.svg" alt="TokenDance" className="wc-paper-stamp__logo" />
                 <span className="wc-paper-stamp__name">TokenDance</span>
               </a>
-              {/* Temporarily hidden: Watcha paper stamp
-              <a
-                href="https://watcha.cn/?ref=aicb"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="wc-paper-stamp"
-                style={{ "--stamp-rotate": "6deg" } as React.CSSProperties}
-                onClick={() => void trackSponsorClick("watcha")}
-              >
-                <img src="/sponsor/watcha.svg" alt="观猹" className="wc-paper-stamp__logo" />
-                <span className="wc-paper-stamp__name">观猹</span>
-              </a>
-              */}
             </div>
 
             <div className="mt-2 text-center">
@@ -1297,27 +1270,6 @@ export function WelcomeScreen({
                 </div>
               ) : null}
             </div>
-
-            {/* Temporarily hidden: Watcha official rating badge
-            <div className="mt-5 flex justify-center">
-              <a
-                href="https://watcha.cn/products/aicb?tab=review&utm_source=product-badge&utm_content=review"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="wc-watcha-paper-badge"
-                aria-label={t("welcome.watchaRating.ariaLabel")}
-                title={t("welcome.watchaRating.title")}
-              >
-                <img
-                  src="https://watcha.cn/api/v2/products/aicb/badge?style=1&dark=false"
-                  alt={t("welcome.watchaRating.title")}
-                  width={360}
-                  loading="lazy"
-                  draggable={false}
-                />
-              </a>
-            </div>
-            */}
 
             <div className="mt-7 text-center wc-contract-body">
               <div className="wc-contract-oath">

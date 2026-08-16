@@ -16,13 +16,10 @@ Current sponsors:
 
 *   [TokenDance](https://tokendance.agent-universe.cn/) - Powers the core game flow, roleplay, and summary features
 *   [Dashscope](https://bailian.console.aliyun.com/) - Provides AI capability support
-*   [Watcha](https://watcha.cn/) - Provides AI capability and showcase platform support
+*   [MiniMax](https://api.minimaxi.com/) - Chat + TTS for the companion characters
+*   [SiliconFlow](https://siliconflow.cn/) - STT
 
 ---
-
-> **Note**: This project was born at the **"Guancha + ModelScope Global Hackathon"** as an AI-native game.
-> 
-> "AI Companion Board Game" combines Wolf (Werewolf) + Cha (猹, a character from Chinese literature). It's a nod to the hackathon host while also capturing the fun of watching AI characters interact — like spectating a show.
 
 ## 📖 Background
 
@@ -84,8 +81,8 @@ To run this project locally:
 1.  **Clone the repository**
 
 ```bash
-git clone https://github.com/oil-oil/aicb.git
-cd aicb
+git clone https://github.com/jim6642/ai-companion-board-game.git
+cd ai-companion-board-game
 ```
 
 2.  **Install dependencies**

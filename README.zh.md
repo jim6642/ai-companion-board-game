@@ -59,8 +59,8 @@ AI Companion Board Game 是一组在浏览器里就能跑的经典社交 / 伪�
 需要 Node ≥ 22 和 [pnpm](https://pnpm.io/)。
 
 ```bash
-git clone https://github.com/oil-oil/aicb.git
-cd aicb
+git clone https://github.com/jim6642/ai-companion-board-game.git
+cd ai-companion-board-game
 pnpm install
 cp .env.example .env.local
 # 至少填 ZENMUX_API_KEY / MINIMAX_API_KEY / MINIMAX_GROUP_ID
@@ -91,15 +91,10 @@ node --experimental-strip-types \
   scripts/qa-aeroplane-queue-drain.mjs      # 同上
 ```
 
-## 项目由来
-
-AI Companion Board Game 诞生于 **观猹 × 魔搭环球黑客松**。名字由 **Wolf（狼人杀）** 和 **Cha（猹）** 组成：既在桌上参与推理，也像观众一样看一群 AI 人格互相碰撞。陪伴游戏（吹牛骰子 / 心动密函 / 飞行棋）把"一个人 + 一桌子性格"这个设定延伸到更短、更轻的伪装类玩法。
-
 ## 感谢赞助
 
 - [TokenDance](https://tokendance.agent-universe.cn/) —— 提供核心游戏流程、角色扮演和总结能力
 - [百炼 DashScope](https://bailian.console.aliyun.com/) —— 提供 AI 能力支持
-- [观猹](https://watcha.cn/) —— 提供 AI 能力与展示平台支持
 - [MiniMax](https://api.minimaxi.com/) —— 角色聊天 + 语音合成
 - [硅基流动](https://siliconflow.cn/) —— 语音识别
 

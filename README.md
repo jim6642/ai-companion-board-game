@@ -86,8 +86,8 @@ All four games share the same 7-character cast (`林夏` / `苏遥` / `顾清岚
 Requirements: Node ≥ 22 and [pnpm](https://pnpm.io/).
 
 ```bash
-git clone https://github.com/oil-oil/aicb.git
-cd aicb
+git clone https://github.com/jim6642/ai-companion-board-game.git
+cd ai-companion-board-game
 pnpm install
 cp .env.example .env.local
 # Fill in ZENMUX_API_KEY / MINIMAX_API_KEY / MINIMAX_GROUP_ID at minimum
@@ -119,20 +119,10 @@ node --experimental-strip-types \
   scripts/qa-aeroplane-queue-drain.mjs      # same regression
 ```
 
-## Project origin
-
-AI Companion Board Game was created at the **Watcha × ModelScope Global Hackathon**. The
-name combines **Wolf** with **Cha (猹)** — part Werewolf, part spectator
-watching a table of AI personalities collide. The companion games
-(Liars Dice, Love Letter, Aeroplane Chess) extend the same "one human +
-a table of personalities" premise to faster, more casual bluffing
-formats.
-
 ## Sponsors
 
 - [TokenDance](https://tokendance.agent-universe.cn/) — core game flow, roleplay, and summaries
 - [DashScope](https://bailian.console.aliyun.com/) — AI capability support
-- [Watcha](https://watcha.cn/) — AI capability and showcase platform support
 - [MiniMax](https://api.minimaxi.com/) — chat + TTS for the companion characters
 - [SiliconFlow](https://siliconflow.cn/) — STT
 

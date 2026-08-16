@@ -102,17 +102,12 @@
       "cards": {
         "openCreator": "OpenCreator 帮助我们生成夜晚所有的角色立绘",
         "bailian": "百炼为我们提供部分 AI 能力支持",
-        "tokendance": "词元跳动为每一场逻辑博弈注入敏锐灵魂。",
-        "watcha": "观猹为猹杀提供 AI 能力与展示平台支持"
+        "tokendance": "词元跳动为每一场逻辑博弈注入敏锐灵魂。"
       },
       "copySuccess": "已复制邮箱",
       "copyFallback": "邮箱地址",
       "mailSubject": "AI Companion Board Game 赞助合作",
       "mailBody": "你好，我对 AI Companion Board Game 项目很感兴趣，希望能够提供以下支持：\n\n-（模型额度/算力）\n-（语音/音效资源）\n-（设计/产品协作）\n-（其他）\n\n我的联系方式：\n\n"
-    },
-    "watchaRating": {
-      "title": "观猹评分",
-      "ariaLabel": "在观猹上查看猹杀评分"
     },
     "settings": "设置",
     "tutorial": "玩法教学",
@@ -488,7 +483,6 @@
       "signUp": "注册",
       "sendReset": "发送重置邮件",
       "waitCooldown": "请稍候（{seconds}s）",
-      "signInWithWatcha": "使用观猹账号登录",
       "signInWithGoogle": "使用 Google 账号登录"
     },
     "divider": {

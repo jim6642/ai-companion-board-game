@@ -102,17 +102,12 @@
       "cards": {
         "openCreator": "OpenCreator helps us generate all night-time character art",
         "bailian": "Dashscope provides us with AI capability support",
-        "tokendance": "TokenDance powers every strategic showdown with sharp AI capabilities.",
-        "watcha": "Watcha provides AI capability and showcase platform support"
+        "tokendance": "TokenDance powers every strategic showdown with sharp AI capabilities."
       },
       "copySuccess": "Email copied",
       "copyFallback": "Email address",
       "mailSubject": "AI Companion Board Game sponsorship inquiry",
       "mailBody": "Hi, I'm interested in supporting AI Companion Board Game and would like to offer help in the following ways:\n\n- (Model credits / compute)\n- (Voice / SFX assets)\n- (Design / product collaboration)\n- (Other)\n\nMy contact info:\n\n"
-    },
-    "watchaRating": {
-      "title": "Watcha Rating",
-      "ariaLabel": "View AI Companion Board Game's rating on Watcha"
     },
     "settings": "Settings",
     "tutorial": "How to play",
@@ -470,7 +465,6 @@
       "signUp": "Sign up",
       "sendReset": "Send reset email",
       "waitCooldown": "Please wait ({seconds}s)",
-      "signInWithWatcha": "Sign in with Watcha",
       "signInWithGoogle": "Sign in with Google"
     },
     "divider": {

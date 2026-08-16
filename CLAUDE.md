@@ -21,7 +21,6 @@ Copy `.env.example` to `.env.local` and fill in:
 - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` / `SUPABASE_SERVICE_ROLE_KEY` — auth & database
 - `DASHSCOPE_API_KEY` — Alibaba Cloud model support
 - `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRICE_ID` — payments
-- `NEXT_PUBLIC_WATCHA_CLIENT_ID` / `WATCHA_CLIENT_SECRET` — optional OAuth
 - `NEWAPI_API_KEY` / `NEWAPI_BASE_URL` — optional custom model endpoint
 
 ## Architecture Overview
@@ -82,7 +81,7 @@ Defined in `src/types/game.ts`. Night: `NIGHT_START → NIGHT_GUARD_ACTION → N
 | `/api/credits/*` | Credit consumption, daily bonus, referral, redeem |
 | `/api/game-sessions` | Session tracking (Supabase) |
 | `/api/stripe/*` | Payment link & webhook |
-| `/api/auth/watcha/*` | Watcha OAuth2 callback |
+| `/api/auth/watcha/*` | (deprecated Watcha OAuth2 callback; route removed) |
 
 ### Key Conventions
 
