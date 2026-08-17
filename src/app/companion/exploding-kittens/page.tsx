@@ -371,8 +371,19 @@ export default function CompanionExplodingKittensPage() {
         publishEvents(events, next);
         return;
       }
+      // Resolve the EKAction kind. legalActionsFor should always set
+      // actionKind, but fall back to cardKind (cat -> cat-combo) for safety.
+      const actionKind: EKAction["kind"] | undefined =
+        legal.actionKind
+        ?? (legal.cardKind === "cat" ? "cat-combo" : (legal.cardKind as EKAction["kind"] | undefined));
+      if (!actionKind) {
+        // Should be impossible now that legalActionsFor sets actionKind
+        // explicitly. Throw rather than silently no-op so a future
+        // regression is visible in dev.
+        throw new Error("无法识别这张牌的 actionKind");
+      }
       const action: Omit<EKAction, "id" | "resolved" | "cancelled" | "nopeChain"> = {
-        kind: legal.actionKind as EKAction["kind"],
+        kind: actionKind,
         actorId: HUMAN_ID,
         cardIds: [legal.cardId!],
         targetId: legal.targetId,

@@ -403,24 +403,24 @@ export class CompanionExplodingKittensEngine {
       if (card.kind === "exploding-kitten" || card.kind === "defuse") continue;
       if (card.kind === "nope") continue;
       if (card.kind === "attack") {
-        actions.push({ kind: "play-card", cardId: card.id, cardKind: card.kind, endsWithoutDraw: true });
+        actions.push({ kind: "play-card", actionKind: "attack", cardId: card.id, cardKind: card.kind, endsWithoutDraw: true });
         continue;
       }
       if (card.kind === "skip") {
-        actions.push({ kind: "play-card", cardId: card.id, cardKind: card.kind, endsWithoutDraw: true });
+        actions.push({ kind: "play-card", actionKind: "skip", cardId: card.id, cardKind: card.kind, endsWithoutDraw: true });
         continue;
       }
       if (card.kind === "see-future" || card.kind === "shuffle") {
-        actions.push({ kind: "play-card", cardId: card.id, cardKind: card.kind, endsWithoutDraw: false });
+        actions.push({ kind: "play-card", actionKind: card.kind, cardId: card.id, cardKind: card.kind, endsWithoutDraw: false });
         continue;
       }
       if (card.kind === "favor") {
         const targets = this.alivePlayers().filter((p) => p.id !== player.id && p.hand.length > 0).map((p) => p.id);
         if (targets.length === 0) {
-          actions.push({ kind: "play-card", cardId: card.id, cardKind: card.kind, endsWithoutDraw: false });
+          actions.push({ kind: "play-card", actionKind: "favor", cardId: card.id, cardKind: card.kind, endsWithoutDraw: false });
         } else {
           for (const targetId of targets) {
-            actions.push({ kind: "play-card", cardId: card.id, cardKind: card.kind, targetId, endsWithoutDraw: false });
+            actions.push({ kind: "play-card", actionKind: "favor", cardId: card.id, cardKind: card.kind, targetId, endsWithoutDraw: false });
           }
         }
         continue;
@@ -429,7 +429,7 @@ export class CompanionExplodingKittensEngine {
         const combo = this.findCatCombo(player.hand);
         if (combo) {
           if (combo.size === 5) {
-            actions.push({ kind: "play-card", cardId: combo.cards[0].id, cardKind: card.kind, catKind: card.catKind, comboSize: 5, endsWithoutDraw: false });
+            actions.push({ kind: "play-card", actionKind: "cat-combo", cardId: combo.cards[0].id, cardKind: card.kind, catKind: card.catKind, comboSize: 5, endsWithoutDraw: false });
             continue;
           }
           const targets = this.alivePlayers().filter((p) => p.id !== player.id && p.hand.length > 0).map((p) => p.id);
@@ -437,12 +437,12 @@ export class CompanionExplodingKittensEngine {
             for (const targetId of targets) {
               for (const namedKind of ["defuse", "attack", "see-future", "shuffle", "skip", "nope", "favor", "exploding-kitten", "cat"] as EKCardKind[]) {
                 if (namedKind === "cat") continue;
-                actions.push({ kind: "play-card", cardId: combo.cards[0].id, cardKind: card.kind, catKind: card.catKind, comboSize: 3, targetId, namedKind, endsWithoutDraw: false });
+                actions.push({ kind: "play-card", actionKind: "cat-combo", cardId: combo.cards[0].id, cardKind: card.kind, catKind: card.catKind, comboSize: 3, targetId, namedKind, endsWithoutDraw: false });
               }
             }
           } else if (combo.size === 2) {
             for (const targetId of targets) {
-              actions.push({ kind: "play-card", cardId: combo.cards[0].id, cardKind: card.kind, catKind: card.catKind, comboSize: 2, targetId, endsWithoutDraw: false });
+              actions.push({ kind: "play-card", actionKind: "cat-combo", cardId: combo.cards[0].id, cardKind: card.kind, catKind: card.catKind, comboSize: 2, targetId, endsWithoutDraw: false });
             }
           }
         }
