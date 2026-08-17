@@ -458,24 +458,27 @@ export class CompanionExplodingKittensEngine {
     const nopeEvents: EKGameEvent[] = [];
     let current: EKAction = { ...action };
     let depth = 0;
+    // Per-bot probability of wanting to play a Nope. Real EK feels like
+    // 15-25% of any given action gets a Nope; with 4 players that's roughly
+    // 6% per bot, so we default to 10% per bot to keep the chain short.
+    const BOT_NOPE_CHANCE = 0.1;
     while (depth < EK_MAX_NOPE_DEPTH) {
       const aliveOthers = this.alivePlayers().filter((p) => p.id !== current.actorId);
-      let nopePlayer: PlayerState | null = null;
-      let bestReasoning = -1;
+      const candidates: Array<{ player: PlayerState; motivation: number }> = [];
       for (const p of aliveOthers) {
-        const hasNope = p.hand.some((c) => c.kind === "nope");
-        if (!hasNope) continue;
-        const score = this.random();
-        if (score > bestReasoning) {
-          bestReasoning = score;
-          nopePlayer = p;
+        if (!p.hand.some((c) => c.kind === "nope")) continue;
+        if (this.random() < BOT_NOPE_CHANCE) {
+          candidates.push({ player: p, motivation: this.random() });
         }
       }
-      if (!nopePlayer || bestReasoning < 0.18) {
+      if (candidates.length === 0) {
         current.resolved = true;
         current.cancelled = false;
         return { finalAction: current, nopes: nopeEvents };
       }
+      // Multiple bots want to Nope: the most "motivated" one (highest random) wins
+      candidates.sort((a, b) => b.motivation - a.motivation);
+      const nopePlayer = candidates[0].player;
       const idx = nopePlayer.hand.findIndex((c) => c.kind === "nope");
       const [nopeCard] = nopePlayer.hand.splice(idx, 1);
       this.discardPile.push(nopeCard);
