@@ -785,7 +785,13 @@ export class CompanionExplodingKittensEngine {
     if (this.phase !== "play") return [];
     const actor = this.player(this.currentPlayerId);
     if (actor.id === this.humanId) return [];
-    if (this.needsDefuseInsertion) return [];
+    if (this.needsDefuseInsertion) {
+      // The bot drew an Exploding Kitten and defused it. The bot must
+      // reinsert the kitten into the deck on its own; otherwise the game
+      // deadlocks because no caller will invoke insertExplodingKitten for
+      // the bot and the human can't (they're not the current player).
+      return this.botInsertExplodingKitten();
+    }
     const events: EKGameEvent[] = [];
 
     if (this.pendingAction) {
@@ -821,8 +827,25 @@ export class CompanionExplodingKittensEngine {
     return events;
   }
 
+  /**
+   * Bot auto-resolves a pending Defuse insertion by picking a random
+   * position. The bot slightly prefers the top of the deck (so the next
+   * player is more likely to draw it, just like a hostile human would),
+   * but it stays inside [0, maxIndex] so we never insert past the bottom.
+   */
+  private botInsertExplodingKitten(): EKGameEvent[] {
+    if (!this.needsDefuseInsertion) return [];
+    const maxIndex = this.needsDefuseInsertion.maxIndex;
+    // 60% top, 40% anywhere else — bots are "hostile" by default
+    const position = this.random() < 0.6
+      ? 0
+      : Math.floor(this.random() * (maxIndex + 1));
+    return this.insertExplodingKitten(this.currentPlayerId, position);
+  }
+
   draw(): EKGameEvent[] {
     if (this.phase !== "play") throw new Error("对局已结束");
+    if (this.needsDefuseInsertion) throw new Error("请先处理爆炸猫");
     if (this.currentPlayerId !== this.humanId) throw new Error("还没轮到你");
     return this.drawForActor();
   }

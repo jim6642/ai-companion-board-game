@@ -474,7 +474,9 @@ export default function CompanionExplodingKittensPage() {
 
   const peekCards = snapshot?.humanPeek && !peekDismissed ? snapshot.humanPeek : null;
   const insertionOptions = snapshot?.defuseInsertionOptions ?? [];
-  const needsInsertion = Boolean(snapshot?.needsDefuseInsertion);
+  const needsInsertion = Boolean(snapshot?.needsDefuseInsertion)
+    && snapshot?.phase === "play"
+    && snapshot?.currentPlayerId === HUMAN_ID;
   const isHumanTurn = snapshot?.phase === "play" && snapshot.currentPlayerId === HUMAN_ID && !needsInsertion;
   const showPeek = Boolean(peekCards && peekCards.length > 0);
 
