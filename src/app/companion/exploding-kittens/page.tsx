@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  CaretRight,
   ChatCircleDots,
   Eye,
   PaperPlaneTilt,
+  Pause,
   Play,
   Shuffle,
   SpeakerHigh,
@@ -129,6 +131,7 @@ export default function CompanionExplodingKittensPage() {
   const [isBotRunning, setIsBotRunning] = useState(false);
   const [isChatResponding, setIsChatResponding] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [aiPaused, setAiPaused] = useState(false);
   const [latestEvent, setLatestEvent] = useState("选 1-4 位 AI 陪玩开局。");
   const [keys, setKeys] = useState({ minimaxApiKey: "", minimaxGroupId: "", siliconflowApiKey: "" });
   const [peekDismissed, setPeekDismissed] = useState(false);
@@ -417,12 +420,33 @@ export default function CompanionExplodingKittensPage() {
     }
   }, [publishEvents, refresh]);
 
+  const stepBot = useCallback(() => {
+    if (!engineRef.current) return;
+    if (!snapshot || snapshot.phase !== "play" || snapshot.currentPlayerId === HUMAN_ID) return;
+    if (snapshot.needsDefuseInsertion) return;
+    try {
+      const events = engineRef.current.runBotTurn();
+      const next = refresh();
+      publishEvents(events, next);
+    } catch (error) {
+      setLatestEvent(`机器人回合失败：${error instanceof Error ? error.message : "未知错误"}`);
+    }
+  }, [publishEvents, refresh, snapshot]);
+
+  const toggleAiPaused = useCallback(() => {
+    setAiPaused((current) => !current);
+  }, []);
+
   useEffect(() => {
     if (!snapshot || snapshot.phase !== "play" || snapshot.currentPlayerId === HUMAN_ID) {
       setIsBotRunning(false);
       return;
     }
     if (snapshot.needsDefuseInsertion) {
+      setIsBotRunning(false);
+      return;
+    }
+    if (aiPaused) {
       setIsBotRunning(false);
       return;
     }
@@ -441,7 +465,7 @@ export default function CompanionExplodingKittensPage() {
       }
     }, 320);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [publishEvents, refresh, snapshot]);
+  }, [publishEvents, refresh, snapshot, aiPaused]);
 
   const sendChat = useCallback(() => {
     if (!snapshot || !human || !draft.trim() || isChatResponding) return;
@@ -531,6 +555,23 @@ export default function CompanionExplodingKittensPage() {
         <button type="button" onClick={() => router.push("/companion")}><ArrowLeft size={18} />游戏大厅</button>
         <div><h1>炸弹猫</h1><p>经典 54 张牌 · 抽到爆炸猫又没拆弹就出局</p></div>
         <div className={styles.headerStatus}>第 {snapshot.turn} 行动 · 牌堆 {snapshot.deckCount} 张{snapshot.attackCarry > 1 ? " · 攻击连环" : ""}</div>
+        <button
+          type="button"
+          className={aiPaused ? styles.aiPausedButton : styles.aiAutoButton}
+          onClick={toggleAiPaused}
+          aria-pressed={aiPaused}
+        >
+          {aiPaused ? <Pause size={20} weight="fill" /> : <Play size={20} weight="fill" />}
+          {aiPaused ? "AI 暂停" : "AI 自动"}
+        </button>
+        <button
+          type="button"
+          className={styles.stepButton}
+          onClick={stepBot}
+          disabled={!aiPaused || snapshot.currentPlayerId === HUMAN_ID || Boolean(snapshot.needsDefuseInsertion) || snapshot.phase !== "play"}
+        >
+          <CaretRight size={20} weight="bold" />下一步
+        </button>
         <button type="button" onClick={() => setVoiceEnabled((value) => !value)}>
           {voiceEnabled ? <SpeakerHigh size={20} /> : <SpeakerSlash size={20} />}{voiceEnabled ? "语音开" : "语音关"}
         </button>

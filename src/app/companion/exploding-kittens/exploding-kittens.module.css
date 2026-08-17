@@ -30,7 +30,7 @@
 }
 
 .gameHeader {
-  grid-template-columns: 160px 1fr auto auto auto;
+  grid-template-columns: 160px 1fr auto auto auto auto auto;
   max-width: 1480px;
   margin: 0 auto 20px;
   padding: 14px 22px;
@@ -66,6 +66,37 @@
   font-weight: 700;
   font-size: 14px;
   white-space: nowrap;
+}
+
+.aiAutoButton,
+.aiPausedButton {
+  border: 1px solid rgba(180, 83, 9, .25) !important;
+  background: rgba(255, 255, 255, .85) !important;
+  color: #7c2d12 !important;
+  font-weight: 700;
+}
+
+.aiPausedButton {
+  background: linear-gradient(135deg, #fde68a, #fb923c) !important;
+  color: #7c2d12 !important;
+  border-color: rgba(180, 83, 9, .35) !important;
+  box-shadow: 0 4px 14px rgba(251, 146, 60, .3) inset;
+}
+
+.stepButton {
+  border: 1px solid rgba(180, 83, 9, .35) !important;
+  background: linear-gradient(135deg, #f97316, #dc2626) !important;
+  color: white !important;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(220, 38, 38, .25);
+}
+
+.stepButton:disabled {
+  background: rgba(214, 211, 209, .5) !important;
+  color: #78716c !important;
+  border-color: rgba(120, 113, 108, .25) !important;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .setupPanel {
@@ -624,9 +655,17 @@
 
 .composer button:disabled { opacity: .5; cursor: not-allowed; }
 
+@media (max-width: 1100px) {
+  .gameHeader { grid-template-columns: 1fr 1fr 1fr; row-gap: 10px; }
+}
+
 @media (max-width: 980px) {
   .gameLayout { grid-template-columns: 1fr; }
   .gameHeader { grid-template-columns: 1fr 1fr; }
   .headerStatus { grid-column: 1 / -1; }
   .characterGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 620px) {
+  .gameHeader { grid-template-columns: 1fr; }
 }
