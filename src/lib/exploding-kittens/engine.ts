@@ -84,7 +84,7 @@ export interface EKBotView {
 }
 
 export interface EKLegalAction {
-  kind: "play-card" | "draw";
+  kind: "play-card" | "draw" | "choose-stolen-card" | "pick-discard";
   cardId?: string;
   cardKind?: EKCardKind;
   actionKind?: EKActionKind;
@@ -120,6 +120,10 @@ export interface EKSnapshot {
   /** last 12 events, newest first, for the chat feed */
   recentEvents: EKGameEvent[];
   needsDefuseInsertion: { kittenId: string; maxIndex: number } | null;
+  /** 2-cat combo: target must pick which card to hand over */
+  pendingCatStealChoice: { requesterId: string; targetId: string } | null;
+  /** 5-cat combo: actor must pick a card from the discard pile */
+  pendingDiscardPick: { actorId: string } | null;
 }
 
 export type EKEventKind =
@@ -231,6 +235,10 @@ export class CompanionExplodingKittensEngine {
   private humanPeek: EKCard[] | null = null;
   private winnerId: string | null = null;
   private needsDefuseInsertion: { kittenId: string; maxIndex: number } | null = null;
+  /** When set, the target of a 2-cat combo must choose which card to give. */
+  private pendingCatStealChoice: { requesterId: string; targetId: string } | null = null;
+  /** When set, the actor of a 5-cat combo must choose a card from discard. */
+  private pendingDiscardPick: { actorId: string } | null = null;
   private recentEvents: EKGameEvent[] = [];
   private playedThisTurn: EKCardKind[] = [];
   private playedAttackThisTurn = false;
@@ -287,6 +295,8 @@ export class CompanionExplodingKittensEngine {
     this.humanPeek = null;
     this.winnerId = null;
     this.needsDefuseInsertion = null;
+    this.pendingCatStealChoice = null;
+    this.pendingDiscardPick = null;
     this.recentEvents = [];
     this.playedThisTurn = [];
     this.playedAttackThisTurn = false;
@@ -399,6 +409,22 @@ export class CompanionExplodingKittensEngine {
     if (player.id !== this.currentPlayerId) return [];
     if (this.needsDefuseInsertion || this.pendingAction) return [];
     const actions: EKLegalAction[] = [];
+    // Picker for a 2-cat combo: target picks which of their own cards
+    // to hand over. Expose the cards as choose-stolen-card actions.
+    if (this.pendingCatStealChoice && this.pendingCatStealChoice.targetId === player.id) {
+      for (const card of player.hand) {
+        actions.push({ kind: "choose-stolen-card", cardId: card.id, cardKind: card.kind, endsWithoutDraw: true });
+      }
+      return actions;
+    }
+    // Picker for a 5-cat combo: actor picks one card from the discard
+    // pile. Expose the discard pile as pick-discard actions.
+    if (this.pendingDiscardPick && this.pendingDiscardPick.actorId === player.id) {
+      for (const card of this.discardPile) {
+        actions.push({ kind: "pick-discard", cardId: card.id, cardKind: card.kind, endsWithoutDraw: true });
+      }
+      return actions;
+    }
     for (const card of player.hand) {
       if (card.kind === "exploding-kitten" || card.kind === "defuse") continue;
       if (card.kind === "nope") continue;
@@ -674,17 +700,36 @@ export class CompanionExplodingKittensEngine {
         if (size === 2 && action.targetId) {
           const target = this.player(action.targetId);
           if (target.hand.length > 0) {
-            const idx = Math.floor(this.random() * target.hand.length);
-            const stolen = target.hand.splice(idx, 1)[0];
-            actor.hand.push(stolen);
+            // Per official rules, the TARGET chooses which card to give.
+            // We do not transfer immediately — we set a pending state and
+            // end the actor's turn; the target (picker) resolves on their
+            // next turn via chooseStolenCard().
+            this.pendingCatStealChoice = { requesterId: actor.id, targetId: target.id };
             const event: EKGameEvent = {
               id: this.newId("ek-event"),
               kind: "cat-combo",
               actorId: actor.id,
               actorName: actor.name,
               targetIds: [target.id],
-              text: `${actor.name}用 2 张${cards[0]?.name ?? "猫牌"}随机偷了${target.name}一张牌。`,
+              text: `${actor.name}用 2 张${cards[0]?.name ?? "猫牌"}向${target.name}勒索一张牌，等${target.name}自己交出来。`,
               significant: true,
+              cards,
+            };
+            events.push(event);
+            this.pushEvent(event);
+            // End the actor's turn without a draw, like Attack/Skip. The
+            // picker will resolve on their own turn.
+            this.playedAttackThisTurn = true;
+          } else {
+            // Target has empty hand — the combo fizzles.
+            const event: EKGameEvent = {
+              id: this.newId("ek-event"),
+              kind: "cat-combo",
+              actorId: actor.id,
+              actorName: actor.name,
+              targetIds: [target.id],
+              text: `${actor.name}想用 2 张${cards[0]?.name ?? "猫牌"}偷${target.name}的牌，但对方手里是空的。`,
+              significant: false,
               cards,
             };
             events.push(event);
@@ -724,21 +769,24 @@ export class CompanionExplodingKittensEngine {
           }
         } else if (size === 5) {
           if (this.discardPile.length > 0) {
-            const idx = Math.floor(this.random() * this.discardPile.length);
-            const taken = this.discardPile.splice(idx, 1)[0];
-            actor.hand.push(taken);
+            // Per official rules, the ACTOR chooses which discard-pile
+            // card to take. We do not take immediately — we set a
+            // pending state; the actor (picker) resolves via
+            // pickFromDiscard() on their turn.
+            this.pendingDiscardPick = { actorId: actor.id };
             const event: EKGameEvent = {
               id: this.newId("ek-event"),
               kind: "cat-combo",
               actorId: actor.id,
               actorName: actor.name,
               targetIds: [],
-              text: `${actor.name}用 5 张不同的猫牌从弃牌堆里挑了 1 张（${this.describeCard(taken)}）。`,
+              text: `${actor.name}用 5 张不同的猫牌，可以从弃牌堆里挑 1 张。`,
               significant: true,
               cards,
             };
             events.push(event);
             this.pushEvent(event);
+            this.playedAttackThisTurn = true;
           } else {
             const event: EKGameEvent = {
               id: this.newId("ek-event"),
@@ -847,6 +895,88 @@ export class CompanionExplodingKittensEngine {
     return [event];
   }
 
+  /**
+   * Used by a 2-cat combo: the TARGET of the combo picks which of
+   * their own cards to hand over to the requester. Per official
+   * rules, the victim chooses what to give up.
+   */
+  chooseStolenCard(targetId: string, cardId: string): EKGameEvent[] {
+    if (!this.pendingCatStealChoice) throw new Error("当前没有待定的偷牌选择");
+    if (this.pendingCatStealChoice.targetId !== targetId) throw new Error("不是让你选");
+    const target = this.player(targetId);
+    const card = target.hand.find((c) => c.id === cardId);
+    if (!card) throw new Error("你手里没这张牌");
+    const requester = this.player(this.pendingCatStealChoice.requesterId);
+    if (!requester.alive) throw new Error("索要方已经不在了");
+    target.hand = target.hand.filter((c) => c.id !== cardId);
+    requester.hand.push(card);
+    const event: EKGameEvent = {
+      id: this.newId("ek-event"),
+      kind: "cat-combo",
+      actorId: target.id,
+      actorName: target.name,
+      targetIds: [requester.id],
+      text: `${target.name}把${this.describeCard(card)}交给了${requester.name}。`,
+      significant: true,
+      cards: [card],
+    };
+    this.pushEvent(event);
+    this.pendingCatStealChoice = null;
+    this.afterAction();
+    return [event];
+  }
+
+  /**
+   * Used by a 5-cat combo: the ACTOR picks one card from the discard
+   * pile to add to their hand. Per official rules, the player who
+   * played the 5 cats picks what to take.
+   *
+   * If the discard pile was reshuffled into the deck in between
+   * (because someone drew with an empty deck), the combo fizzles
+   * cleanly — the picker no longer has anything to take.
+   */
+  pickFromDiscard(actorId: string, cardId: string): EKGameEvent[] {
+    if (!this.pendingDiscardPick) throw new Error("当前没有待定的弃牌堆选择");
+    if (this.pendingDiscardPick.actorId !== actorId) throw new Error("不是让你选");
+    const actor = this.player(actorId);
+    if (this.discardPile.length === 0) {
+      // Discard was reshuffled between the play and the pick. The
+      // combo fizzles; the actor's 5 cats are lost.
+      this.pendingDiscardPick = null;
+      const event: EKGameEvent = {
+        id: this.newId("ek-event"),
+        kind: "cat-combo",
+        actorId: actor.id,
+        actorName: actor.name,
+        targetIds: [],
+        text: `${actor.name}想从弃牌堆里挑牌，但弃牌堆已经被洗回牌堆了。`,
+        significant: false,
+        cards: [],
+      };
+      this.pushEvent(event);
+      this.afterAction();
+      return [event];
+    }
+    const cardIdx = this.discardPile.findIndex((c) => c.id === cardId);
+    if (cardIdx < 0) throw new Error("弃牌堆里没有这张牌");
+    const [card] = this.discardPile.splice(cardIdx, 1);
+    actor.hand.push(card);
+    const event: EKGameEvent = {
+      id: this.newId("ek-event"),
+      kind: "cat-combo",
+      actorId: actor.id,
+      actorName: actor.name,
+      targetIds: [],
+      text: `${actor.name}从弃牌堆里挑了${this.describeCard(card)}。`,
+      significant: true,
+      cards: [card],
+    };
+    this.pushEvent(event);
+    this.pendingDiscardPick = null;
+    this.afterAction();
+    return [event];
+  }
+
   /** When the current player is a bot and is the only one allowed to act. */
   runBotTurn(): EKGameEvent[] {
     if (this.phase !== "play") return [];
@@ -858,6 +988,16 @@ export class CompanionExplodingKittensEngine {
       // deadlocks because no caller will invoke insertExplodingKitten for
       // the bot and the human can't (they're not the current player).
       return this.botInsertExplodingKitten();
+    }
+    // If this bot is the picker for a pending 2-cat or 5-cat combo,
+    // resolve the pick instead of taking a normal turn. The actor's
+    // turn has already ended (playedAttackThisTurn is true), and the
+    // turn arrived at the picker.
+    if (this.pendingCatStealChoice && this.pendingCatStealChoice.targetId === actor.id) {
+      return this.botChooseStolenCard(actor);
+    }
+    if (this.pendingDiscardPick && this.pendingDiscardPick.actorId === actor.id) {
+      return this.botPickFromDiscard(actor);
     }
     const events: EKGameEvent[] = [];
 
@@ -895,6 +1035,61 @@ export class CompanionExplodingKittensEngine {
   }
 
   /**
+   * Bot picker for 2-cat combo: hand over the weakest card.
+   * Priority (lowest first, hand over in this order): favor, shuffle,
+   * nope, skip, see-future, attack, defuse. Cat and EK are kept
+   * (cannot be handed over as defuse) and we never hand over a card
+   * that would leave us defuse-less when the deck is still dangerous.
+   */
+  private botChooseStolenCard(actor: PlayerState): EKGameEvent[] {
+    if (!this.pendingCatStealChoice) return [];
+    const hand = actor.hand;
+    // Hand-over priority by card kind, lowest first.
+    const priority: EKCardKind[] = ["favor", "shuffle", "nope", "skip", "see-future", "attack", "defuse"];
+    let chosen: EKCard | undefined;
+    const hasSpareDefuse = hand.filter((c) => c.kind === "defuse").length > 1;
+    for (const kind of priority) {
+      const candidates = hand.filter((c) => c.kind === kind);
+      if (candidates.length === 0) continue;
+      // Don't hand over our last defuse if the deck is still risky.
+      if (kind === "defuse" && !hasSpareDefuse) continue;
+      chosen = candidates[0];
+      break;
+    }
+    if (!chosen) chosen = hand[0];
+    return this.chooseStolenCard(actor.id, chosen.id);
+  }
+
+  /**
+   * Bot picker for 5-cat combo: take the most useful card from the
+   * discard pile. Priority: defuse > see-future > attack > skip >
+   * nope > favor > shuffle > cat. Exploding kittens in the discard
+   * pile (rare) are also taken if no defuse is in hand.
+   *
+   * If the discard pile was reshuffled into the deck in between
+   * (because some other player drew with an empty deck), the bot
+   * just calls pickFromDiscard which fizzles cleanly.
+   */
+  private botPickFromDiscard(actor: PlayerState): EKGameEvent[] {
+    if (!this.pendingDiscardPick) return [];
+    const pile = this.discardPile;
+    if (pile.length === 0) {
+      return this.pickFromDiscard(actor.id, "__noop__");
+    }
+    const hasDefuse = actor.hand.some((c) => c.kind === "defuse");
+    const priority: EKCardKind[] = hasDefuse
+      ? ["defuse", "see-future", "attack", "skip", "nope", "favor", "shuffle", "cat", "exploding-kitten"]
+      : ["defuse", "see-future", "exploding-kitten", "attack", "skip", "nope", "favor", "shuffle", "cat"];
+    for (const kind of priority) {
+      const found = pile.find((c) => c.kind === kind);
+      if (found) return this.pickFromDiscard(actor.id, found.id);
+    }
+    // Fallback (should not happen because picker is only set when
+    // discardPile is non-empty, but be defensive).
+    return this.pickFromDiscard(actor.id, pile[0].id);
+  }
+
+  /**
    * Bot auto-resolves a pending Defuse insertion with a self-preserving
    * heuristic instead of a flat 60/40 top/random roll.
    *
@@ -920,7 +1115,7 @@ export class CompanionExplodingKittensEngine {
     // discard pile, so it is not in the hand anymore.
     const stillHasDefuse = actor.hand.some((c) => c.kind === "defuse");
     const nextPlayer = this.player(this.nextPlayerId(this.currentPlayerId));
-    const nextPlayerLooksVulnerable = nextPlayer.handCount <= 2;
+    const nextPlayerLooksVulnerable = nextPlayer.hand.length <= 2;
     const r = this.random();
     let position: number;
     if (stillHasDefuse) {
@@ -1152,6 +1347,8 @@ export class CompanionExplodingKittensEngine {
         ? Array.from({ length: this.needsDefuseInsertion.maxIndex + 1 }, (_, i) => i)
         : [],
       winnerId: this.winnerId,
+      pendingCatStealChoice: this.pendingCatStealChoice ? { ...this.pendingCatStealChoice } : null,
+      pendingDiscardPick: this.pendingDiscardPick ? { ...this.pendingDiscardPick } : null,
       recentEvents: this.recentEvents.slice(0, 12).map((e) => ({ ...e })),
       needsDefuseInsertion: this.needsDefuseInsertion ? { ...this.needsDefuseInsertion } : null,
     };
@@ -1219,8 +1416,29 @@ function chooseEKBotMove(view: EKBotView, random: () => number): EKBotMove {
     catCounts.set(c.catKind, [...(catCounts.get(c.catKind) ?? []), c]);
   }
   const twoOfAKind = Array.from(catCounts.values()).find((arr) => arr.length >= 2);
+  // 2 cats vs 3 cats trade-off: 2 cats always steals something but the
+  // victim chooses what to give (often a junk card). 3 cats is a bet on
+  // a specific kind — only worth it when the target's hand is big
+  // enough to plausibly contain it, and only when the bot has reason
+  // to want that specific kind.
+  const threeOfAKind = Array.from(catCounts.values()).find((arr) => arr.length >= 3);
   if (twoOfAKind && aliveOthers.length > 0) {
     const target = aliveOthers[Math.floor(random() * aliveOthers.length)];
+    // If target has only 1 card, 3 cats is mostly a wasted combo (the
+    // named kind is unlikely to match). Skip 3 cats and use 2 cats.
+    const canUse3 = threeOfAKind && target.handCount >= 2;
+    if (canUse3) {
+      // Pick the named kind based on what the bot needs most.
+      const namedKind = chooseEKCatThreeNamedKind(actorHand, hasDefuse, view.deckCount, random);
+      return {
+        kind: "play-card",
+        actionKind: "cat-combo",
+        cardIds: threeOfAKind!.slice(0, 3).map((c) => c.id),
+        targetId: target.id,
+        comboSize: 3,
+        namedKind,
+      };
+    }
     return {
       kind: "play-card",
       actionKind: "cat-combo",
@@ -1229,16 +1447,16 @@ function chooseEKBotMove(view: EKBotView, random: () => number): EKBotMove {
       comboSize: 2,
     };
   }
-  const threeOfAKind = Array.from(catCounts.values()).find((arr) => arr.length >= 3);
   if (threeOfAKind && aliveOthers.length > 0) {
     const target = aliveOthers[Math.floor(random() * aliveOthers.length)];
+    const namedKind = chooseEKCatThreeNamedKind(actorHand, hasDefuse, view.deckCount, random);
     return {
       kind: "play-card",
       actionKind: "cat-combo",
       cardIds: threeOfAKind.slice(0, 3).map((c) => c.id),
       targetId: target.id,
       comboSize: 3,
-      namedKind: "defuse",
+      namedKind,
     };
   }
   const distinctCats = new Set<EKCatKind>();
@@ -1273,6 +1491,49 @@ function chooseEKBotMove(view: EKBotView, random: () => number): EKBotMove {
 
   // Otherwise just draw
   return { kind: "draw" };
+}
+
+/**
+ * Strategic choice of which card kind to demand with a 3-cat combo.
+ * The bot cannot see the target's hand, so this is a bet based on what
+ * the bot most needs. The target's `handCount` would be a useful
+ * probability input but is not part of EKBotView, so we just rank by
+ * self-interest:
+ *
+ *   - No defuse in hand: prioritize "defuse" (most urgent).
+ *   - Defuse in hand but deck is small: "see-future" gives info.
+ *   - Defuse + safe deck: vary among "see-future" / "attack" so
+ *     we don't always ask for the same thing (the bot's "always
+ *     defuse" was the regression target here).
+ */
+function chooseEKCatThreeNamedKind(
+  actorHand: EKCard[],
+  hasDefuse: boolean,
+  deckCount: number,
+  random: () => number,
+): EKCardKind {
+  const ownKinds = new Set(actorHand.map((c) => c.kind));
+  const r = random();
+  if (!hasDefuse) {
+    // Survival first. 85% defuse, 15% see-future for info.
+    return r < 0.85 ? "defuse" : "see-future";
+  }
+  // Has a defuse already; the threat is lower. Mix asks so we don't
+  // always telegraph the same target.
+  if (deckCount <= 6) {
+    // Deck is thin — peek at the top is more valuable than offense.
+    return r < 0.5 ? "see-future" : (r < 0.8 ? "attack" : "defuse");
+  }
+  // Comfortable deck — try to cripple the target. Attack ends their
+  // turn early; see-future lets us plan; defuse is a safety net.
+  if (r < 0.4) return "attack";
+  if (r < 0.7) return "see-future";
+  if (r < 0.9) return "defuse";
+  // Wildcard: ask for a kind the target might happen to hold and we
+  // might want a copy of (e.g., another attack for double-turn).
+  if (!ownKinds.has("skip")) return "skip";
+  if (!ownKinds.has("favor")) return "favor";
+  return "nope";
 }
 
 export const EK_CARD_DEFINITIONS = CARD_DEFINITIONS;

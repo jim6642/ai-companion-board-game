@@ -380,6 +380,50 @@
 
 .insertionButton:hover { background: #fee2e2; }
 
+.pickerPanel {
+  border: 1px solid #a78bfa;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(237, 233, 254, .95), rgba(245, 243, 255, .9));
+  padding: 14px 18px;
+  color: #4c1d95;
+}
+
+.pickerPanel strong { font-size: 16px; }
+.pickerPanel p { margin: 6px 0 12px; font-size: 13px; color: #5b21b6; }
+
+.pickerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+}
+
+.pickerButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  border: 1px solid rgba(76, 29, 149, .3);
+  border-radius: 12px;
+  background: #fff;
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .12s ease, background .12s ease;
+}
+
+.pickerButton:hover {
+  background: #ede9fe;
+  transform: translateY(-2px);
+}
+
+.pickerSymbol {
+  font-size: 24px;
+  line-height: 1;
+  color: var(--card-tone, #6b21a8);
+}
+
 .handArea { display: flex; flex-direction: column; gap: 10px; }
 
 .handHeading {

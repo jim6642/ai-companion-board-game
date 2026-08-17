@@ -34,7 +34,7 @@ function collectInsertionPositions(hasSpareDefuse: boolean): { top: number; nonT
 
   for (let seed = 1; seed <= 400; seed += 1) {
     const engine = makeEngine(seed);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicitany
     const internal = engine as any;
     for (const p of internal.players) while (p.hand.length) p.hand.pop();
     internal.currentPlayerId = "lin-xia";
@@ -51,6 +51,15 @@ function collectInsertionPositions(hasSpareDefuse: boolean): { top: number; nonT
       bot.hand.push({ id: "spare-defuse", kind: "defuse", name: "defuse", effect: "", symbol: "🛠", tone: "#0f0" });
     }
     bot.hand.push({ id: "test-defuse", kind: "defuse", name: "defuse", effect: "", symbol: "🛠", tone: "#0f0" });
+    // Give every other player enough cards so the "next player looks
+    // vulnerable" gamble branch (handCount <= 2 → 60% top) does not
+    // fire and pollute the no-spare-defuse distribution.
+    for (const pid of ["human", "su-yao", "gu-qinglan"]) {
+      const target = internal.players.find((p: { id: string }) => p.id === pid);
+      for (let i = 0; i < 5; i += 1) {
+        target.hand.push({ id: `${pid}-filler-${i}`, kind: "skip", name: "skip", effect: "", symbol: "?", tone: "#888" });
+      }
+    }
 
     // First call: bot draws EK and auto-defuses (consuming test-defuse).
     engine.runBotTurn();

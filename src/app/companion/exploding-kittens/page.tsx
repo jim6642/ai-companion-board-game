@@ -431,6 +431,26 @@ export default function CompanionExplodingKittensPage() {
     }
   }, [publishEvents, refresh]);
 
+  const chooseStolenCardForHuman = useCallback((cardId: string) => {
+    try {
+      const events = engineRef.current?.chooseStolenCard(HUMAN_ID, cardId) ?? [];
+      const next = refresh();
+      publishEvents(events, next);
+    } catch (error) {
+      setLatestEvent(error instanceof Error ? error.message : "交牌失败。");
+    }
+  }, [publishEvents, refresh]);
+
+  const pickFromDiscardForHuman = useCallback((cardId: string) => {
+    try {
+      const events = engineRef.current?.pickFromDiscard(HUMAN_ID, cardId) ?? [];
+      const next = refresh();
+      publishEvents(events, next);
+    } catch (error) {
+      setLatestEvent(error instanceof Error ? error.message : "挑牌失败。");
+    }
+  }, [publishEvents, refresh]);
+
   const stepBot = useCallback(() => {
     if (!engineRef.current) return;
     if (!snapshot || snapshot.phase !== "play" || snapshot.currentPlayerId === HUMAN_ID) return;
@@ -513,7 +533,18 @@ export default function CompanionExplodingKittensPage() {
   const needsInsertion = Boolean(snapshot?.needsDefuseInsertion)
     && snapshot?.phase === "play"
     && snapshot?.currentPlayerId === HUMAN_ID;
-  const isHumanTurn = snapshot?.phase === "play" && snapshot.currentPlayerId === HUMAN_ID && !needsInsertion;
+  // Picker states: 2-cat steals from the target, 5-cat picks from discard.
+  const mustPickStolenCard = Boolean(snapshot?.pendingCatStealChoice)
+    && snapshot?.pendingCatStealChoice?.targetId === HUMAN_ID
+    && snapshot?.phase === "play";
+  const mustPickFromDiscard = Boolean(snapshot?.pendingDiscardPick)
+    && snapshot?.pendingDiscardPick?.actorId === HUMAN_ID
+    && snapshot?.phase === "play";
+  const isHumanTurn = snapshot?.phase === "play"
+    && snapshot.currentPlayerId === HUMAN_ID
+    && !needsInsertion
+    && !mustPickStolenCard
+    && !mustPickFromDiscard;
   const showPeek = Boolean(peekCards && peekCards.length > 0);
 
   if (!snapshot) {
@@ -668,6 +699,48 @@ export default function CompanionExplodingKittensPage() {
                     onClick={() => insertExplodingKitten(option)}
                   >
                     {option === 0 ? "顶部" : `倒数第 ${option} 张`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {mustPickStolenCard ? (
+            <div className={styles.pickerPanel}>
+              <strong>有人用 2 张猫牌勒索你</strong>
+              <p>从你手牌里交出 1 张——规则规定由你决定交哪张。</p>
+              <div className={styles.pickerGrid}>
+                {snapshot.humanHand.map((card) => (
+                  <button
+                    key={card.id}
+                    type="button"
+                    className={styles.pickerButton}
+                    style={{ "--card-tone": card.tone } as CSSProperties}
+                    onClick={() => chooseStolenCardForHuman(card.id)}
+                  >
+                    <span className={styles.pickerSymbol}>{card.symbol}</span>
+                    <span>{card.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {mustPickFromDiscard ? (
+            <div className={styles.pickerPanel}>
+              <strong>用 5 张猫牌从弃牌堆里挑 1 张</strong>
+              <p>规则规定由你决定拿哪张。</p>
+              <div className={styles.pickerGrid}>
+                {snapshot.discardPile.map((card) => (
+                  <button
+                    key={card.id}
+                    type="button"
+                    className={styles.pickerButton}
+                    style={{ "--card-tone": card.tone } as CSSProperties}
+                    onClick={() => pickFromDiscardForHuman(card.id)}
+                  >
+                    <span className={styles.pickerSymbol}>{card.symbol}</span>
+                    <span>{card.name}</span>
                   </button>
                 ))}
               </div>
