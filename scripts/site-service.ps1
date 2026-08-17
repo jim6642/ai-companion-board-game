@@ -30,6 +30,28 @@ function Open-Site {
   Start-Process $SiteUrl
 }
 
+$WarmupRoutes = @(
+  "/companion",
+  "/companion/uno",
+  "/companion/aeroplane",
+  "/companion/love-letter",
+  "/companion/liars-dice",
+  "/companion/exploding-kittens",
+  "/companion/werewolf"
+)
+
+function Invoke-WarmupWarm {
+  param([int]$Port, [string[]]$Routes)
+  $base = "http://localhost:$Port"
+  foreach ($route in $Routes) {
+    try {
+      $null = Invoke-WebRequest -UseBasicParsing -Uri ($base + $route) -TimeoutSec 60
+    } catch {
+      # ignore warmup failures; the real page request will retry
+    }
+  }
+}
+
 try {
   Set-Location -LiteralPath $ProjectRoot
   $listener = Get-SiteListener
@@ -92,6 +114,9 @@ try {
       }
       Set-Content -LiteralPath $PidPath -Value $listener.OwningProcess -Encoding ascii
       Write-Host "The site is ready: $SiteUrl" -ForegroundColor Green
+      Write-Host "Pre-warming the 6 game routes so the first click is instant..." -ForegroundColor Cyan
+      Invoke-WarmupWarm -Port $Port -Routes $WarmupRoutes
+      Write-Host "Pre-warm complete. Opening the browser..." -ForegroundColor Green
       Open-Site
       exit 0
     }
