@@ -458,16 +458,25 @@ export class CompanionExplodingKittensEngine {
     const nopeEvents: EKGameEvent[] = [];
     let current: EKAction = { ...action };
     let depth = 0;
-    // Per-bot probability of wanting to play a Nope. Real EK feels like
-    // 15-25% of any given action gets a Nope; with 4 players that's roughly
-    // 6% per bot, so we default to 10% per bot to keep the chain short.
-    const BOT_NOPE_CHANCE = 0.1;
+    // Each bot's decision to play a Nope is now a strategic call based on
+    // the original action and the bot's own state (hand, peeks, target).
+    // At even depth the action is "live" and a Nope cancels it, so a bot
+    // plays a Nope when it wants the action to be cancelled. At odd depth
+    // the action is already cancelled and a Nope re-Nopes (revives) it, so
+    // a bot plays a Nope when it wants the action to come back. The
+    // original action itself is the only thing the bot reasons about — it
+    // does not track the chain mid-flight.
     while (depth < EK_MAX_NOPE_DEPTH) {
       const aliveOthers = this.alivePlayers().filter((p) => p.id !== current.actorId);
       const candidates: Array<{ player: PlayerState; motivation: number }> = [];
       for (const p of aliveOthers) {
         if (!p.hand.some((c) => c.kind === "nope")) continue;
-        if (this.random() < BOT_NOPE_CHANCE) {
+        const cancelPreference = this.botCancelPreference(p, action);
+        // At depth 0 the action is live, so a Nope fires when cancelPreference
+        // is high. At depth 1 the action is cancelled, so a Nope fires when
+        // cancelPreference is low (we want the original to come back).
+        const threshold = depth % 2 === 0 ? cancelPreference : 1 - cancelPreference;
+        if (this.random() < threshold) {
           candidates.push({ player: p, motivation: this.random() });
         }
       }
@@ -476,7 +485,6 @@ export class CompanionExplodingKittensEngine {
         current.cancelled = false;
         return { finalAction: current, nopes: nopeEvents };
       }
-      // Multiple bots want to Nope: the most "motivated" one (highest random) wins
       candidates.sort((a, b) => b.motivation - a.motivation);
       const nopePlayer = candidates[0].player;
       const idx = nopePlayer.hand.findIndex((c) => c.kind === "nope");
@@ -505,10 +513,66 @@ export class CompanionExplodingKittensEngine {
       };
       depth += 1;
     }
-    // chain cap reached → resolve top
     current.resolved = true;
     current.cancelled = false;
     return { finalAction: current, nopes: nopeEvents };
+  }
+
+  /**
+   * Strategic preference (0..1) for a bot wanting the original action to
+   * be cancelled. High = the bot wants the Nope. Low = the bot would
+   * rather let the action go through. Pure heuristic, no extra RNG.
+   */
+  private botCancelPreference(bot: PlayerState, originalAction: EKAction): number {
+    const view = this.botView(bot);
+    const target = originalAction.targetId ? this.player(originalAction.targetId) : null;
+    switch (originalAction.kind) {
+      case "favor":
+        if (target?.id === bot.id && bot.hand.length > 0) {
+          return 0.95;
+        }
+        return 0.05;
+      case "cat-combo": {
+        const size = originalAction.comboSize ?? 2;
+        if (target?.id !== bot.id) return 0.1;
+        if (size === 2) return 0.95;
+        if (size === 3) {
+          if (originalAction.namedKind && bot.hand.some((c) => c.kind === originalAction.namedKind)) {
+            return 0.9;
+          }
+          return 0.2;
+        }
+        return 0.1;
+      }
+      case "attack": {
+        const nextId = this.nextPlayerId(originalAction.actorId);
+        return nextId === bot.id ? 0.9 : 0.2;
+      }
+      case "skip": {
+        if (view.lastPeek[0]?.kind === "exploding-kitten") {
+          // We peeked and saw an EK on top — force the actor to draw it.
+          return 0.9;
+        }
+        // No peek: mostly let the skip through; mild counter-pressure if
+        // the deck is small and we don't want the next player to draw.
+        if (view.deckCount <= 4) {
+          return this.nextPlayerId(originalAction.actorId) === bot.id ? 0.3 : 0.4;
+        }
+        return 0.1;
+      }
+      case "shuffle": {
+        if (view.lastPeek.length === 0) return 0.1;
+        const topIsEk = view.lastPeek[0]?.kind === "exploding-kitten";
+        return topIsEk ? 0.85 : 0.8;
+      }
+      case "see-future":
+        return 0.1;
+      case "nope":
+        // Re-Nope: the previous Nope is being countered. Bot's "cancel
+        // preference" for the ORIGINAL action decides whether to revive.
+        return 0.1;
+    }
+    return 0.1;
   }
 
   private resolveAction(action: EKAction): EKGameEvent[] {
