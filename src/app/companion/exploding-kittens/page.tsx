@@ -423,7 +423,9 @@ export default function CompanionExplodingKittensPage() {
   const stepBot = useCallback(() => {
     if (!engineRef.current) return;
     if (!snapshot || snapshot.phase !== "play" || snapshot.currentPlayerId === HUMAN_ID) return;
-    if (snapshot.needsDefuseInsertion) return;
+    // Note: do NOT short-circuit on needsDefuseInsertion. When a bot is the
+    // current player mid-insertion, runBotTurn() routes to
+    // botInsertExplodingKitten() and resolves the deadlock itself.
     try {
       const events = engineRef.current.runBotTurn();
       const next = refresh();
@@ -442,10 +444,9 @@ export default function CompanionExplodingKittensPage() {
       setIsBotRunning(false);
       return;
     }
-    if (snapshot.needsDefuseInsertion) {
-      setIsBotRunning(false);
-      return;
-    }
+    // The bot can resolve its own defuse insertion via runBotTurn(), so we
+    // never short-circuit on needsDefuseInsertion here either — the timer
+    // keeps ticking until it's the human's turn.
     if (aiPaused) {
       setIsBotRunning(false);
       return;
@@ -568,7 +569,7 @@ export default function CompanionExplodingKittensPage() {
           type="button"
           className={styles.stepButton}
           onClick={stepBot}
-          disabled={!aiPaused || snapshot.currentPlayerId === HUMAN_ID || Boolean(snapshot.needsDefuseInsertion) || snapshot.phase !== "play"}
+          disabled={!aiPaused || snapshot.currentPlayerId === HUMAN_ID || snapshot.phase !== "play"}
         >
           <CaretRight size={20} weight="bold" />下一步
         </button>
