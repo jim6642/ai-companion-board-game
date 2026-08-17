@@ -895,18 +895,61 @@ export class CompanionExplodingKittensEngine {
   }
 
   /**
-   * Bot auto-resolves a pending Defuse insertion by picking a random
-   * position. The bot slightly prefers the top of the deck (so the next
-   * player is more likely to draw it, just like a hostile human would),
-   * but it stays inside [0, maxIndex] so we never insert past the bottom.
+   * Bot auto-resolves a pending Defuse insertion with a self-preserving
+   * heuristic instead of a flat 60/40 top/random roll.
+   *
+   *   - Spare defuse in hand (after using one to defuse this EK): the
+   *     bot is still safe if it draws another EK. Push the kitten near
+   *     the top to put pressure on the next player.
+   *       70% top, 20% upper third, 10% anywhere.
+   *   - No spare defuse: bot is exposed. Bury the kitten.
+   *       50% bottom, 30% near bottom, 20% middle. Never top by default.
+   *   - Tie-breaker: if the next player has very few cards (likely low
+   *     defuse odds, since they would have played it by now), force
+   *     position 0 even without our own spare defuse — gamble on them.
    */
   private botInsertExplodingKitten(): EKGameEvent[] {
     if (!this.needsDefuseInsertion) return [];
     const maxIndex = this.needsDefuseInsertion.maxIndex;
-    // 60% top, 40% anywhere else — bots are "hostile" by default
-    const position = this.random() < 0.6
-      ? 0
-      : Math.floor(this.random() * (maxIndex + 1));
+    if (maxIndex <= 0) {
+      return this.insertExplodingKitten(this.currentPlayerId, 0);
+    }
+    const actor = this.player(this.currentPlayerId);
+    // hasDefuse here means "still has a spare defuse after using one to
+    // defuse this kitten". The defuse just used is already in the
+    // discard pile, so it is not in the hand anymore.
+    const stillHasDefuse = actor.hand.some((c) => c.kind === "defuse");
+    const nextPlayer = this.player(this.nextPlayerId(this.currentPlayerId));
+    const nextPlayerLooksVulnerable = nextPlayer.handCount <= 2;
+    const r = this.random();
+    let position: number;
+    if (stillHasDefuse) {
+      if (r < 0.7) {
+        position = 0;
+      } else if (r < 0.9) {
+        // upper third
+        const upper = Math.max(1, Math.floor(maxIndex * 0.3) + 1);
+        position = Math.floor(this.random() * upper);
+      } else {
+        position = Math.floor(this.random() * (maxIndex + 1));
+      }
+    } else if (nextPlayerLooksVulnerable && this.random() < 0.6) {
+      // gamble: weak next player is probably defuse-less, top is lethal
+      position = 0;
+    } else {
+      if (r < 0.5) {
+        position = maxIndex;
+      } else if (r < 0.8) {
+        // near bottom (lower 40%)
+        const lower = Math.max(1, Math.floor(maxIndex * 0.6) + 1);
+        position = lower + Math.floor(this.random() * (maxIndex - lower + 1));
+      } else {
+        // middle band
+        const lower = Math.max(1, Math.floor(maxIndex * 0.3) + 1);
+        const upper = Math.max(lower, Math.floor(maxIndex * 0.6));
+        position = lower + Math.floor(this.random() * (upper - lower + 1));
+      }
+    }
     return this.insertExplodingKitten(this.currentPlayerId, position);
   }
 
